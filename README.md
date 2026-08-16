@@ -1,43 +1,74 @@
-# React Native WhatsApp Clone with Clerk
+# Veill
 
-This is a React Native WhatsApp clone using [Clerk](https://clerk.com/?utm_source=sponsorship&utm_medium=github&utm_campaign=simong&utm_content=rn-whatsapp) for user authentication with OTP.
+End-to-end encrypted messaging app with real-time chat, voice/video calls, and push notifications.
 
-Additional features:
+## Tech Stack
 
 - [Expo Router](https://docs.expo.dev/routing/introduction/) file-based navigation
-- [SMS OTP](https://clerk.com/docs/custom-flows/email-sms-otp?utm_source=sponsorship&utm_medium=github&utm_campaign=simong&utm_content=rn-whatsapp) Auth with Clerk
-- [Reanimated](https://docs.swmansion.com/react-native-reanimated/) 3 for animations
+- [React Native Reanimated](https://docs.swmansion.com/react-native-reanimated/) 3 for animations
 - [Gesture Handler](https://docs.swmansion.com/react-native-gesture-handler/) for gestures
-- [Gifted Chat](https://github.com/FaridSafi/react-native-gifted-chat) for chat UI
+- [Socket.IO](https://socket.io/) for real-time messaging
+- [LiveKit](https://livekit.io/) for WebRTC voice/video calls
+- [OneSignal](https://onesignal.com/) for push notifications
+- [SQLite](https://www.sqlite.org/) + [MongoDB](https://www.mongodb.com/) for data storage
 
-## Screenshots
+## Features
 
-<div style="display: flex; flex-direction: 'row';">
-<img src="./screenshots/1.png" width=30%>
-<img src="./screenshots/2.png" width=30%>
-<img src="./screenshots/3.png" width=30%>
-<img src="./screenshots/4.png" width=30%>
-<img src="./screenshots/5.png" width=30%>
-<img src="./screenshots/6.png" width=30%>
-<img src="./screenshots/7.png" width=30%>
-<img src="./screenshots/8.png" width=30%>
-<img src="./screenshots/9.png" width=30%>
+- E2E encrypted messaging
+- Real-time chat with Socket.IO
+- Voice and video calls via LiveKit
+- Push notifications via OneSignal
+- Contact management
+- Media sharing with auto-expiry
+- Offline message queue
 
-</div>
+## Building
 
-## Demo
+### Prerequisites
 
-<div style="display: flex; flex-direction: 'row';">
-<img src="./screenshots/calls.gif" width=40%>
-<img src="./screenshots/chats.gif" width=40%>
-<img src="./screenshots/contacts.gif" width=40%>
-<img src="./screenshots/messages.gif" width=40%>
-</div>
+- Node.js 18+
+- pnpm
+- EAS CLI (`npm install -g eas-cli`)
+- Expo account
 
-## 🚀 More
+### Development
 
-**Take a shortcut from web developer to mobile development fluency with guided learning**
+```bash
+pnpm install
+pnpm start
+```
 
-Enjoyed this project? Learn to use React Native to build production-ready, native mobile apps for both iOS and Android based on your existing web development skills.
+### Production Build
 
-<a href="https://galaxies.dev"><img src="banner.png" height="auto" width="100%"></a>
+```bash
+eas build --profile production --platform android
+```
+
+## Environment Variables
+
+Create a `.env` file in the root:
+
+```env
+EXPO_PUBLIC_SERVER_URL=https://your-server.com
+EXPO_PUBLIC_ONESIGNAL_APP_ID=your-onesignal-app-id
+```
+
+Server-side environment variables are in `veill_relay/.env`.
+
+## Architecture
+
+```
+veill/
+├── app/                    # Expo Router screens
+├── components/             # Reusable UI components
+├── constants/              # Colors, Fonts, Styles
+├── utils/                  # Client-side utilities
+├── veill_relay/            # Backend server
+│   ├── src/
+│   │   ├── routes/         # API routes
+│   │   ├── socket/         # Socket.IO handlers
+│   │   ├── services/       # OneSignal, LiveKit, Centrifugo
+│   │   └── database/       # SQLite + MongoDB
+│   └── .env                # Server environment
+└── assets/                 # Images, fonts
+```

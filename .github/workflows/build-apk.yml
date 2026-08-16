@@ -1,0 +1,55 @@
+name: Build Release APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Configure EAS secrets
+        run: |
+          eas secret:create --name EXPO_PUBLIC_SERVER_URL --value "${{ secrets.EXPO_PUBLIC_SERVER_URL }}" --force
+          eas secret:create --name EXPO_PUBLIC_ONESIGNAL_APP_ID --value "${{ secrets.EXPO_PUBLIC_ONESIGNAL_APP_ID }}" --force
+          eas secret:create --name ONESIGNAL_APP_ID --value "${{ secrets.ONESIGNAL_APP_ID }}" --force
+          eas secret:create --name ONESIGNAL_REST_API_KEY --value "${{ secrets.ONESIGNAL_REST_API_KEY }}" --force
+          eas secret:create --name LIVEKIT_URL --value "${{ secrets.LIVEKIT_URL }}" --force
+          eas secret:create --name LIVEKIT_API_KEY --value "${{ secrets.LIVEKIT_API_KEY }}" --force
+          eas secret:create --name LIVEKIT_API_SECRET --value "${{ secrets.LIVEKIT_API_SECRET }}" --force
+          eas secret:create --name JWT_SECRET --value "${{ secrets.JWT_SECRET }}" --force
+          eas secret:create --name MONGODB_URI --value "${{ secrets.MONGODB_URI }}" --force
+          eas secret:create --name CORS_ORIGIN --value "${{ secrets.CORS_ORIGIN }}" --force
+
+      - name: Build APK
+        run: eas build --profile production --platform android --non-interactive
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: veill-apk
+          path: |
+            *.apk
+            *.aab
+          retention-days: 30
