@@ -1,0 +1,15 @@
+export default {
+  primary: '#7A2222',
+  muted: '#9B2E2E',
+  background: '#000000',
+  surface: '#0D0D0D',
+  card: '#181818',
+  text: '#FFFFFF',
+  textSecondary: '#FFFFFF',
+  gray: '#FFFFFF',
+  lightGray: '#292929',
+  green: '#7A2222',
+  lightGreen: '#9B2E2E',
+  red: '#7A2222',
+  yellow: '#FFFFFF',
+};
