@@ -37,16 +37,16 @@ jobs:
 
       - name: Configure EAS secrets
         run: |
-          eas env:set --name EXPO_PUBLIC_SERVER_URL --value "${{ secrets.EXPO_PUBLIC_SERVER_URL }}" --visibility plaintext --environment production
-          eas env:set --name EXPO_PUBLIC_ONESIGNAL_APP_ID --value "${{ secrets.EXPO_PUBLIC_ONESIGNAL_APP_ID }}" --visibility plaintext --environment production
-          eas secret:create --name ONESIGNAL_APP_ID --value "${{ secrets.ONESIGNAL_APP_ID }}" --environment production
-          eas secret:create --name ONESIGNAL_REST_API_KEY --value "${{ secrets.ONESIGNAL_REST_API_KEY }}" --environment production
-          eas secret:create --name LIVEKIT_URL --value "${{ secrets.LIVEKIT_URL }}" --environment production
-          eas secret:create --name LIVEKIT_API_KEY --value "${{ secrets.LIVEKIT_API_KEY }}" --environment production
-          eas secret:create --name LIVEKIT_API_SECRET --value "${{ secrets.LIVEKIT_API_SECRET }}" --environment production
-          eas secret:create --name JWT_SECRET --value "${{ secrets.JWT_SECRET }}" --environment production
-          eas secret:create --name MONGODB_URI --value "${{ secrets.MONGODB_URI }}" --environment production
-          eas secret:create --name CORS_ORIGIN --value "${{ secrets.CORS_ORIGIN }}" --environment production
+          eas env:create --name EXPO_PUBLIC_SERVER_URL --value "${{ secrets.EXPO_PUBLIC_SERVER_URL }}" --visibility plaintext --environment production
+          eas env:create --name EXPO_PUBLIC_ONESIGNAL_APP_ID --value "${{ secrets.EXPO_PUBLIC_ONESIGNAL_APP_ID }}" --visibility plaintext --environment production
+          eas env:create --name ONESIGNAL_APP_ID --value "${{ secrets.ONESIGNAL_APP_ID }}" --visibility sensitive --environment production
+          eas env:create --name ONESIGNAL_REST_API_KEY --value "${{ secrets.ONESIGNAL_REST_API_KEY }}" --visibility sensitive --environment production
+          eas env:create --name LIVEKIT_URL --value "${{ secrets.LIVEKIT_URL }}" --visibility plaintext --environment production
+          eas env:create --name LIVEKIT_API_KEY --value "${{ secrets.LIVEKIT_API_KEY }}" --visibility sensitive --environment production
+          eas env:create --name LIVEKIT_API_SECRET --value "${{ secrets.LIVEKIT_API_SECRET }}" --visibility sensitive --environment production
+          eas env:create --name JWT_SECRET --value "${{ secrets.JWT_SECRET }}" --visibility sensitive --environment production
+          eas env:create --name MONGODB_URI --value "${{ secrets.MONGODB_URI }}" --visibility sensitive --environment production
+          eas env:create --name CORS_ORIGIN --value "${{ secrets.CORS_ORIGIN }}" --visibility plaintext --environment production
 
       - name: Build APK
         run: eas build --profile production --platform android --non-interactive
