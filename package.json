@@ -1,7 +1,7 @@
 {
   "name": "whatsapp",
   "version": "1.0.0",
-  "packageManager": "pnpm@9",
+  "packageManager": "pnpm@9.12.3",
   "private": true,
   "scripts": {
     "start": "expo start",
