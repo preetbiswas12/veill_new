@@ -16,14 +16,8 @@ jobs:
           node-version: 22
           cache: 'pnpm'
 
-      - name: Install pnpm
-        run: npm install -g pnpm@9.12.3
-
-      - name: Verify pnpm
-        run: pnpm --version
-
       - name: Install dependencies
-        run: pnpm install
+        run: npx pnpm@9.12.3 install
 
       - name: Setup EAS
         uses: expo/expo-github-action@v8
