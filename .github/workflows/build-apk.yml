@@ -37,16 +37,16 @@ jobs:
 
       - name: Configure EAS secrets
         run: |
-          eas env:create --name EXPO_PUBLIC_SERVER_URL --value "${{ secrets.EXPO_PUBLIC_SERVER_URL }}" --force
-          eas env:create --name EXPO_PUBLIC_ONESIGNAL_APP_ID --value "${{ secrets.EXPO_PUBLIC_ONESIGNAL_APP_ID }}" --force
-          eas env:create --name ONESIGNAL_APP_ID --value "${{ secrets.ONESIGNAL_APP_ID }}" --force
-          eas env:create --name ONESIGNAL_REST_API_KEY --value "${{ secrets.ONESIGNAL_REST_API_KEY }}" --force
-          eas env:create --name LIVEKIT_URL --value "${{ secrets.LIVEKIT_URL }}" --force
-          eas env:create --name LIVEKIT_API_KEY --value "${{ secrets.LIVEKIT_API_KEY }}" --force
-          eas env:create --name LIVEKIT_API_SECRET --value "${{ secrets.LIVEKIT_API_SECRET }}" --force
-          eas env:create --name JWT_SECRET --value "${{ secrets.JWT_SECRET }}" --force
-          eas env:create --name MONGODB_URI --value "${{ secrets.MONGODB_URI }}" --force
-          eas env:create --name CORS_ORIGIN --value "${{ secrets.CORS_ORIGIN }}" --force
+          eas env:set --name EXPO_PUBLIC_SERVER_URL --value "${{ secrets.EXPO_PUBLIC_SERVER_URL }}" --visibility plaintext --force
+          eas env:set --name EXPO_PUBLIC_ONESIGNAL_APP_ID --value "${{ secrets.EXPO_PUBLIC_ONESIGNAL_APP_ID }}" --visibility plaintext --force
+          eas env:set --name ONESIGNAL_APP_ID --value "${{ secrets.ONESIGNAL_APP_ID }}" --visibility plaintext --force
+          eas env:set --name ONESIGNAL_REST_API_KEY --value "${{ secrets.ONESIGNAL_REST_API_KEY }}" --visibility sensitive --force
+          eas env:set --name LIVEKIT_URL --value "${{ secrets.LIVEKIT_URL }}" --visibility plaintext --force
+          eas env:set --name LIVEKIT_API_KEY --value "${{ secrets.LIVEKIT_API_KEY }}" --visibility sensitive --force
+          eas env:set --name LIVEKIT_API_SECRET --value "${{ secrets.LIVEKIT_API_SECRET }}" --visibility sensitive --force
+          eas env:set --name JWT_SECRET --value "${{ secrets.JWT_SECRET }}" --visibility sensitive --force
+          eas env:set --name MONGODB_URI --value "${{ secrets.MONGODB_URI }}" --visibility sensitive --force
+          eas env:set --name CORS_ORIGIN --value "${{ secrets.CORS_ORIGIN }}" --visibility plaintext --force
 
       - name: Build APK
         run: eas build --profile production --platform android --non-interactive
