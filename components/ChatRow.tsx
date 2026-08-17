@@ -1,10 +1,11 @@
-import AppleStyleSwipeableRow from '@/components/AppleStyleSwipeableRow';
+import AppleStyleSwipeableRow, { SwipeableAction } from '@/components/AppleStyleSwipeableRow';
 import Colors from '@/constants/Colors';
 import Fonts from '@/constants/Fonts';
 import dayjs from 'dayjs';
 import { Link } from 'expo-router';
 import { FC } from 'react';
-import { View, Text, Image, TouchableHighlight } from 'react-native';
+import { View, Text, Image, TouchableHighlight, Alert } from 'react-native';
+import StorageService from '@/utils/storage';
 
 export interface ChatRowProps {
   id: string;
@@ -17,8 +18,46 @@ export interface ChatRowProps {
 }
 
 const ChatRow: FC<ChatRowProps> = ({ id, from, date, img, msg, read, unreadCount }) => {
+  const handleArchive = async () => {
+    Alert.alert('Archive chat', `Archive ${from}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Archive',
+        onPress: async () => {
+          const chats = await StorageService.getChats();
+          const updated = chats.filter((c) => c.id !== id);
+          await StorageService.saveChats(updated);
+        },
+      },
+    ]);
+  };
+
+  const handleDelete = async () => {
+    Alert.alert('Delete chat', `Delete chat with ${from}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          const chats = await StorageService.getChats();
+          const updated = chats.filter((c) => c.id !== id);
+          await StorageService.saveChats(updated);
+        },
+      },
+    ]);
+  };
+
+  const handleMore = () => {
+    Alert.alert('More options', 'Select an action', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Mark as unread', onPress: () => {} },
+      { text: 'Pin chat', onPress: () => {} },
+      { text: 'Mute notifications', onPress: () => {} },
+    ]);
+  };
+
   return (
-    <AppleStyleSwipeableRow>
+    <AppleStyleSwipeableRow onArchive={handleArchive} onDelete={handleDelete} onMore={handleMore}>
       <Link href={`/(tabs)/chats/${id}`} asChild>
         <TouchableHighlight activeOpacity={0.8} underlayColor={Colors.lightGray}>
           <View

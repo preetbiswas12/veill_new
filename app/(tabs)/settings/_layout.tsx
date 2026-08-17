@@ -9,12 +9,9 @@ const Layout = () => {
       {/* Account sub-screens */}
       <Stack.Screen name="account" options={{ title: 'Account', headerShown: false }} />
       <Stack.Screen name="security-notifications" options={{ title: 'Security notifications' }} />
-      <Stack.Screen name="passkeys" options={{ title: 'Passkeys' }} />
       <Stack.Screen name="two-step-verification" options={{ title: 'Two-step verification' }} />
       <Stack.Screen name="change-number" options={{ title: 'Change number' }} />
-      <Stack.Screen name="request-account-info" options={{ title: 'Request account info' }} />
       <Stack.Screen name="delete-account" options={{ title: 'Delete my account' }} />
-      <Stack.Screen name="add-account" options={{ title: 'Add account' }} />
 
       {/* Privacy sub-screens */}
       <Stack.Screen name="privacy" options={{ title: 'Privacy', headerShown: false }} />
@@ -32,8 +29,6 @@ const Layout = () => {
       <Stack.Screen name="wallpaper" options={{ title: 'Wallpaper' }} />
       <Stack.Screen name="font-size" options={{ title: 'Font size' }} />
       <Stack.Screen name="archived-chats" options={{ title: 'Archived chats' }} />
-      <Stack.Screen name="chat-backup" options={{ title: 'Chat backup' }} />
-      <Stack.Screen name="chat-history" options={{ title: 'Chat history' }} />
 
       {/* Notifications sub-screens */}
       <Stack.Screen name="notifications" options={{ title: 'Notifications', headerShown: false }} />

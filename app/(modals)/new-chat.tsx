@@ -42,7 +42,7 @@ const Page = () => {
 
       setLoading(true);
       try {
-        const serverUrl = __DEV__ ? 'http://localhost:3000' : 'https://veill.qzz.io';
+        const serverUrl = 'https://veill.qzz.io';
         const response = await fetch(`${serverUrl}/api/auth/search?q=${encodeURIComponent(searchText)}`);
         if (response.ok) {
           const data = await response.json();

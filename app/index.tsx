@@ -3,8 +3,6 @@ import { View, Text, Image, StyleSheet, TouchableOpacity, Linking } from 'react-
 import Colors from '@/constants/Colors';
 import Fonts from '@/constants/Fonts';
 import { Link } from 'expo-router';
-import welcomeImage from '@/assets/images/goth.png';
-const welcome_image = Image.resolveAssetSource(welcomeImage).uri;
 
 const WelcomeScreen = () => {
   const openLink = () => {
@@ -13,7 +11,7 @@ const WelcomeScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Image source={{ uri: welcome_image }} style={styles.welcome} />
+      <Image source={require('@/assets/images/goth.png')} style={styles.welcome} />
       <Text style={styles.headline}>Welcome to Veill</Text>
       <Text style={styles.description}>
         Read our{' '}

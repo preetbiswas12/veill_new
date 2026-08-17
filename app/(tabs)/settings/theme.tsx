@@ -1,21 +1,24 @@
 import OptionSelector from '@/components/OptionSelector';
 import { useState, useEffect } from 'react';
 import StorageService from '@/utils/storage';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const ThemePage = () => {
-  const [selected, setSelected] = useState('light');
+  const { setTheme } = useTheme();
+  const [selected, setSelected] = useState<'light' | 'dark' | 'system'>('dark');
 
   useEffect(() => {
     const loadTheme = async () => {
       const settings = await StorageService.getSettings();
-      setSelected(settings.theme);
+      setSelected((settings.theme as 'light' | 'dark' | 'system') || 'dark');
     };
     loadTheme();
   }, []);
 
   const handleSelect = async (value: string) => {
-    setSelected(value);
+    setSelected(value as 'light' | 'dark' | 'system');
     await StorageService.updateSetting('theme', value);
+    setTheme(value as 'light' | 'dark' | 'system');
   };
 
   return (
@@ -34,4 +37,3 @@ const ThemePage = () => {
 };
 
 export default ThemePage;
-

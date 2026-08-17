@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
-import { View, ScrollView, Text, Switch } from 'react-native';
+import { View, ScrollView, Text, Switch, Alert } from 'react-native';
 import { alert } from '@/utils/customAlert';
 import Colors from '@/constants/Colors';
 
 import { ToggleRow, SectionBlock, PageHeader } from '@/components/SettingsUI';
 import OptionSelector from '@/components/OptionSelector';
 import StorageService from '@/utils/storage';
+import { getSupportedBiometry, isBiometryEnrolled, authenticateWithBiometry, checkBiometricAvailability } from '@/utils/biometric';
 
 const FingerprintLockPage = () => {
   const [enabled, setEnabled] = useState(false);
   const [showContent, setShowContent] = useState(false);
   const [autoLock, setAutoLock] = useState('immediately');
   const [showNotifications, setShowNotifications] = useState(false);
+  const [biometricType, setBiometricType] = useState<string>('biometry');
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -19,18 +21,47 @@ const FingerprintLockPage = () => {
       setEnabled(settings.fingerprintLock || false);
       setAutoLock(settings.autoLock || 'immediately');
       setShowNotifications(settings.showNotifications || false);
+
+      const type = await getSupportedBiometry();
+      if (type !== 'none') {
+        setBiometricType(type);
+      }
     };
     loadSettings();
   }, []);
 
-  const handleToggle = async (key: string, value: boolean) => {
+  const handleToggle = async (key: string, value: boolean | string) => {
     await StorageService.updateSetting(key, value);
+  };
+
+  const handleEnableBiometric = async () => {
+    const { available } = await checkBiometricAvailability();
+    if (!available) {
+      alert('Not available', 'Biometric authentication is not available on this device.');
+      return;
+    }
+
+    const success = await authenticateWithBiometry();
+    if (success) {
+      setEnabled(true);
+      await handleToggle('fingerprintLock', true);
+    }
+  };
+
+  const handleDisableBiometric = async () => {
+    alert('Disable fingerprint lock?', 'Veill will no longer require biometric to open.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Disable', onPress: () => {
+        setEnabled(false);
+        handleToggle('fingerprintLock', false);
+      } },
+    ]);
   };
 
   const handleAutoLockSelect = async (value: string) => {
     setAutoLock(value);
     setShowContent(false);
-    await StorageService.updateSetting('autoLock', value);
+    await handleToggle('autoLock', value);
   };
 
   if (!enabled || showContent) {
@@ -55,31 +86,19 @@ const FingerprintLockPage = () => {
         <PageHeader title="Fingerprint lock" />
 
         <Text style={{ fontSize: 13, color: '#8696A0', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 }}>
-          Lock Veill with your fingerprint when switching away from the app.
+          Lock Veill with your {biometricType} when switching away from the app.
         </Text>
 
         <SectionBlock marginTop={0}>
           <ToggleRow
-            title="Unlock with fingerprint"
+            title={`Unlock with ${biometricType}`}
             toggle
             toggleValue={enabled}
             onToggle={(val) => {
               if (!val) {
-                alert('Disable fingerprint lock?', 'Veill will no longer require fingerprint to open.', [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'Disable', onPress: () => {
-                    setEnabled(false);
-                    handleToggle('fingerprintLock', false);
-                  } },
-                ]);
+                handleDisableBiometric();
               } else {
-                alert('Confirm fingerprint', 'Touch the fingerprint sensor to enable.', [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'OK', onPress: () => {
-                    setEnabled(true);
-                    handleToggle('fingerprintLock', true);
-                  } },
-                ]);
+                handleEnableBiometric();
               }
             }}
           />
@@ -116,4 +135,3 @@ const FingerprintLockPage = () => {
 };
 
 export default FingerprintLockPage;
-

@@ -1,7 +1,8 @@
 {
   "name": "whatsapp",
-  "main": "expo-router/entry",
   "version": "1.0.0",
+  "packageManager": "pnpm@9",
+  "private": true,
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
@@ -25,6 +26,9 @@
     "expo-font": "~14.0.12",
     "expo-haptics": "~15.0.8",
     "expo-image-picker": "~17.0.11",
+    "expo-local-authentication": "~14.0.1",
+    "expo-media-library": "~15.9.1",
+    "expo-av": "~14.0.6",
     "expo-linking": "~8.0.12",
     "expo-notifications": "~0.29.14",
     "expo-router": "~6.0.24",

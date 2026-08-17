@@ -7,12 +7,22 @@ import { RectButton } from 'react-native-gesture-handler';
 
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 
-export default class AppleStyleSwipeableRow extends Component<PropsWithChildren<unknown>> {
+export type SwipeableAction = 'more' | 'archive' | 'delete';
+
+export interface AppleStyleSwipeableRowProps {
+  children?: React.ReactNode;
+  onMore?: () => void;
+  onArchive?: () => void;
+  onDelete?: () => void;
+}
+
+export default class AppleStyleSwipeableRow extends Component<PropsWithChildren<AppleStyleSwipeableRowProps>> {
   private renderRightAction = (
     text: string,
     color: string,
     x: number,
-    progress: Animated.AnimatedInterpolation<number>
+    progress: Animated.AnimatedInterpolation<number>,
+    onPress?: () => void
   ) => {
     const trans = progress.interpolate({
       inputRange: [0, 1],
@@ -20,15 +30,14 @@ export default class AppleStyleSwipeableRow extends Component<PropsWithChildren<
     });
     const pressHandler = () => {
       this.close();
-      // eslint-disable-next-line no-alert
-      window.alert(text);
+      onPress?.();
     };
 
     return (
       <Animated.View style={{ flex: 1, transform: [{ translateX: trans }] }}>
         <RectButton style={[styles.rightAction, { backgroundColor: color }]} onPress={pressHandler}>
           <Ionicons
-            name={text === 'More' ? 'ellipsis-horizontal' : 'archive'}
+            name={text === 'More' ? 'ellipsis-horizontal' : text === 'Archive' ? 'archive' : 'trash'}
             size={24}
             color={'#fff'}
             style={{ paddingTop: 10 }}
@@ -42,16 +51,20 @@ export default class AppleStyleSwipeableRow extends Component<PropsWithChildren<
   private renderRightActions = (
     progress: Animated.AnimatedInterpolation<number>,
     _dragAnimatedValue: Animated.AnimatedInterpolation<number>
-  ) => (
-    <View
-      style={{
-        width: 192,
-        flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
-      }}>
-      {this.renderRightAction('More', '#C8C7CD', 192, progress)}
-      {this.renderRightAction('Archive', Colors.muted, 128, progress)}
-    </View>
-  );
+  ) => {
+    const { onMore, onArchive, onDelete } = this.props;
+    return (
+      <View
+        style={{
+          width: 192,
+          flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
+        }}>
+        {this.renderRightAction('More', '#C8C7CD', 192, progress, onMore)}
+        {this.renderRightAction('Archive', Colors.muted, 128, progress, onArchive)}
+        {this.renderRightAction('Delete', Colors.red, 64, progress, onDelete)}
+      </View>
+    );
+  };
 
   private swipeableRow?: Swipeable;
 

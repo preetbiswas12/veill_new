@@ -2,11 +2,27 @@ import { View, ScrollView, Text, TouchableOpacity } from 'react-native';
 import { alert } from '@/utils/customAlert';
 import Colors from '@/constants/Colors';
 
+import { useState, useEffect } from 'react';
 import { SectionBlock, PageHeader } from '@/components/SettingsUI';
 import { Ionicons } from '@expo/vector-icons';
+import StorageService from '@/utils/storage';
 
 const BlockedContactsPage = () => {
-  const blocked: Array<{ name: string; phone: string }> = [];
+  const [blocked, setBlocked] = useState<Array<{ name: string; phone: string }>>([]);
+
+  useEffect(() => {
+    const loadBlocked = async () => {
+      const settings = await StorageService.getSettings();
+      setBlocked(settings.blockedContacts || []);
+    };
+    loadBlocked();
+  }, []);
+
+  const handleUnblock = async (phone: string) => {
+    const updated = blocked.filter((c) => c.phone !== phone);
+    setBlocked(updated);
+    await StorageService.updateSetting('blockedContacts', updated);
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
@@ -27,14 +43,14 @@ const BlockedContactsPage = () => {
           </View>
         ) : (
           <SectionBlock marginTop={0}>
-            {blocked.map((contact, index) => (
+            {blocked.map((contact) => (
               <TouchableOpacity
                 key={contact.phone}
                 activeOpacity={0.5}
                 onPress={() =>
                   alert('Unblock ' + contact.name + '?', '', [
                     { text: 'Cancel', style: 'cancel' },
-                    { text: 'Unblock', onPress: () => {} },
+                    { text: 'Unblock', onPress: () => handleUnblock(contact.phone) },
                   ])
                 }>
                 <View
@@ -51,7 +67,9 @@ const BlockedContactsPage = () => {
                     <Text style={{ fontSize: 16, color: Colors.text }}>{contact.name}</Text>
                     <Text style={{ fontSize: 13, color: '#8696A0', marginTop: 1 }}>{contact.phone}</Text>
                   </View>
-                  <Ionicons name="close-circle" size={22} color="#D1D5DB" />
+                  <TouchableOpacity onPress={() => handleUnblock(contact.phone)}>
+                    <Ionicons name="close-circle" size={22} color="#D1D5DB" />
+                  </TouchableOpacity>
                 </View>
               </TouchableOpacity>
             ))}
@@ -63,4 +81,3 @@ const BlockedContactsPage = () => {
 };
 
 export default BlockedContactsPage;
-

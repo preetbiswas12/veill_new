@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useState, useCallback } from 'react';
 import { View, ScrollView, FlatList, ActivityIndicator, RefreshControl, TouchableOpacity, Text } from 'react-native';
 import ChatRow from '@/components/ChatRow';
 import { defaultStyles } from '@/constants/Styles';
 import Colors from '@/constants/Colors';
 import Fonts from '@/constants/Fonts';
 import ChatService, { Conversation } from '@/utils/chat';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 const Page = () => {
@@ -21,15 +21,11 @@ const Page = () => {
     setRefreshing(false);
   };
 
-  useEffect(() => {
-    loadConversations();
-
-    const unsubscribe = ChatService.onConversationUpdate((updatedConvs) => {
-      setConversations(updatedConvs);
-    });
-
-    return unsubscribe;
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadConversations();
+    }, [])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);

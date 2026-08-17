@@ -14,6 +14,14 @@ export type ChatMessage = {
   contentType?: string;
   tempId?: string;
   decrypted?: boolean;
+  replyTo?: {
+    _id: string | number;
+    user: {
+      _id: number;
+      name: string;
+    };
+    text: string;
+  };
 };
 
 export type Conversation = {
@@ -108,7 +116,18 @@ class ChatServiceClass {
     };
   }
 
-  async sendMessage(peerId: number, text: string): Promise<{ success: boolean; tempId?: string; error?: string }> {
+  async sendMessage(
+    peerId: number,
+    text: string,
+    replyTo?: {
+      _id: string | number;
+      user: {
+        _id: number;
+        name: string;
+      };
+      text: string;
+    }
+  ): Promise<{ success: boolean; tempId?: string; error?: string }> {
     if (!text.trim()) return { success: false, error: 'Empty message' };
 
     try {
@@ -139,6 +158,13 @@ class ChatServiceClass {
           contentType: 'text',
           tempId,
           decrypted: true,
+          replyTo: replyTo
+            ? {
+                _id: String(replyTo._id),
+                user: replyTo.user,
+                text: replyTo.text,
+              }
+            : undefined,
         };
 
         const key = this.getChatKey(peerId);

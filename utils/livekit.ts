@@ -66,9 +66,7 @@ class LiveKitCallService {
         this.events.onTrackSubscribed?.(track, participant);
       });
 
-      const LIVEKIT_URL = __DEV__
-        ? 'wss://preetllm.qzz.io'
-        : 'wss://veill.qzz.io';
+      const LIVEKIT_URL = 'wss://preetllm.qzz.io';
 
       await roomInstance.connect(LIVEKIT_URL, token);
 

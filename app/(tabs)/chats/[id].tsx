@@ -32,6 +32,7 @@ import chats from '@/assets/data/chats.json';
 import ChatService, { ChatMessage as ServiceChatMessage } from '@/utils/chat';
 import EncryptionService from '@/utils/encryption';
 import AuthService from '@/utils/auth';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const Page = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -43,6 +44,7 @@ const Page = () => {
   const [chatContact, setChatContact] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [peerId, setPeerId] = useState<number | null>(null);
+  const { wallpaper, wallpaperColor } = useTheme();
 
   useEffect(() => {
     const initChat = async () => {
@@ -95,7 +97,17 @@ const Page = () => {
       if (!peerId) return;
 
       for (const msg of newMessages) {
-        const result = await ChatService.sendMessage(peerId, msg.text);
+        const result = await ChatService.sendMessage(
+          peerId,
+          msg.text,
+          replyMessage
+            ? {
+                _id: replyMessage._id,
+                user: replyMessage.user,
+                text: replyMessage.text,
+              }
+            : undefined
+        );
         if (!result.success) {
           alert('Error', result.error || 'Failed to send message');
         }
@@ -104,7 +116,7 @@ const Page = () => {
       setReplyMessage(null);
       Keyboard.dismiss();
     },
-    [peerId]
+    [peerId, replyMessage]
   );
 
   const showActionsheet = () => {
@@ -277,15 +289,16 @@ const Page = () => {
     text: msg.text,
     createdAt: new Date(msg.createdAt),
     user: msg.user,
+    replyTo: msg.replyTo,
   }));
 
   if (loading) {
     return (
       <ImageBackground
-        source={require('@/assets/images/chat-bg.png')}
+        source={wallpaper === 'default' ? require('@/assets/images/chat-bg.png') : undefined}
         style={{
           flex: 1,
-          backgroundColor: Colors.background,
+          backgroundColor: wallpaperColor || Colors.background,
           marginBottom: insets.bottom,
         }}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -298,10 +311,10 @@ const Page = () => {
 
   return (
     <ImageBackground
-      source={require('@/assets/images/chat-bg.png')}
+      source={wallpaper === 'default' ? require('@/assets/images/chat-bg.png') : undefined}
       style={{
         flex: 1,
-        backgroundColor: Colors.background,
+        backgroundColor: wallpaperColor || Colors.background,
         marginBottom: insets.bottom,
       }}>
       <GiftedChat

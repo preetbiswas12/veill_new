@@ -2,9 +2,9 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import StorageService from './storage';
 
-const SERVER_URL = __DEV__
-  ? 'http://localhost:3000'
-  : 'https://veill.qzz.io';
+type Notification = Notifications.Notification;
+
+const SERVER_URL = 'https://veill.qzz.io';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -80,8 +80,8 @@ export async function sendPushTokenToServer(token: string | null): Promise<void>
 }
 
 export function setupNotificationListeners(
-  onNotificationReceived?: (notification: Notifications.Notification) => void
-): (() => void) => {
+  onNotificationReceived?: (notification: Notification) => void
+): () => void {
   const subscription1 = Notifications.addNotificationReceivedListener((notification) => {
     console.log('[Push] Notification received:', notification);
     onNotificationReceived?.(notification);

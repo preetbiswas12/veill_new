@@ -37,6 +37,32 @@ declare module 'livekit-client' {
   export const Track: Record<string, any>;
 }
 
+declare module 'expo-local-authentication' {
+  export const AuthenticationType: {
+    FACIAL_RECOGNITION: number;
+    IRIS: number;
+    FINGERPRINT: number;
+  };
+
+  export async function hasHardwareAsync(): Promise<boolean>;
+  export async function supportedAuthenticationTypesAsync(): Promise<number[]>;
+  export async function isEnrolledAsync(): Promise<boolean>;
+  export async function authenticateAsync(opts?: {
+    promptMessage?: string;
+    fallbackLabel?: string;
+  }): Promise<{ success: boolean }>;
+}
+
+declare module 'expo-media-library' {
+  export async function requestPermissionsAsync(): Promise<{ status: string }>;
+  export async function getPermissionsAsync(): Promise<{ status: string }>;
+}
+
+declare module 'expo-av' {
+  export async function requestPermissionsAsync(): Promise<{ status: string }>;
+  export async function getPermissionsAsync(): Promise<{ status: string }>;
+}
+
 declare module '*.png' {
   const content: any;
   export default content;

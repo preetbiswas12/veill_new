@@ -2,9 +2,7 @@ import { io, Socket } from 'socket.io-client';
 import EncryptionService from './encryption';
 import StorageService from './storage';
 
-const SERVER_URL = __DEV__
-  ? 'http://localhost:3000'
-  : 'https://veill.qzz.io';
+const SERVER_URL = 'https://veill.qzz.io';
 
 let socket: Socket | null = null;
 

@@ -10,6 +10,9 @@ import StorageService from '@/utils/storage';
 import AuthService from '@/utils/auth';
 import ChatService from '@/utils/chat';
 import { registerPushToken } from '@/utils/onesignal';
+import { requestAllPermissions } from '@/utils/permissions';
+import { authenticateWithBiometry, checkBiometricAvailability } from '@/utils/biometric';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import { CustomAlert } from '@/components/CustomAlert';
 
 export {
@@ -44,6 +47,11 @@ const InitialLayout = () => {
     const initApp = async () => {
       await StorageService.initializeDefaultData();
       await AuthService.initialize();
+
+      if (Platform.OS !== 'web') {
+        requestAllPermissions().catch(() => {});
+      }
+
       setInitialized(true);
     };
     initApp();
@@ -55,11 +63,12 @@ const InitialLayout = () => {
     async function initOneSignal() {
       try {
         const { OneSignal, LogLevel } = await import('react-native-onesignal');
+        const os = Platform.OS as 'ios' | 'android';
         OneSignal.Debug.setLogLevel(LogLevel.Verbose);
         OneSignal.initialize(process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || 'YOUR_ONESIGNAL_APP_ID');
         OneSignal.Notifications.requestPermission(false);
 
-        const clickListener = async (event) => {
+        const clickListener = async (event: any) => {
           console.log('OneSignal: notification clicked:', event);
           const data = event.getNotification().additionalData;
           if (data?.chatId) {
@@ -69,30 +78,28 @@ const InitialLayout = () => {
           }
         };
 
-        const foregroundListener = (event) => {
+        const foregroundListener = (event: any) => {
           console.log('OneSignal: foreground will display:', event);
         };
 
         OneSignal.Notifications.addEventListener('click', clickListener);
         OneSignal.Notifications.addEventListener('foregroundWillDisplay', foregroundListener);
 
-        OneSignal.Notifications.addEventListener('permissionChange', (granted) => {
+        OneSignal.Notifications.addEventListener('permissionChange', (granted: boolean) => {
           if (granted && mounted) {
-            OneSignal.Notifications.getDeviceState().then((state) => {
+            (OneSignal.Notifications as any).getDeviceState().then((state: any) => {
               const pushToken = state?.pushSubscription?.id;
-              const platform = Platform.OS;
               if (pushToken) {
-                registerPushToken(null, pushToken, platform);
+                registerPushToken(null, pushToken, os);
               }
             });
           }
         });
 
-        OneSignal.Notifications.getDeviceState().then((state) => {
+        (OneSignal.Notifications as any).getDeviceState().then((state: any) => {
           const pushToken = state?.pushSubscription?.id;
-          const platform = Platform.OS;
           if (pushToken && mounted) {
-            registerPushToken(null, pushToken, platform);
+            registerPushToken(null, pushToken, os);
           }
         });
       } catch (err) {
@@ -116,8 +123,22 @@ const InitialLayout = () => {
 
       if (authState.isAuthenticated && authState.userId) {
         if (isAuthRoute) {
-          router.replace('/chats' as any);
+          router.replace('/(tabs)/chats');
         }
+
+        const settings = await StorageService.getSettings();
+        if (settings.fingerprintLock && Platform.OS !== 'web') {
+          const { available } = await checkBiometricAvailability();
+          if (available) {
+            const authenticated = await authenticateWithBiometry();
+            if (!authenticated) {
+              router.replace('/auth/sign-in');
+              setAuthChecked(true);
+              return;
+            }
+          }
+        }
+
         try {
           await ChatService.initialize(authState.userId);
         } catch (err) {
@@ -125,7 +146,7 @@ const InitialLayout = () => {
         }
       } else {
         if (isTabsRoute) {
-          router.replace('/auth/sign-in' as any);
+          router.replace('/auth/sign-in');
         }
       }
       setAuthChecked(true);
@@ -143,46 +164,48 @@ const InitialLayout = () => {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
-      <StatusBar barStyle="light-content" />
-      <CustomAlert />
-      <Stack>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen
-        name="auth/sign-in"
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="auth/sign-up"
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen
-        name="(modals)/new-chat"
-        options={{
-          presentation: 'modal',
-          title: 'New Chat',
-          headerTransparent: true,
-          headerBlurEffect: 'regular',
-          headerStyle: {
-            backgroundColor: Colors.background,
-          },
-          headerRight: () => (
-            <Link href={'/chats'} asChild>
-              <TouchableOpacity
-                style={{ backgroundColor: Colors.lightGray, borderRadius: 20, padding: 4 }}>
-                <Ionicons name="close" color={Colors.text} size={30} />
-              </TouchableOpacity>
-            </Link>
-          ),
-          headerSearchBarOptions: {
-            placeholder: 'Search name or number',
-            hideWhenScrolling: false,
-          },
-        }}
-      />
-    </Stack>
-    </View>
+    <ThemeProvider>
+      <View style={{ flex: 1, backgroundColor: Colors.background }}>
+        <StatusBar barStyle="light-content" />
+        <CustomAlert />
+        <Stack>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="auth/sign-in"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="auth/sign-up"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="(modals)/new-chat"
+          options={{
+            presentation: 'modal',
+            title: 'New Chat',
+            headerTransparent: true,
+            headerBlurEffect: 'regular',
+            headerStyle: {
+              backgroundColor: Colors.background,
+            },
+            headerRight: () => (
+              <Link href={'/(tabs)/chats'} asChild>
+                <TouchableOpacity
+                  style={{ backgroundColor: Colors.lightGray, borderRadius: 20, padding: 4 }}>
+                  <Ionicons name="close" color={Colors.text} size={30} />
+                </TouchableOpacity>
+              </Link>
+            ),
+            headerSearchBarOptions: {
+              placeholder: 'Search name or number',
+              hideWhenScrolling: false,
+            },
+          }}
+        />
+      </Stack>
+      </View>
+    </ThemeProvider>
   );
 };
 

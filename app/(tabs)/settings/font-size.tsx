@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { View, ScrollView, Text, TouchableOpacity } from 'react-native';
-import Colors from '@/constants/Colors';
-
 import { SectionBlock, PageHeader } from '@/components/SettingsUI';
 import { Ionicons } from '@expo/vector-icons';
 import StorageService from '@/utils/storage';
+import Colors from '@/constants/Colors';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const sizes = [
   { label: 'Small', value: 'small' },
@@ -21,22 +21,21 @@ const sizeValues = {
 };
 
 const FontSizePage = () => {
-  const [fontSize, setFontSize] = useState('medium');
+  const { fontSize, fontSizeValue, setFontSize } = useTheme();
+  const [selected, setSelected] = useState(fontSize);
 
   useEffect(() => {
     const loadFontSize = async () => {
       const settings = await StorageService.getSettings();
-      setFontSize(settings.fontSize || 'medium');
+      const size = settings.fontSize || 'medium';
+      setSelected(size);
     };
     loadFontSize();
   }, []);
 
-  const current = sizes.find((s) => s.value === fontSize) || sizes[1];
-  const fontSizeValue = sizeValues[fontSize as keyof typeof sizeValues] || 16;
-
   const handleSelect = async (value: string) => {
-    setFontSize(value);
-    await StorageService.updateSetting('fontSize', value);
+    setSelected(value as 'small' | 'medium' | 'large' | 'xlarge');
+    await setFontSize(value as 'small' | 'medium' | 'large' | 'xlarge');
   };
 
   return (
@@ -47,7 +46,7 @@ const FontSizePage = () => {
         <SectionBlock marginTop={8}>
           <View style={{ padding: 16 }}>
             <Text style={{ fontSize: 13, color: '#8696A0', marginBottom: 16 }}>
-              {current.label}
+              {sizes.find((s) => s.value === selected)?.label || 'Medium'}
             </Text>
 
             <View style={{ backgroundColor: '#F5F5F5', borderRadius: 12, padding: 16, minHeight: 100 }}>
@@ -78,7 +77,7 @@ const FontSizePage = () => {
                   borderBottomColor: Colors.lightGray,
                 }}>
                 <Text style={{ flex: 1, fontSize: 16, color: Colors.text }}>{size.label}</Text>
-                {fontSize === size.value ? (
+                {selected === size.value ? (
                   <Ionicons name="checkmark" size={22} color="#00A884" />
                 ) : null}
               </View>

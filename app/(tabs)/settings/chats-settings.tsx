@@ -130,8 +130,7 @@ const ChatsSettingsPage = () => {
 
         <View style={{ marginTop: 8 }} />
         <View style={{ backgroundColor: Colors.card, borderTopWidth: 0.5, borderBottomWidth: 0.5, borderColor: Colors.lightGray }}>
-          <SettingsItem icon="cloud-upload" title="Chat backup" onPress={() => router.push('/settings/chat-backup' as any)} />
-          <SettingsItem icon="chatbubbles" title="Chat history" onPress={() => router.push('/settings/chat-history' as any)} />
+          <SettingsItem icon="archive" title="Archived chats" onPress={() => router.push('/settings/archived-chats' as any)} />
         </View>
       </ScrollView>
     </View>

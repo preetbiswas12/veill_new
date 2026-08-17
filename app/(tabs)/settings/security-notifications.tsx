@@ -1,12 +1,25 @@
-import { View, ScrollView, Text, Switch, Alert } from 'react-native';
-import Colors from '@/constants/Colors';
-
-import { useState } from 'react';
+import { View, ScrollView, Text, Switch } from 'react-native';
+import { useState, useEffect } from 'react';
 import { ToggleRow, SectionBlock, PageHeader } from '@/components/SettingsUI';
+import StorageService from '@/utils/storage';
+import Colors from '@/constants/Colors';
 
 const SecurityNotificationsPage = () => {
   const [showNotifications, setShowNotifications] = useState(true);
   const [showInChat, setShowInChat] = useState(false);
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      const settings = await StorageService.getSettings();
+      setShowNotifications(settings.securityNotifications ?? true);
+      setShowInChat(settings.securityNotificationsInChat || false);
+    };
+    loadSettings();
+  }, []);
+
+  const handleToggle = async (key: string, value: boolean) => {
+    await StorageService.updateSetting(key, value);
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
@@ -22,14 +35,20 @@ const SecurityNotificationsPage = () => {
             title="Show security notifications"
             toggle
             toggleValue={showNotifications}
-            onToggle={setShowNotifications}
+            onToggle={(val) => {
+              setShowNotifications(val);
+              handleToggle('securityNotifications', val);
+            }}
           />
           <ToggleRow
             title="Show in chat"
             description="Show security notifications inside chats"
             toggle
             toggleValue={showInChat}
-            onToggle={setShowInChat}
+            onToggle={(val) => {
+              setShowInChat(val);
+              handleToggle('securityNotificationsInChat', val);
+            }}
           />
         </SectionBlock>
 
@@ -44,4 +63,3 @@ const SecurityNotificationsPage = () => {
 };
 
 export default SecurityNotificationsPage;
-

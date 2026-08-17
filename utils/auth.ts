@@ -10,7 +10,7 @@ export type AuthState = {
   email: string | null;
 };
 
-const SERVER_URL = process.env.EXPO_PUBLIC_SERVER_URL || 'http://localhost:3000';
+export const SERVER_URL = 'https://veill.qzz.io';
 
 export const AuthService = {
   async initialize(): Promise<void> {
@@ -61,8 +61,8 @@ export const AuthService = {
       });
 
       const authState = await AuthService.getCurrentAuthState();
-      if (authState.userId) {
-        registerPushToken(authState.serverToken, 'pending', 'web').catch(() => {});
+      if (authState.userId && authState.serverToken) {
+        registerPushToken(authState.serverToken, 'pending', 'ios').catch(() => {});
       }
 
       return { serverToken: data.token, user: data.user };
@@ -95,8 +95,8 @@ export const AuthService = {
       });
 
       const authState = await AuthService.getCurrentAuthState();
-      if (authState.userId) {
-        registerPushToken(authState.serverToken, 'pending', 'web').catch(() => {});
+      if (authState.userId && authState.serverToken) {
+        registerPushToken(authState.serverToken, 'pending', 'ios').catch(() => {});
       }
 
       return { serverToken: data.token, user: data.user };

@@ -1,24 +1,26 @@
 import { useState, useEffect } from 'react';
 import { View, ScrollView, Text, TouchableOpacity } from 'react-native';
 import { alert } from '@/utils/customAlert';
-import Colors from '@/constants/Colors';
-
 import { SectionBlock, PageHeader } from '@/components/SettingsUI';
 import { Ionicons } from '@expo/vector-icons';
 import StorageService from '@/utils/storage';
+import Colors from '@/constants/Colors';
+import { useTheme } from '@/contexts/ThemeContext';
+
+const wallpapers = [
+  { id: 'default', color: '#E8F5E9', name: 'Default' },
+  { id: 'blue', color: '#E3F2FD', name: 'Blue' },
+  { id: 'orange', color: '#FFF3E0', name: 'Orange' },
+  { id: 'purple', color: '#F3E5F5', name: 'Purple' },
+  { id: 'red', color: '#FFEBEE', name: 'Red' },
+  { id: 'teal', color: '#E0F2F1', name: 'Teal' },
+  { id: 'yellow', color: '#FFFDE7', name: 'Yellow' },
+  { id: 'grey', color: '#F5F5F5', name: 'Grey' },
+];
 
 const WallpaperPage = () => {
-  const [selectedWallpaper, setSelectedWallpaper] = useState('default');
-  const wallpapers = [
-    { id: 'default', color: '#E8F5E9', name: 'Default' },
-    { id: 'blue', color: '#E3F2FD', name: 'Blue' },
-    { id: 'orange', color: '#FFF3E0', name: 'Orange' },
-    { id: 'purple', color: '#F3E5F5', name: 'Purple' },
-    { id: 'red', color: '#FFEBEE', name: 'Red' },
-    { id: 'teal', color: '#E0F2F1', name: 'Teal' },
-    { id: 'yellow', color: '#FFFDE7', name: 'Yellow' },
-    { id: 'grey', color: '#F5F5F5', name: 'Grey' },
-  ];
+  const { wallpaper, setWallpaper } = useTheme();
+  const [selectedWallpaper, setSelectedWallpaper] = useState(wallpaper);
 
   useEffect(() => {
     const loadWallpaper = async () => {
@@ -30,14 +32,14 @@ const WallpaperPage = () => {
 
   const handleWallpaperSelect = async (wallpaperId: string) => {
     setSelectedWallpaper(wallpaperId);
-    await StorageService.updateSetting('wallpaper', wallpaperId);
+    await setWallpaper(wallpaperId);
     const selected = wallpapers.find(w => w.id === wallpaperId);
     alert('Wallpaper set', `Your chat wallpaper has been changed to ${selected?.name}.`);
   };
 
   const handleReset = async () => {
     setSelectedWallpaper('default');
-    await StorageService.updateSetting('wallpaper', 'default');
+    await setWallpaper('default');
     alert('Reset', 'Wallpaper reset to default.');
   };
 

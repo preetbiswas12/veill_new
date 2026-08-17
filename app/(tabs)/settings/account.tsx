@@ -3,6 +3,7 @@ import Fonts from '@/constants/Fonts';
 import { Ionicons } from '@expo/vector-icons';
 import { View, ScrollView, Text, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import AuthService from '@/utils/auth';
 
 const SettingsItem = ({
   icon,
@@ -71,8 +72,6 @@ const AccountPage = () => {
             borderColor: Colors.lightGray,
           }}>
           <SettingsItem icon="shield-checkmark" title="Security notifications" onPress={() => router.push('/settings/security-notifications' as any)} />
-          <SettingsItem icon="finger-print" title="Passkeys" onPress={() => router.push('/settings/passkeys' as any)} />
-          <SettingsItem icon="document-text" title="Request account info" onPress={() => router.push('/settings/request-account-info' as any)} />
           <SettingsItem icon="trash" title="Delete my account" danger onPress={() => router.push('/settings/delete-account' as any)} />
         </View>
 
@@ -84,7 +83,7 @@ const AccountPage = () => {
             borderColor: Colors.lightGray,
             marginTop: 8,
           }}>
-          <SettingsItem icon="log-out-outline" title="Switch account" onPress={() => router.push('/settings/add-account' as any)} />
+          <SettingsItem icon="log-out-outline" title="Sign out" onPress={() => AuthService.signOut().then(() => router.replace('/auth/sign-in'))} />
         </View>
       </ScrollView>
     </View>
