@@ -14,10 +14,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'npm'
+          cache: 'pnpm'
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Activate pnpm
+        run: corepack prepare pnpm@9.12.3 --activate
+
+      - name: Verify pnpm
+        run: pnpm --version
 
       - name: Install dependencies
-        run: npm install
+        run: pnpm install
 
       - name: Setup EAS
         uses: expo/expo-github-action@v8
