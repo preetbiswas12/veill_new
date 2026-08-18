@@ -18,6 +18,11 @@ allprojects {
     mavenCentral()
     maven { url 'https://www.jitpack.io' }
   }
+  configurations.all {
+    resolutionStrategy {
+      force 'org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.0.21'
+    }
+  }
 }
 
 apply plugin: "expo-root-project"
