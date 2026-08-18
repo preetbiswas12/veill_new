@@ -7,7 +7,9 @@ module.exports = function (api) {
       ['babel-plugin-transform-define', {
         'process.env.EXPO_ROUTER_APP_ROOT': JSON.stringify('app')
       }],
-      '@babel/plugin-transform-private-methods'
+      ['@babel/plugin-transform-class-properties', { loose: false }],
+      ['@babel/plugin-transform-private-methods', { loose: false }],
+      ['@babel/plugin-transform-private-property-in-object', { loose: false }]
     ],
   };
 };
