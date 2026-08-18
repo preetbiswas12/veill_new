@@ -12,6 +12,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
+    "entryPoint": "expo-router/entry",
     "assetBundlePatterns": [
       "**/*"
     ],
