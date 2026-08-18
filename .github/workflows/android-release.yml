@@ -2,25 +2,34 @@ name: Android Release Build
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
+
+env:
+  NODE_ENV: production
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    timeout-minutes: 45
 
-      - uses: pnpm/action-setup@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: 9
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
 
-      - uses: actions/setup-java@v5
+      - name: Setup Java
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
@@ -31,7 +40,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Remove dev-client for release build
+      - name: Add missing Babel plugin
+        run: pnpm add -D @babel/plugin-transform-class-properties
+
+      - name: Remove expo-dev-client for release build
         run: pnpm remove expo-dev-client
 
       - name: Patch expo-router for CI bundling
@@ -44,12 +56,27 @@ jobs:
           find node_modules -path "*expo-modules-core*ReactNativeFeatureFlags.kt" -exec sed -i 's/val enableBridgelessArchitecture = ReactNativeFeatureFlags.enableBridgelessArchitecture()/val enableBridgelessArchitecture = false/' {} +
           find node_modules -path "*expo-modules-core*CSSProps.kt" -exec sed -i 's/BoxShadow.parse(shadows.getMap(i), view.context)/BoxShadow.parse(shadows.getMap(i))/' {} +
 
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
       - name: Build release AAB
-        run: chmod +x android/gradlew && cd android && EXPO_ROUTER_APP_ROOT=app ./gradlew bundleRelease
+        run: cd android && EXPO_ROUTER_APP_ROOT=app ./gradlew bundleRelease
 
       - name: Upload AAB artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: app-release
           path: android/app/build/outputs/bundle/release/app-release.aab
           retention-days: 14
+
+      - name: Build summary
+        if: always()
+        run: |
+          echo "## Build Status" >> $GITHUB_STEP_SUMMARY
+          if [ ${{ job.status }} = 'success' ]; then
+            echo "✅ Android release build completed successfully" >> $GITHUB_STEP_SUMMARY
+            echo "📦 AAB available in artifacts" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Build failed" >> $GITHUB_STEP_SUMMARY
+          fi
