@@ -54,8 +54,8 @@ importers:
         specifier: ~14.0.1
         version: 14.0.1(expo@54.0.36)
       expo-media-library:
-        specifier: ~15.9.1
-        version: 15.9.2(expo@54.0.36)
+        specifier: ~16.0.3
+        version: 16.0.5(expo@54.0.36)
       expo-notifications:
         specifier: ~0.29.14
         version: 0.29.14(expo@54.0.36)(react-native@0.81.5(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)(supports-color@8.1.1)
@@ -2243,8 +2243,8 @@ packages:
     peerDependencies:
       expo: '*'
 
-  expo-media-library@15.9.2:
-    resolution: {integrity: sha512-ExRcCxNO768aWPQr9axuBDQLcFnRTSiqvWZ1XvnopCfZEic04wJ/CPAE1hLqTp7AyYrd6jHpqxa/aNKBAAFVeA==}
+  expo-media-library@16.0.5:
+    resolution: {integrity: sha512-O9RUqBWgJVRF0mO6EiLSBFyfb5wR1/ZqovbT43V0TAo5sgcjrHRs+0NID/U6BWDRuiFeX2AU516JgNDutNUFSw==}
     peerDependencies:
       expo: '*'
 
@@ -7148,7 +7148,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  expo-media-library@15.9.2(expo@54.0.36):
+  expo-media-library@16.0.5(expo@54.0.36):
     dependencies:
       expo: 54.0.36(@babel/core@7.29.7(supports-color@8.1.1))(@expo/metro-runtime@6.1.2)(bufferutil@4.1.0)(expo-router@6.0.24)(react-native@0.81.5(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)(supports-color@8.1.1)(typescript@5.9.3)
 
