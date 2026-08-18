@@ -58,11 +58,6 @@ declare module 'expo-media-library' {
   export async function getPermissionsAsync(): Promise<{ status: string }>;
 }
 
-declare module 'expo-av' {
-  export async function requestPermissionsAsync(): Promise<{ status: string }>;
-  export async function getPermissionsAsync(): Promise<{ status: string }>;
-}
-
 declare module '*.png' {
   const content: any;
   export default content;

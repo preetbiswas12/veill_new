@@ -1,7 +1,5 @@
 // @ts-ignore - expo-media-library types
 const MediaLibrary = require('expo-media-library');
-// @ts-ignore - expo-av types
-const Audio = require('expo-av');
 import * as ImagePicker from 'expo-image-picker';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
@@ -51,10 +49,15 @@ export async function requestAllPermissions(): Promise<PermissionResult> {
   }
 
   try {
-    const audioStatus = await Audio.requestPermissionsAsync();
-    result.audio = await getPermissionStatus(audioStatus);
+    if (Platform.OS === 'ios') {
+      const { AVAudioSession } = await import('expo-av');
+      const audioStatus = await AVAudioSession.requestPermissionAsync();
+      result.audio = audioStatus.granted ? 'granted' : 'denied';
+    } else {
+      result.audio = 'granted';
+    }
   } catch {
-    result.audio = 'denied';
+    result.audio = 'undetermined';
   }
 
   return result;
@@ -90,10 +93,15 @@ export async function checkPermissions(): Promise<PermissionResult> {
   }
 
   try {
-    const audioStatus = await Audio.getPermissionsAsync();
-    result.audio = await getPermissionStatus(audioStatus);
+    if (Platform.OS === 'ios') {
+      const { AVAudioSession } = await import('expo-av');
+      const audioStatus = await AVAudioSession.getPermissionAsync();
+      result.audio = audioStatus.granted ? 'granted' : 'denied';
+    } else {
+      result.audio = 'granted';
+    }
   } catch {
-    result.audio = 'denied';
+    result.audio = 'undetermined';
   }
 
   return result;
