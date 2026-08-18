@@ -105,6 +105,9 @@ jobs:
           cd android
           ls -la
           ls -la gradlew || true
+          echo "=== Testing gradlew ==="
+          bash -x ./gradlew --version 2>&1 | head -20 || true
+          echo "=== Running bundleRelease ==="
           EXPO_ROUTER_APP_ROOT=app NODE_ENV=production ./gradlew bundleRelease --stacktrace -v 2>&1 | tee build.log
         timeout-minutes: 30
 
