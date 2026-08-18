@@ -123,6 +123,9 @@ jobs:
           ./gradlew :app:tasks --all 2>&1 | grep -E "(bundle|Bundle|assemble|Assemble)" | head -20 || echo "No app bundle/assemble tasks found"
           
           echo "=== Building release AAB ==="
+          echo "=== Testing gradle help ==="
+          ./gradlew help 2>&1 | head -20
+          echo "=== Running bundleRelease ==="
           EXPO_ROUTER_APP_ROOT=app NODE_ENV=production ./gradlew bundleRelease --stacktrace -v 2>&1 | tee build.log
           GRADLE_EXIT=${PIPESTATUS[0]}
           echo "Gradle exit code: $GRADLE_EXIT"
