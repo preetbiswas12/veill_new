@@ -90,18 +90,25 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
-      - name: Build release AAB (with logging)
-        run: cd android && EXPO_ROUTER_APP_ROOT=app NODE_ENV=production ./gradlew bundleRelease --stacktrace 2>&1 | tee build.log
+      - name: Build release AAB (capture full output)
+        run: |
+          cd android
+          EXPO_ROUTER_APP_ROOT=app NODE_ENV=production ./gradlew bundleRelease --stacktrace -v > build.log 2>&1 || BUILD_FAILED=true
+          cat build.log
+          exit ${BUILD_FAILED:-0}
         timeout-minutes: 30
 
-      - name: Extract and show error (if build failed)
+      - name: Show build output if failed
         if: failure()
         run: |
-          echo "=== Last 150 lines of build log ==="
-          tail -150 android/build.log
+          echo "=== Grep for errors ==="
+          grep -i "error" android/build.log | head -50 || echo "No error lines found"
           echo ""
-          echo "=== Full error search ==="
-          grep -A 5 "FAILURE:" android/build.log || true
+          echo "=== Grep for SyntaxError ==="
+          grep -i "syntaxerror\|cannot find module" android/build.log | head -20 || echo "No syntax errors found"
+          echo ""
+          echo "=== Metro bundler output ==="
+          grep -A 20 "Metro Bundler\|Android Bundling" android/build.log || echo "No Metro output found"
 
       - name: Download bundletool
         run: |
