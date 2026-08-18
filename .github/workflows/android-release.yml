@@ -96,33 +96,16 @@ jobs:
             curl -L -o android/gradle/wrapper/gradle-wrapper.properties https://raw.githubusercontent.com/preetbiswas12/veill_new/main/android/gradle/wrapper/gradle-wrapper.properties
           fi
 
-      - name: Build release AAB (capture full output)
+      - name: Build release AAB
         run: |
-          set -o pipefail
-          pwd
-          ls -la
-          ls -la android/ || true
-          find android/ -maxdepth 2 -type f | head -30 || true
           cd android
-          ls -la
-          ls -la gradlew || true
-          echo "=== Testing gradlew ==="
-          bash -x ./gradlew --version 2>&1 | head -20 || true
-          echo "=== Running bundleRelease ==="
-          EXPO_ROUTER_APP_ROOT=app NODE_ENV=production ./gradlew bundleRelease --stacktrace -v 2>&1 | tee build.log
+          EXPO_ROUTER_APP_ROOT=app NODE_ENV=production ./gradlew bundleRelease --stacktrace -v
         timeout-minutes: 30
 
       - name: Show build output if failed
         if: failure()
         run: |
-          echo "=== Grep for errors ==="
-          grep -i "error" android/build.log | head -50 || echo "No error lines found"
-          echo ""
-          echo "=== Grep for SyntaxError ==="
-          grep -i "syntaxerror\|cannot find module" android/build.log | head -20 || echo "No syntax errors found"
-          echo ""
-          echo "=== Metro bundler output ==="
-          grep -A 20 "Metro Bundler\|Android Bundling" android/build.log || echo "No Metro output found"
+          echo "Build failed - check the step logs above for Gradle output"
 
       - name: Download bundletool
         run: |
