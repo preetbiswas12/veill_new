@@ -42,6 +42,5 @@ expo-env.d.ts
 
 .env
 
-android/
 ios/
 veill_relay/
