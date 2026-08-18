@@ -99,7 +99,11 @@ jobs:
       - name: Build release AAB
         run: |
           cd android
-          EXPO_ROUTER_APP_ROOT=app NODE_ENV=production ./gradlew bundleRelease --stacktrace -v
+          curl -L -o /tmp/gradle.zip https://services.gradle.org/distributions/gradle-8.14.3-bin.zip
+          unzip -q /tmp/gradle.zip -d /tmp/
+          export PATH=/tmp/gradle-8.14.3/bin:$PATH
+          gradle --version
+          EXPO_ROUTER_APP_ROOT=app NODE_ENV=production gradle bundleRelease --stacktrace -v
         timeout-minutes: 30
 
       - name: Show build output if failed
