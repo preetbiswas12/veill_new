@@ -39,9 +39,8 @@ jobs:
         run: eas init --account preetb --non-interactive
 
       - name: Build APK
-        run: eas build --profile production --platform android --non-interactive
+        run: EXPO_ROUTER_APP_ROOT=app eas build --profile production --platform android --non-interactive
         env:
-          EXPO_ROUTER_APP_ROOT: app
           EXPO_PUBLIC_SERVER_URL: ${{ secrets.EXPO_PUBLIC_SERVER_URL }}
           EXPO_PUBLIC_ONESIGNAL_APP_ID: ${{ secrets.EXPO_PUBLIC_ONESIGNAL_APP_ID }}
           ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}

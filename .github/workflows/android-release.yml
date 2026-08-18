@@ -35,9 +35,7 @@ jobs:
         run: pnpm remove expo-dev-client
 
       - name: Build release AAB
-        run: chmod +x android/gradlew && cd android && ./gradlew bundleRelease
-        env:
-          EXPO_ROUTER_APP_ROOT: app
+        run: chmod +x android/gradlew && cd android && EXPO_ROUTER_APP_ROOT=app ./gradlew bundleRelease
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
