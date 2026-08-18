@@ -40,7 +40,7 @@ jobs:
           find node_modules -path "*expo-modules-core*CSSProps.kt" -exec sed -i 's/BoxShadow.parse(shadows.getMap(i), view.context)/BoxShadow.parse(shadows.getMap(i))/' {} +
 
       - name: Build release AAB
-        run: chmod +x android/gradlew && cd android && EXPO_ROUTER_APP_ROOT=../app ./gradlew bundleRelease
+        run: chmod +x android/gradlew && cd android && EXPO_ROUTER_APP_ROOT=app ./gradlew bundleRelease
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
