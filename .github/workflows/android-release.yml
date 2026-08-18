@@ -5,9 +5,6 @@ on:
     branches: [main]
   workflow_dispatch:
 
-env:
-  NODE_ENV: production
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -128,7 +125,7 @@ jobs:
           echo "=== Testing gradle help ==="
           ./gradlew help 2>&1 | head -20
           echo "=== Running bundleRelease ==="
-          ./gradlew :app:bundleRelease --stacktrace --info --no-daemon --rerun-tasks 2>&1 | tee build.log
+          NODE_ENV=production ./gradlew :app:bundleRelease --stacktrace --info --no-daemon --rerun-tasks 2>&1 | tee build.log
           GRADLE_EXIT=${PIPESTATUS[0]}
           echo "Gradle exit code: $GRADLE_EXIT"
           
