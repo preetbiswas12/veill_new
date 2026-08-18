@@ -19,8 +19,10 @@ allprojects {
     maven { url 'https://www.jitpack.io' }
   }
   configurations.all {
-    resolutionStrategy {
-      force 'org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.0.21'
+    resolutionStrategy.eachDependency { details ->
+      if (details.requested.group == 'org.jetbrains.kotlin' && details.requested.name == 'kotlin-compose-compiler-plugin-embeddable') {
+        details.useVersion '2.0.21'
+      }
     }
   }
 }
