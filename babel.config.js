@@ -6,7 +6,8 @@ module.exports = function (api) {
       'react-native-reanimated/plugin',
       ['babel-plugin-transform-define', {
         'process.env.EXPO_ROUTER_APP_ROOT': JSON.stringify('app')
-      }]
+      }],
+      '@babel/plugin-transform-private-methods'
     ],
   };
 };
