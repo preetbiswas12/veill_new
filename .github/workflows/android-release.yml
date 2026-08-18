@@ -40,9 +40,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Add missing Babel plugins (v7 compatible)
-        run: pnpm add -D babel-plugin-transform-define @babel/plugin-transform-class-properties@^7 @babel/plugin-transform-private-methods@^7 @babel/plugin-transform-private-property-in-object@^7
-
       - name: Remove expo-dev-client for release build
         run: pnpm remove expo-dev-client
 
