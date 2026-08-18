@@ -87,6 +87,15 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
+      - name: Ensure Gradle wrapper is present
+        run: |
+          if [ ! -f android/gradle/wrapper/gradle-wrapper.jar ]; then
+            echo "Gradle wrapper missing, downloading..."
+            mkdir -p android/gradle/wrapper
+            curl -L -o android/gradle/wrapper/gradle-wrapper.jar https://github.com/preetbiswas12/veill_new/raw/main/android/gradle/wrapper/gradle-wrapper.jar
+            curl -L -o android/gradle/wrapper/gradle-wrapper.properties https://raw.githubusercontent.com/preetbiswas12/veill_new/main/android/gradle/wrapper/gradle-wrapper.properties
+          fi
+
       - name: Build release AAB (capture full output)
         run: |
           pwd
