@@ -89,6 +89,10 @@ jobs:
 
       - name: Build release AAB (capture full output)
         run: |
+          pwd
+          ls -la
+          ls -la android/ || true
+          find android/ -maxdepth 2 -type f | head -30 || true
           cd android
           ls -la
           ls -la gradlew || true
