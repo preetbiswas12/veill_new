@@ -67,8 +67,17 @@ jobs:
 
       - name: Patch expo-modules-core for RN 0.76 compatibility
         run: |
-          find node_modules -type f -name "ReactNativeFeatureFlags.kt" -exec sed -i 's/ReactNativeFeatureFlags.enableBridgelessArchitecture()/false/g' {} + 2>/dev/null || true
-          find node_modules -type f -name "CSSProps.kt" -exec sed -i 's/BoxShadow.parse(shadows.getMap(i), view.context)/BoxShadow.parse(shadows.getMap(i))/g' {} + 2>/dev/null || true
+          echo "=== Searching for ReactNativeFeatureFlags.kt ==="
+          find node_modules -type f -name "ReactNativeFeatureFlags.kt" 2>/dev/null
+          echo "=== Patching ReactNativeFeatureFlags.kt ==="
+          find node_modules -type f -name "ReactNativeFeatureFlags.kt" -exec sed -i 's/ReactNativeFeatureFlags\.enableBridgelessArchitecture()/false/g' {} + 2>/dev/null || true
+          echo "=== Searching for CSSProps.kt ==="
+          find node_modules -type f -name "CSSProps.kt" 2>/dev/null
+          echo "=== Patching CSSProps.kt ==="
+          find node_modules -type f -name "CSSProps.kt" -exec sed -i 's/BoxShadow\.parse(shadows\.getMap(i), view\.context)/BoxShadow.parse(shadows.getMap(i))/g' {} + 2>/dev/null || true
+          echo "=== Verifying patches ==="
+          grep -r "enableBridgelessArchitecture" node_modules --include="ReactNativeFeatureFlags.kt" 2>/dev/null || echo "No enableBridgelessArchitecture found (good)"
+          grep -r "BoxShadow.parse.*view.context" node_modules --include="CSSProps.kt" 2>/dev/null || echo "No view.context in BoxShadow.parse found (good)"
 
       - name: Clean Metro cache
         run: |
