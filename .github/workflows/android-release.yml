@@ -34,6 +34,11 @@ jobs:
       - name: Remove dev-client for release build
         run: pnpm remove expo-dev-client
 
+      - name: Patch expo-router for CI bundling
+        run: |
+          find node_modules -path "*expo-router*_ctx.*.js" -exec sed -i "s/process.env.EXPO_ROUTER_APP_ROOT/'app'/g" {} +
+          find node_modules -path "*expo-router*_ctx.*.js" -exec sed -i "s/process.env.EXPO_ROUTER_IMPORT_MODE/'sync'/g" {} +
+
       - name: Patch expo-modules-core for RN 0.76 compatibility
         run: |
           find node_modules -path "*expo-modules-core*ReactNativeFeatureFlags.kt" -exec sed -i 's/val enableBridgelessArchitecture = ReactNativeFeatureFlags.enableBridgelessArchitecture()/val enableBridgelessArchitecture = false/' {} +
