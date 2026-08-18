@@ -11,8 +11,7 @@ jobs:
     timeout-minutes: 45
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -22,187 +21,48 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20  # ✅ Changed from 24
           cache: pnpm
 
       - name: Setup Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      - name: Verify pnpm
-        run: pnpm --version
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
       - name: Install dependencies
-        env:
-          NODE_ENV: development
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Remove expo-dev-client for release build
-        run: pnpm remove expo-dev-client
-
-      - name: Check and fix Babel config
-        run: |
-          if [ -f babel.config.js ]; then
-            echo "Found babel.config.js"
-            head -20 babel.config.js
-          fi
-          if [ -f .babelrc ]; then
-            echo "Found .babelrc"
-            cat .babelrc
-          fi
-          if [ -f .babelrc.json ]; then
-            echo "Found .babelrc.json"
-            cat .babelrc.json
-          fi
-
-      - name: Patch expo-router bundle root
-        run: |
-          export ROUTER_ENTRY="node_modules/expo-router/entry.js"
-          if [ -f "$ROUTER_ENTRY" ]; then
-            sed -i "s|require.*EXPO_ROUTER_APP_ROOT|'./app/index'|g" "$ROUTER_ENTRY" || true
-            echo "Patched expo-router entry"
-          fi
-          export CTX_ANDROID="node_modules/expo-router/_ctx.android.js"
-          if [ -f "$CTX_ANDROID" ]; then
-            sed -i "s|process.env.EXPO_ROUTER_IMPORT_MODE|'sync'|g" "$CTX_ANDROID" || true
-            echo "Patched _ctx.android.js"
-          fi
-          export CTX_IOS="node_modules/expo-router/_ctx.ios.js"
-          if [ -f "$CTX_IOS" ]; then
-            sed -i "s|process.env.EXPO_ROUTER_IMPORT_MODE|'sync'|g" "$CTX_IOS" || true
-            echo "Patched _ctx.ios.js"
-          fi
-
-      - name: Patch expo-modules-core for RN 0.76 compatibility
-        run: |
-          echo "=== Searching for ReactNativeFeatureFlags.kt ==="
-          find node_modules -type f -name "ReactNativeFeatureFlags.kt" 2>/dev/null
-          echo "=== Patching ReactNativeFeatureFlags.kt ==="
-          find node_modules -type f -name "ReactNativeFeatureFlags.kt" -exec sed -i 's/ReactNativeFeatureFlags\.enableBridgelessArchitecture()/false/g' {} + 2>/dev/null || true
-          echo "=== Searching for CSSProps.kt ==="
-          find node_modules -type f -name "CSSProps.kt" 2>/dev/null
-          echo "=== Patching CSSProps.kt ==="
-          find node_modules -type f -name "CSSProps.kt" -exec sed -i 's/BoxShadow\.parse(shadows\.getMap(i), view\.context)/BoxShadow.parse(shadows.getMap(i))/g' {} + 2>/dev/null || true
-          echo "=== Verifying patches ==="
-          grep -r "enableBridgelessArchitecture" node_modules --include="ReactNativeFeatureFlags.kt" 2>/dev/null || echo "No enableBridgelessArchitecture found (good)"
-          grep -r "BoxShadow.parse.*view.context" node_modules --include="CSSProps.kt" 2>/dev/null || echo "No view.context in BoxShadow.parse found (good)"
-
-      - name: Clean Metro cache
-        run: |
-          rm -rf /tmp/metro-* 2>/dev/null || true
-          rm -rf ~/Library/Developer/Xcode/DerivedData 2>/dev/null || true
-
-      - name: Verify Babel dependencies
-        run: |
-          echo "=== Checking Babel plugins ==="
-          pnpm list @babel/plugin-transform-class-properties @babel/plugin-transform-private-methods @babel/plugin-transform-private-property-in-object babel-plugin-transform-define @babel/core
-          echo ""
-          echo "=== Babel core version ==="
-          pnpm list @babel/core
+        run: pnpm install --frozen-lockfile  # ✅ Changed from --no-frozen-lockfile
 
       - name: Make gradlew executable
         run: chmod +x android/gradlew
-
-      - name: Ensure Gradle wrapper is present
-        run: |
-          if [ ! -f android/gradle/wrapper/gradle-wrapper.jar ]; then
-            echo "Gradle wrapper missing, downloading..."
-            mkdir -p android/gradle/wrapper
-            curl -L -o android/gradle/wrapper/gradle-wrapper.jar https://github.com/preetbiswas12/veill_new/raw/main/android/gradle/wrapper/gradle-wrapper.jar
-            curl -L -o android/gradle/wrapper/gradle-wrapper.properties https://raw.githubusercontent.com/preetbiswas12/veill_new/main/android/gradle/wrapper/gradle-wrapper.properties
-          fi
 
       - name: Build release AAB
         run: |
           cd android
           
-          echo "=== Checking local.properties ==="
+          # Create local.properties
           if [ ! -f local.properties ]; then
-            echo "local.properties missing, creating..."
-            echo "sdk.dir=/usr/local/lib/android/sdk" > local.properties
-            echo "ANDROID_HOME=$ANDROID_HOME" >> local.properties
-            echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> local.properties
+            echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
           fi
-          cat local.properties
           
-          echo "=== Verifying gradlew ==="
-          ls -la gradlew
-          chmod +x gradlew
-          ./gradlew --version
-          
-          echo "=== Listing available tasks ==="
-          ./gradlew tasks --all 2>&1 | grep -i bundle || echo "No bundle tasks found in first 100 lines"
-          
-          echo "=== Searching for bundle-related tasks ==="
-          ./gradlew tasks --all 2>&1 | grep -E "(bundle|Bundle)" | head -20 || echo "No bundle tasks found"
-          echo "=== App-specific tasks ==="
-          ./gradlew :app:tasks --all 2>&1 | grep -E "(bundle|Bundle|assemble|Assemble)" | head -20 || echo "No app bundle/assemble tasks found"
-          
-          echo "=== Building release AAB ==="
-          echo "=== Testing gradle help ==="
-          ./gradlew help 2>&1 | head -20
-          echo "=== Running bundleRelease ==="
-          ./gradlew :app:bundleRelease --stacktrace --info --no-daemon --rerun-tasks 2>&1 | tee build.log
-          GRADLE_EXIT=${PIPESTATUS[0]}
-          echo "Gradle exit code: $GRADLE_EXIT"
-          
-          echo "=== Checking build outputs ==="
-          ls -la app/build/outputs/bundle/release/ 2>/dev/null || echo "No bundle output directory"
-          ls -la app/build/outputs/apk/release/ 2>/dev/null || echo "No apk output directory"
-          
-          if [ $GRADLE_EXIT -ne 0 ]; then
-            echo "Gradle build failed with exit code $GRADLE_EXIT"
-            exit $GRADLE_EXIT
-          fi
-        timeout-minutes: 30
+          # Build with verbose output
+          ./gradlew :app:bundleRelease \
+            --stacktrace \
+            --no-daemon \
+            -Dorg.gradle.jvmargs="-Xmx4g -XX:+UseG1GC"
 
-      - name: Show build output if failed
-        if: failure()
-        run: |
-          echo "Build failed - check the step logs above for Gradle output"
-
-      - name: Download bundletool
-        run: |
-          mkdir -p tools
-          curl -L -o tools/bundletool.jar https://github.com/google/bundletool/releases/download/1.15.0/bundletool-all-1.15.0.jar
-
-      - name: Convert AAB to universal APK
-        run: |
-          java -jar tools/bundletool.jar build-apks \
-            --bundle=android/app/build/outputs/bundle/release/app-release.aab \
-            --output=android/app/build/outputs/apk/release/app-release.apks \
-            --mode=universal
-
-      - name: Extract APK from APKS
-        run: |
-          cd android/app/build/outputs/apk/release
-          unzip -o app-release.apks universal.apk
-          mv universal.apk app-release.apk
-          ls -lh app-release.apk
-
-      - name: Upload build artifacts
+      - name: Upload AAB
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-builds
-          path: |
-            android/app/build/outputs/bundle/release/app-release.aab
-            android/app/build/outputs/apk/release/app-release.apk
-          retention-days: 14
+          name: app-release
+          path: android/app/build/outputs/bundle/release/app-release.aab
 
-      - name: Build summary
-        if: always()
+      - name: Show error logs
+        if: failure()
         run: |
-          echo "## Build Status" >> $GITHUB_STEP_SUMMARY
-          if [ ${{ job.status }} = 'success' ]; then
-            echo "✅ Android release build completed successfully" >> $GITHUB_STEP_SUMMARY
-            echo "📦 **Artifacts:**" >> $GITHUB_STEP_SUMMARY
-            echo "- **AAB** (for Google Play Store): app-release.aab" >> $GITHUB_STEP_SUMMARY
-            echo "- **APK** (for mobile installation): app-release.apk" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Download from:** Artifacts section" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ Build failed" >> $GITHUB_STEP_SUMMARY
-          fi
+          cd android
+          cat build.log 2>/dev/null || ./gradlew :app:bundleRelease --stacktrace 2>&1 | tail -100
