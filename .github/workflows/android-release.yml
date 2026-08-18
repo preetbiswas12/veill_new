@@ -98,6 +98,7 @@ jobs:
 
       - name: Build release AAB (capture full output)
         run: |
+          set -o pipefail
           pwd
           ls -la
           ls -la android/ || true
