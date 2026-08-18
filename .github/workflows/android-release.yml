@@ -32,7 +32,7 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Build release AAB
-        run: cd android && ./gradlew bundleRelease
+        run: chmod +x android/gradlew && cd android && ./gradlew bundleRelease
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
