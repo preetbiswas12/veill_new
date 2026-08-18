@@ -5,7 +5,8 @@ module.exports = function (api) {
     plugins: [
       'react-native-reanimated/plugin',
       ['babel-plugin-transform-define', {
-        'process.env.EXPO_ROUTER_APP_ROOT': JSON.stringify('app')
+        'process.env.EXPO_ROUTER_APP_ROOT': JSON.stringify('app'),
+        'process.env.EXPO_ROUTER_IMPORT_MODE': JSON.stringify('sync')
       }],
       ['@babel/plugin-transform-class-properties', { loose: false }],
       ['@babel/plugin-transform-private-methods', { loose: false }],

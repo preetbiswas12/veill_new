@@ -64,6 +64,16 @@ jobs:
             sed -i "s|require.*EXPO_ROUTER_APP_ROOT|'./app/index'|g" "$ROUTER_ENTRY" || true
             echo "Patched expo-router entry"
           fi
+          export CTX_ANDROID="node_modules/expo-router/_ctx.android.js"
+          if [ -f "$CTX_ANDROID" ]; then
+            sed -i "s|process.env.EXPO_ROUTER_IMPORT_MODE|'sync'|g" "$CTX_ANDROID" || true
+            echo "Patched _ctx.android.js"
+          fi
+          export CTX_IOS="node_modules/expo-router/_ctx.ios.js"
+          if [ -f "$CTX_IOS" ]; then
+            sed -i "s|process.env.EXPO_ROUTER_IMPORT_MODE|'sync'|g" "$CTX_IOS" || true
+            echo "Patched _ctx.ios.js"
+          fi
 
       - name: Patch expo-modules-core for RN 0.76 compatibility
         run: |
@@ -134,7 +144,7 @@ jobs:
           echo "=== Testing gradle help ==="
           ./gradlew help 2>&1 | head -20
           echo "=== Running bundleRelease ==="
-          NODE_ENV=production ./gradlew :app:bundleRelease --stacktrace --info --no-daemon --rerun-tasks 2>&1 | tee build.log
+          ./gradlew :app:bundleRelease --stacktrace --info --no-daemon --rerun-tasks 2>&1 | tee build.log
           GRADLE_EXIT=${PIPESTATUS[0]}
           echo "Gradle exit code: $GRADLE_EXIT"
           
