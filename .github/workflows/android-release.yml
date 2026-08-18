@@ -115,7 +115,12 @@ jobs:
           ./gradlew --version
           
           echo "=== Listing available tasks ==="
-          ./gradlew tasks --all 2>&1 | head -100
+          ./gradlew tasks --all 2>&1 | grep -i bundle || echo "No bundle tasks found in first 100 lines"
+          
+          echo "=== Searching for bundle-related tasks ==="
+          ./gradlew tasks --all 2>&1 | grep -E "(bundle|Bundle)" | head -20 || echo "No bundle tasks found"
+          echo "=== App-specific tasks ==="
+          ./gradlew :app:tasks --all 2>&1 | grep -E "(bundle|Bundle|assemble|Assemble)" | head -20 || echo "No app bundle/assemble tasks found"
           
           echo "=== Building release AAB ==="
           EXPO_ROUTER_APP_ROOT=app NODE_ENV=production ./gradlew bundleRelease --stacktrace -v 2>&1 | tee build.log
