@@ -40,34 +40,96 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Add missing Babel plugin
-        run: pnpm add -D @babel/plugin-transform-class-properties -w
+      - name: Add missing Babel plugins (v7 compatible)
+        run: pnpm add -D babel-plugin-transform-define @babel/plugin-transform-class-properties@^7 @babel/plugin-transform-private-methods@^7 @babel/plugin-transform-private-property-in-object@^7
 
       - name: Remove expo-dev-client for release build
         run: pnpm remove expo-dev-client
 
-      - name: Patch expo-router for CI bundling
+      - name: Check and fix Babel config
         run: |
-          find node_modules -path "*expo-router*_ctx.*.js" -exec sed -i "s/process.env.EXPO_ROUTER_APP_ROOT/'app'/g" {} +
-          find node_modules -path "*expo-router*_ctx.*.js" -exec sed -i "s/process.env.EXPO_ROUTER_IMPORT_MODE/'sync'/g" {} +
+          if [ -f babel.config.js ]; then
+            echo "Found babel.config.js"
+            head -20 babel.config.js
+          fi
+          if [ -f .babelrc ]; then
+            echo "Found .babelrc"
+            cat .babelrc
+          fi
+          if [ -f .babelrc.json ]; then
+            echo "Found .babelrc.json"
+            cat .babelrc.json
+          fi
+
+      - name: Patch expo-router bundle root
+        run: |
+          export ROUTER_ENTRY="node_modules/expo-router/entry.js"
+          if [ -f "$ROUTER_ENTRY" ]; then
+            sed -i "s|require.*EXPO_ROUTER_APP_ROOT|'./app/index'|g" "$ROUTER_ENTRY" || true
+            echo "Patched expo-router entry"
+          fi
 
       - name: Patch expo-modules-core for RN 0.76 compatibility
         run: |
-          find node_modules -path "*expo-modules-core*ReactNativeFeatureFlags.kt" -exec sed -i 's/val enableBridgelessArchitecture = ReactNativeFeatureFlags.enableBridgelessArchitecture()/val enableBridgelessArchitecture = false/' {} +
-          find node_modules -path "*expo-modules-core*CSSProps.kt" -exec sed -i 's/BoxShadow.parse(shadows.getMap(i), view.context)/BoxShadow.parse(shadows.getMap(i))/' {} +
+          find node_modules -type f -name "ReactNativeFeatureFlags.kt" -exec sed -i 's/enableBridgelessArchitecture()/false/g' {} + 2>/dev/null || true
+          find node_modules -type f -name "CSSProps.kt" -exec sed -i 's/BoxShadow.parse(shadows.getMap(i), view.context)/BoxShadow.parse(shadows.getMap(i))/g' {} + 2>/dev/null || true
+
+      - name: Clean Metro cache
+        run: |
+          rm -rf /tmp/metro-* 2>/dev/null || true
+          rm -rf ~/Library/Developer/Xcode/DerivedData 2>/dev/null || true
+
+      - name: Verify Babel dependencies
+        run: |
+          echo "=== Checking Babel plugins ==="
+          pnpm list @babel/plugin-transform-class-properties @babel/plugin-transform-private-methods @babel/plugin-transform-private-property-in-object babel-plugin-transform-define @babel/core
+          echo ""
+          echo "=== Babel core version ==="
+          pnpm list @babel/core
 
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
-      - name: Build release AAB
-        run: cd android && EXPO_ROUTER_APP_ROOT=app ./gradlew bundleRelease
+      - name: Build release AAB (with logging)
+        run: cd android && EXPO_ROUTER_APP_ROOT=app NODE_ENV=production ./gradlew bundleRelease --stacktrace 2>&1 | tee build.log
+        timeout-minutes: 30
 
-      - name: Upload AAB artifact
+      - name: Extract and show error (if build failed)
+        if: failure()
+        run: |
+          echo "=== Last 150 lines of build log ==="
+          tail -150 android/build.log
+          echo ""
+          echo "=== Full error search ==="
+          grep -A 5 "FAILURE:" android/build.log || true
+
+      - name: Download bundletool
+        run: |
+          mkdir -p tools
+          curl -L https://github.com/google/bundletool/releases/latest/download/bundletool-all.jar -o tools/bundletool.jar
+
+      - name: Convert AAB to universal APK
+        run: |
+          java -jar tools/bundletool.jar build-apks \
+            --bundle=android/app/build/outputs/bundle/release/app-release.aab \
+            --output=android/app/build/outputs/apk/release/app-release.apks \
+            --mode=universal
+
+      - name: Extract APK from APKS
+        run: |
+          cd android/app/build/outputs/apk/release
+          unzip -o app-release.apks universal.apk
+          mv universal.apk app-release.apk
+          ls -lh app-release.apk
+
+      - name: Upload build artifacts
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: app-release
-          path: android/app/build/outputs/bundle/release/app-release.aab
+          name: app-release-builds
+          path: |
+            android/app/build/outputs/bundle/release/app-release.aab
+            android/app/build/outputs/apk/release/app-release.apk
           retention-days: 14
 
       - name: Build summary
@@ -76,7 +138,11 @@ jobs:
           echo "## Build Status" >> $GITHUB_STEP_SUMMARY
           if [ ${{ job.status }} = 'success' ]; then
             echo "✅ Android release build completed successfully" >> $GITHUB_STEP_SUMMARY
-            echo "📦 AAB available in artifacts" >> $GITHUB_STEP_SUMMARY
+            echo "📦 **Artifacts:**" >> $GITHUB_STEP_SUMMARY
+            echo "- **AAB** (for Google Play Store): app-release.aab" >> $GITHUB_STEP_SUMMARY
+            echo "- **APK** (for mobile installation): app-release.apk" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Download from:** Artifacts section" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ Build failed" >> $GITHUB_STEP_SUMMARY
           fi
