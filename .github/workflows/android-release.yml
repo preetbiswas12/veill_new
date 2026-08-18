@@ -36,6 +36,8 @@ jobs:
 
       - name: Build release AAB
         run: chmod +x android/gradlew && cd android && ./gradlew bundleRelease
+        env:
+          EXPO_ROUTER_APP_ROOT: app
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
