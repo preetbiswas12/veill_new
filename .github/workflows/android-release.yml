@@ -90,9 +90,7 @@ jobs:
       - name: Build release AAB (capture full output)
         run: |
           cd android
-          EXPO_ROUTER_APP_ROOT=app NODE_ENV=production ./gradlew bundleRelease --stacktrace -v > build.log 2>&1 || BUILD_FAILED=true
-          cat build.log
-          exit ${BUILD_FAILED:-0}
+          EXPO_ROUTER_APP_ROOT=app NODE_ENV=production ./gradlew bundleRelease --stacktrace -v 2>&1 | tee build.log
         timeout-minutes: 30
 
       - name: Show build output if failed
