@@ -29,6 +29,11 @@ jobs:
       - name: Remove dev-client for release build
         run: pnpm remove expo-dev-client
 
+      - name: Patch expo-modules-core for RN 0.76 compatibility
+        run: |
+          find node_modules -path "*expo-modules-core*ReactNativeFeatureFlags.kt" -exec sed -i 's/val enableBridgelessArchitecture = ReactNativeFeatureFlags.enableBridgelessArchitecture()/val enableBridgelessArchitecture = false/' {} +
+          find node_modules -path "*expo-modules-core*CSSProps.kt" -exec sed -i 's/BoxShadow.parse(shadows.getMap(i), view.context)/BoxShadow.parse(shadows.getMap(i))/' {} +
+
       - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:
