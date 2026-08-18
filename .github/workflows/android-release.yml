@@ -99,11 +99,37 @@ jobs:
       - name: Build release AAB
         run: |
           cd android
-          curl -L -o /tmp/gradle.zip https://services.gradle.org/distributions/gradle-8.14.3-bin.zip
-          unzip -q /tmp/gradle.zip -d /tmp/
-          export PATH=/tmp/gradle-8.14.3/bin:$PATH
-          gradle --version
-          EXPO_ROUTER_APP_ROOT=app NODE_ENV=production gradle bundleRelease --stacktrace -v
+          
+          echo "=== Checking local.properties ==="
+          if [ ! -f local.properties ]; then
+            echo "local.properties missing, creating..."
+            echo "sdk.dir=/usr/local/lib/android/sdk" > local.properties
+            echo "ANDROID_HOME=$ANDROID_HOME" >> local.properties
+            echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> local.properties
+          fi
+          cat local.properties
+          
+          echo "=== Verifying gradlew ==="
+          ls -la gradlew
+          chmod +x gradlew
+          ./gradlew --version
+          
+          echo "=== Listing available tasks ==="
+          ./gradlew tasks --all 2>&1 | head -100
+          
+          echo "=== Building release AAB ==="
+          EXPO_ROUTER_APP_ROOT=app NODE_ENV=production ./gradlew bundleRelease --stacktrace -v 2>&1 | tee build.log
+          GRADLE_EXIT=${PIPESTATUS[0]}
+          echo "Gradle exit code: $GRADLE_EXIT"
+          
+          echo "=== Checking build outputs ==="
+          ls -la app/build/outputs/bundle/release/ 2>/dev/null || echo "No bundle output directory"
+          ls -la app/build/outputs/apk/release/ 2>/dev/null || echo "No apk output directory"
+          
+          if [ $GRADLE_EXIT -ne 0 ]; then
+            echo "Gradle build failed with exit code $GRADLE_EXIT"
+            exit $GRADLE_EXIT
+          fi
         timeout-minutes: 30
 
       - name: Show build output if failed
