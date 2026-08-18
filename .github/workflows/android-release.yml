@@ -41,7 +41,7 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Add missing Babel plugin
-        run: pnpm add -D @babel/plugin-transform-class-properties
+        run: pnpm add -D @babel/plugin-transform-class-properties -w
 
       - name: Remove expo-dev-client for release build
         run: pnpm remove expo-dev-client
