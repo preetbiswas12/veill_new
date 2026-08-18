@@ -26,6 +26,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Remove dev-client for release build
+        run: pnpm remove expo-dev-client
+
       - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:
