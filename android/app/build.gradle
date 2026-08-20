@@ -105,15 +105,15 @@ android {
             keyPassword 'android'
         }
         release {
-            def keystoreFile = findProperty('RELEASE_STORE_FILE') ?: file('../upload-keystore.jks')
-            def keystorePassword = findProperty('RELEASE_STORE_PASSWORD') ?: ''
-            def keyAlias = findProperty('RELEASE_KEY_ALIAS') ?: 'upload'
-            def keyPassword = findProperty('RELEASE_KEY_PASSWORD') ?: ''
-            if (keystoreFile.exists()) {
-                storeFile keystoreFile
-                storePassword keystorePassword
-                keyAlias keyAlias
-                keyPassword keyPassword
+            def releaseStoreFile = findProperty('RELEASE_STORE_FILE') ?: file('../upload-keystore.jks')
+            def releaseStorePassword = findProperty('RELEASE_STORE_PASSWORD') ?: ''
+            def releaseKeyAlias = findProperty('RELEASE_KEY_ALIAS') ?: 'upload'
+            def releaseKeyPassword = findProperty('RELEASE_KEY_PASSWORD') ?: ''
+            if (releaseStoreFile.exists()) {
+                storeFile releaseStoreFile
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
             } else {
                 storeFile file('debug.keystore')
                 storePassword 'android'
