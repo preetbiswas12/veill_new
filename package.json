@@ -1,6 +1,7 @@
 {
   "name": "veill",
   "version": "1.0.0",
+  "packageManager": "pnpm@11.21.0",
   "private": true,
   "main": "index.js",
   "scripts": {
