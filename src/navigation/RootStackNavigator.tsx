@@ -4,7 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import BottomTabNavigator from './BottomTabNavigator';
 import { SCREEN_CONSTANTS } from '../utils/AppConstants';
-import { useTheme } from '@cometchat/chat-ui-kit-react-native';
+import { useTheme } from '@cometchat/chat-uikit-react-native';
 import { RootStackParamList } from './types';
 import { navigationRef, processPendingNavigation } from './NavigationService';
 import SignIn from '../components/login/SignIn';
