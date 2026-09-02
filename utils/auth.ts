@@ -1,16 +1,42 @@
-import SocketService from './socket';
+import * as SecureStore from 'expo-secure-store';
 import StorageService from './storage';
 import { registerPushToken, unregisterPushToken } from './onesignal';
+import { CometChat } from '@cometchat/chat-sdk-react-native';
+import { getOneSignalPlayerId } from './incomingCalls';
 
 export type AuthState = {
-  userId: number | null;
+  userId: string | null;
   isAuthenticated: boolean;
-  serverToken: string | null;
   username: string | null;
-  email: string | null;
+  displayName: string | null;
+  token: string | null;
 };
 
-export const SERVER_URL = 'https://veill.qzz.io';
+const API_BASE = (process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
+const TOKEN_KEY = 'veill_auth_token';
+const USER_KEY = 'veill_user';
+
+type CometchatTokenResponse = {
+  cometchatUid: string;
+  authToken: string;
+  cometchatAppId: string;
+  cometchatRegion: string;
+};
+
+async function apiPost(path: string, body: any, token?: string) {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const resp = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  });
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok) {
+    throw new Error(data?.error || `HTTP ${resp.status}`);
+  }
+  return data;
+}
 
 export const AuthService = {
   async initialize(): Promise<void> {
@@ -19,149 +45,94 @@ export const AuthService = {
 
   async getCurrentAuthState(): Promise<AuthState> {
     try {
-      const stored = await StorageService.getAuth();
+      const token = await SecureStore.getItemAsync(TOKEN_KEY);
+      const userJson = await SecureStore.getItemAsync(USER_KEY);
+      const user = userJson ? JSON.parse(userJson) : null;
       return {
-        userId: stored?.userId || null,
-        isAuthenticated: stored?.isAuthenticated || false,
-        serverToken: stored?.serverToken || null,
-        username: stored?.username || null,
-        email: stored?.email || null,
+        userId: user?.id || null,
+        isAuthenticated: !!token,
+        username: user?.username || null,
+        displayName: user?.displayName || null,
+        token,
       };
     } catch {
-      return {
-        userId: null,
-        isAuthenticated: false,
-        serverToken: null,
-        username: null,
-        email: null,
-      };
+      return { userId: null, isAuthenticated: false, username: null, displayName: null, token: null };
     }
   },
 
-  async register(email: string, password: string, username: string): Promise<{ serverToken: string; user: any }> {
+  async signUp(username: string, displayName: string, password: string) {
+    const data = await apiPost('/api/auth/signup', { username, displayName, password });
+    await SecureStore.setItemAsync(TOKEN_KEY, data.token);
+    await SecureStore.setItemAsync(USER_KEY, JSON.stringify(data.user));
+    await StorageService.saveAuth({
+      userId: data.user.id,
+      isAuthenticated: true,
+      serverToken: data.token,
+      username: data.user.username,
+      displayName: data.user.displayName,
+    });
     try {
-      const response = await fetch(`${SERVER_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, username }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Registration failed' }));
-        throw new Error(error.error || 'Registration failed');
+      const onesignalId = await getOneSignalPlayerId();
+      if (onesignalId) {
+        await registerPushToken(data.user.id, onesignalId);
       }
-
-      const data = await response.json();
-      await StorageService.saveAuth({
-        userId: data.user.id,
-        isAuthenticated: true,
-        serverToken: data.token,
-        username: data.user.username,
-        email: data.user.email,
-      });
-
-      const authState = await AuthService.getCurrentAuthState();
-      if (authState.userId && authState.serverToken) {
-        registerPushToken(authState.serverToken, 'pending', 'ios').catch(() => {});
-      }
-
-      return { serverToken: data.token, user: data.user };
-    } catch (err) {
-      console.error('[Auth] Register error:', err);
-      throw err;
-    }
+    } catch {}
+    return data.user;
   },
 
-  async login(email: string, password: string): Promise<{ serverToken: string; user: any }> {
+  async signIn(username: string, password: string) {
+    const data = await apiPost('/api/auth/signin', { username, password });
+    await SecureStore.setItemAsync(TOKEN_KEY, data.token);
+    await SecureStore.setItemAsync(USER_KEY, JSON.stringify(data.user));
+    await StorageService.saveAuth({
+      userId: data.user.id,
+      isAuthenticated: true,
+      serverToken: data.token,
+      username: data.user.username,
+      displayName: data.user.displayName,
+    });
     try {
-      const response = await fetch(`${SERVER_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Login failed' }));
-        throw new Error(error.error || 'Login failed');
+      const onesignalId = await getOneSignalPlayerId();
+      if (onesignalId) {
+        await registerPushToken(data.user.id, onesignalId);
       }
-
-      const data = await response.json();
-      await StorageService.saveAuth({
-        userId: data.user.id,
-        isAuthenticated: true,
-        serverToken: data.token,
-        username: data.user.username,
-        email: data.user.email,
-      });
-
-      const authState = await AuthService.getCurrentAuthState();
-      if (authState.userId && authState.serverToken) {
-        registerPushToken(authState.serverToken, 'pending', 'ios').catch(() => {});
-      }
-
-      return { serverToken: data.token, user: data.user };
-    } catch (err) {
-      console.error('[Auth] Login error:', err);
-      throw err;
-    }
+    } catch {}
+    return data.user;
   },
 
-  async connectToServer(userId: number): Promise<void> {
-    try {
-      const stored = await StorageService.getAuth();
-      let serverToken = stored?.serverToken;
-
-      if (!serverToken) {
-        throw new Error('No server token — user must log in first');
-      }
-
-      await SocketService.connect(userId, serverToken);
-    } catch (err) {
-      console.error('[Auth] Connect to server error:', err);
-      throw err;
-    }
+  async getCometChatAuthToken(): Promise<CometchatTokenResponse> {
+    const token = await SecureStore.getItemAsync(TOKEN_KEY);
+    return await apiPost('/api/auth/token', {}, token || undefined);
   },
 
   async signOut(): Promise<void> {
     try {
-      await StorageService.clearAuth();
-    } catch (err) {
-      console.error('[Auth] Sign out error:', err);
-    }
-    await SocketService.disconnect();
+      const onesignalId = await getOneSignalPlayerId();
+      const authState = await AuthService.getCurrentAuthState();
+      if (onesignalId && authState.userId) {
+        await unregisterPushToken(authState.userId, onesignalId).catch(() => {});
+      }
+    } catch {}
+    try {
+      await CometChat.logout();
+    } catch {}
+    try {
+      const { OneSignal } = await import('react-native-onesignal');
+      OneSignal.logout();
+    } catch {}
+    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await SecureStore.deleteItemAsync(USER_KEY);
+    await StorageService.clearAuth();
   },
 
   onAuthStateChanged(callback: (state: AuthState) => void): () => void {
     let isActive = true;
-
     const checkAuth = async () => {
       if (!isActive) return;
-
-      try {
-        const stored = await StorageService.getAuth();
-
-        callback({
-          userId: stored?.userId || null,
-          isAuthenticated: stored?.isAuthenticated || false,
-          serverToken: stored?.serverToken || null,
-          username: stored?.username || null,
-          email: stored?.email || null,
-        });
-      } catch (err) {
-        if (isActive) {
-          callback({
-            userId: null,
-            isAuthenticated: false,
-            serverToken: null,
-            username: null,
-            email: null,
-          });
-        }
-      }
+      const state = await AuthService.getCurrentAuthState();
+      callback(state);
     };
-
     checkAuth();
-
     return () => {
       isActive = false;
     };

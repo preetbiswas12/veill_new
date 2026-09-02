@@ -33,7 +33,7 @@ expoAutolinking.useExpoModules()
 
 rootProject.name = 'Veill'
 
-// expoAutolinking.useExpoVersionCatalog()
+expoAutolinking.useExpoVersionCatalog()
 
 include ':app'
 includeBuild(expoAutolinking.reactNativeGradlePlugin)

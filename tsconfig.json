@@ -2,10 +2,25 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "paths": {
-      "@/*": ["./*"]
-    }
+    "skipLibCheck": true
   },
-  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "types.d.ts"],
-  "exclude": ["veill_relay", "node_modules"]
+  "include": [
+    "App.tsx",
+    "index.js",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "utils/**/*.ts",
+    "utils/**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts",
+    "types.d.ts"
+  ],
+  "exclude": [
+    "veill_relay",
+    "node_modules",
+    "**/node_modules",
+    "**/node_modules/**/src/**/*",
+    "android",
+    "ios"
+  ]
 }

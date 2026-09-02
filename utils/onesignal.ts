@@ -1,52 +1,55 @@
-const SERVER_URL = 'https://veill.qzz.io';
+const PUSH_SERVER_URL = (process.env.EXPO_PUBLIC_PUSH_SERVER_URL || process.env.EXPO_PUBLIC_API_BASE_URL || '').replace(/\/$/, '');
 
-const ONESIGNAL_APP_ID = process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID;
+export type RingCallRequest = {
+  calleeIds: string[];
+  callerId: string;
+  callerName: string;
+  callType: 'voice' | 'video';
+  callId: string;
+  roomUrl: string;
+};
 
-export async function registerPushToken(
-  serverToken: string | null,
-  pushToken: string,
-  platform: 'ios' | 'android'
-): Promise<void> {
-  if (!ONESIGNAL_APP_ID || ONESIGNAL_APP_ID === 'YOUR_ONESIGNAL_APP_ID') {
-    return;
+async function post<T = any>(path: string, body: unknown): Promise<{ ok: boolean; data?: T; error?: string }> {
+  if (!PUSH_SERVER_URL) {
+    return { ok: false, error: 'Push server not configured — set EXPO_PUBLIC_PUSH_SERVER_URL' };
   }
-
-  if (!serverToken) return;
-
   try {
-    const resp = await fetch(`${SERVER_URL}/api/onesignal/register`, {
+    const resp = await fetch(`${PUSH_SERVER_URL}${path}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${serverToken}`,
-      },
-      body: JSON.stringify({ pushToken, platform }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
     });
-
+    const data = await resp.json().catch(() => ({}));
     if (!resp.ok) {
-      console.error('[OneSignal] Failed to register push token:', await resp.text());
+      return { ok: false, error: (data as any)?.error || `HTTP ${resp.status}` };
     }
-  } catch (err) {
-    console.error('[OneSignal] Register error:', err);
+    return { ok: true, data: data as T };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Network request failed' };
   }
 }
 
-export async function unregisterPushToken(
-  serverToken: string | null,
-  pushToken: string
-): Promise<void> {
-  if (!serverToken) return;
-
-  try {
-    await fetch(`${SERVER_URL}/api/onesignal/unregister`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${serverToken}`,
-      },
-      body: JSON.stringify({ pushToken }),
-    });
-  } catch (err) {
-    console.error('[OneSignal] Unregister error:', err);
+export async function registerPushToken(userId: string | null, onesignalId: string): Promise<void> {
+  if (!userId) return;
+  const result = await post('/api/register-push', { userId, onesignalId });
+  if (!result.ok) {
+    console.warn('[Push] Register failed:', result.error);
   }
+}
+
+export async function unregisterPushToken(userId: string | null, onesignalId?: string): Promise<void> {
+  if (!userId) return;
+  await post('/api/unregister-push', { userId, onesignalId }).catch(() => {});
+}
+
+export async function ringCall(request: RingCallRequest): Promise<boolean> {
+  const result = await post('/api/calls/ring', request);
+  if (!result.ok) {
+    console.warn('[Push] Call ring failed:', result.error);
+  }
+  return result.ok;
+}
+
+export async function cancelRing(calleeIds: string[], callId: string): Promise<void> {
+  await post('/api/calls/end', { calleeIds, callId }).catch(() => {});
 }

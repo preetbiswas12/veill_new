@@ -9,6 +9,8 @@ buildscript {
     classpath('com.android.tools.build:gradle')
     classpath('com.facebook.react:react-native-gradle-plugin')
     classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
+    classpath('com.google.gms:google-services:4.4.2')
+    classpath 'com.onesignal:onesignal-gradle-plugin:0.14.4'
   }
 }
 
@@ -17,13 +19,6 @@ allprojects {
     google()
     mavenCentral()
     maven { url 'https://www.jitpack.io' }
-  }
-  configurations.all {
-    resolutionStrategy.eachDependency { details ->
-      if (details.requested.group == 'org.jetbrains.kotlin') {
-        details.useVersion '2.0.21'
-      }
-    }
   }
 }
 

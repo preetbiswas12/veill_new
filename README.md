@@ -1,74 +1,63 @@
 # Veill
 
-End-to-end encrypted messaging app with real-time chat, voice/video calls, and push notifications.
+A WhatsApp-style chat and calling app built with React Native (Expo SDK 54) and a Node.js/Express backend.
 
-## Tech Stack
+## Stack
 
-- [Expo Router](https://docs.expo.dev/routing/introduction/) file-based navigation
-- [React Native Reanimated](https://docs.swmansion.com/react-native-reanimated/) 3 for animations
-- [Gesture Handler](https://docs.swmansion.com/react-native-gesture-handler/) for gestures
-- [Socket.IO](https://socket.io/) for real-time messaging
-- [LiveKit](https://livekit.io/) for WebRTC voice/video calls
+**Mobile** (this repo):
+- Expo SDK 54 + React Native 0.81 + React 19
+- React Navigation v7 (stack + bottom-tabs)
+- [CometChat](https://www.cometchat.com/) for messaging and group chat
+- [Daily.co](https://www.daily.co/) for voice/video calls (`@daily-co/react-native-daily-js`)
 - [OneSignal](https://onesignal.com/) for push notifications
-- [SQLite](https://www.sqlite.org/) + [MongoDB](https://www.mongodb.com/) for data storage
+- [notifee](https://notifee.app/) for Android fullscreen incoming-call UI
+- [react-native-callkeep](https://github.com/react-native-webrtc/react-native-callkeep) + [react-native-voip-push-notification](https://github.com/zo0r/react-native-voip-push-notification) for iOS native call UI (CallKit + PushKit)
+- Expo SecureStore for token storage
 
-## Features
+**Backend** (separate repo: [`preetbiswas12/veill_backend`](https://github.com/preetbiswas12/veill_backend)):
+- Node.js 22 + Express
+- MongoDB (Atlas)
+- Bcrypt auth, JWT tokens
+- CometChat REST API integration for user/token generation
+- OneSignal REST API for call push (chat push via CometChat, calls via OneSignal)
+- Daily.co REST API for room creation
+- Tuned for Render free tier (≤400 MB RAM, 0.1 CPU)
 
-- E2E encrypted messaging
-- Real-time chat with Socket.IO
-- Voice and video calls via LiveKit
-- Push notifications via OneSignal
-- Contact management
-- Media sharing with auto-expiry
-- Offline message queue
+## Setup
 
-## Building
+### 1. Backend
 
-### Prerequisites
+```bash
+git clone https://github.com/preetbiswas12/veill_backend.git
+cd veill_backend
+npm install
+cp .env.example .env  # fill in MONGO_URI, COMETCHAT_*, DAILY_KEY, JWT_SECRET, ONESIGNAL_*
+npm start
+```
 
-- Node.js 18+
-- pnpm
-- EAS CLI (`npm install -g eas-cli`)
-- Expo account
+Push to your own Render account via the included `render.yaml` blueprint.
 
-### Development
+### 2. Mobile
 
 ```bash
 pnpm install
-pnpm start
+cp .env.example .env  # fill in EXPO_PUBLIC_API_BASE_URL, EXPO_PUBLIC_ONESIGNAL_APP_ID, etc.
+pnpm exec expo prebuild --platform android
+pnpm android   # or pnpm ios (macOS only)
 ```
 
-### Production Build
+## Environment variables
 
-```bash
-eas build --profile production --platform android
-```
+Mobile (`.env`):
+- `EXPO_PUBLIC_API_BASE_URL` — backend URL (e.g. `https://veill-backend.onrender.com`)
+- `EXPO_PUBLIC_COMETCHAT_APP_ID` — from CometChat dashboard
+- `EXPO_PUBLIC_COMETCHAT_REGION` — CometChat region (e.g. `IN`)
+- `EXPO_PUBLIC_DAILY_DOMAIN` — your Daily.co domain (e.g. `veill.daily.co`)
+- `EXPO_PUBLIC_ONESIGNAL_APP_ID` — OneSignal app ID for Android
+- `EXPO_PUBLIC_PUSH_SERVER_URL` — backend URL (usually same as API_BASE)
 
-## Environment Variables
+Backend (`.env`): see `veill_backend/.env.example`.
 
-Create a `.env` file in the root:
+## iOS Push Notifications (VoIP)
 
-```env
-EXPO_PUBLIC_SERVER_URL=https://your-server.com
-EXPO_PUBLIC_ONESIGNAL_APP_ID=your-onesignal-app-id
-```
-
-Server-side environment variables are in `veill_relay/.env`.
-
-## Architecture
-
-```
-veill/
-├── app/                    # Expo Router screens
-├── components/             # Reusable UI components
-├── constants/              # Colors, Fonts, Styles
-├── utils/                  # Client-side utilities
-├── veill_relay/            # Backend server
-│   ├── src/
-│   │   ├── routes/         # API routes
-│   │   ├── socket/         # Socket.IO handlers
-│   │   ├── services/       # OneSignal, LiveKit, Centrifugo
-│   │   └── database/       # SQLite + MongoDB
-│   └── .env                # Server environment
-└── assets/                 # Images, fonts
-```
+Requires a separate OneSignal app configured for iOS VoIP with a VoIP Services Certificate from Apple Developer Portal. Push for Android uses the regular OneSignal app.

@@ -1,7 +1,6 @@
 // @ts-ignore - expo-media-library types
 const MediaLibrary = require('expo-media-library');
 import * as ImagePicker from 'expo-image-picker';
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 export type PermissionStatus = 'granted' | 'denied' | 'undetermined';
@@ -19,12 +18,23 @@ async function getPermissionStatus(status: { status: string }): Promise<Permissi
   return 'undetermined';
 }
 
+async function requestNotificationPermission(): Promise<PermissionStatus> {
+  try {
+    const { OneSignal } = await import('react-native-onesignal');
+    OneSignal.Notifications.requestPermission(true);
+    const granted = OneSignal.Notifications.hasPermission();
+    return granted ? 'granted' : 'denied';
+  } catch {
+    return 'undetermined';
+  }
+}
+
 export async function requestAllPermissions(): Promise<PermissionResult> {
   const result: PermissionResult = {
     camera: 'undetermined',
     mediaLibrary: 'undetermined',
     notifications: 'undetermined',
-    audio: 'undetermined',
+    audio: Platform.OS === 'android' ? 'granted' : 'undetermined',
   };
 
   try {
@@ -41,24 +51,7 @@ export async function requestAllPermissions(): Promise<PermissionResult> {
     result.mediaLibrary = 'denied';
   }
 
-  try {
-    const notificationStatus = await Notifications.requestPermissionsAsync();
-    result.notifications = await getPermissionStatus(notificationStatus);
-  } catch {
-    result.notifications = 'denied';
-  }
-
-  try {
-    if (Platform.OS === 'ios') {
-      const { AVAudioSession } = await import('expo-av');
-      const audioStatus = await AVAudioSession.requestPermissionAsync();
-      result.audio = audioStatus.granted ? 'granted' : 'denied';
-    } else {
-      result.audio = 'granted';
-    }
-  } catch {
-    result.audio = 'undetermined';
-  }
+  result.notifications = await requestNotificationPermission();
 
   return result;
 }
@@ -68,7 +61,7 @@ export async function checkPermissions(): Promise<PermissionResult> {
     camera: 'undetermined',
     mediaLibrary: 'undetermined',
     notifications: 'undetermined',
-    audio: 'undetermined',
+    audio: Platform.OS === 'android' ? 'granted' : 'undetermined',
   };
 
   try {
@@ -86,22 +79,10 @@ export async function checkPermissions(): Promise<PermissionResult> {
   }
 
   try {
-    const notificationStatus = await Notifications.getPermissionsAsync();
-    result.notifications = await getPermissionStatus(notificationStatus);
+    const { OneSignal } = await import('react-native-onesignal');
+    result.notifications = OneSignal.Notifications.hasPermission() ? 'granted' : 'denied';
   } catch {
-    result.notifications = 'denied';
-  }
-
-  try {
-    if (Platform.OS === 'ios') {
-      const { AVAudioSession } = await import('expo-av');
-      const audioStatus = await AVAudioSession.getPermissionAsync();
-      result.audio = audioStatus.granted ? 'granted' : 'denied';
-    } else {
-      result.audio = 'granted';
-    }
-  } catch {
-    result.audio = 'undetermined';
+    result.notifications = 'undetermined';
   }
 
   return result;

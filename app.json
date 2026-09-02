@@ -12,7 +12,6 @@
       "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
-    "entryPoint": "expo-router/entry",
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -47,7 +46,21 @@
         "backgroundColor": "#000000"
       },
       "package": "com.stargazer.veill",
-      "networkSecurityConfig": "./android/app/src/main/res/xml/network_security_config.xml"
+      "networkSecurityConfig": "./android/app/src/main/res/xml/network_security_config.xml",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_PHONE_CALL",
+        "android.permission.FOREGROUND_SERVICE_CAMERA",
+        "android.permission.FOREGROUND_SERVICE_MICROPHONE",
+        "android.permission.USE_FULL_SCREEN_INTENT",
+        "android.permission.WAKE_LOCK",
+        "android.permission.VIBRATE",
+        "android.permission.POST_NOTIFICATIONS"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -55,18 +68,10 @@
       "favicon": "./assets/images/veill.png"
     },
     "plugins": [
-      [
-        "onesignal-expo-plugin",
-        {
-          "mode": "development"
-        }
-      ],
-      "expo-router",
       "expo-secure-store",
       "expo-font"
     ],
     "experiments": {
-      "typedRoutes": true,
       "tsconfigPaths": true
     }
   }
