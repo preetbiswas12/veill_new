@@ -31,6 +31,9 @@ yarn-error.*
 # local env files
 .env*.local
 
+# Backend lives in its own repo (https://github.com/preetbiswas12/veill_backend)
+backend/
+
 # typescript
 *.tsbuildinfo
 
@@ -42,5 +45,6 @@ expo-env.d.ts
 
 .env
 
+android/
 ios/
 veill_relay/
