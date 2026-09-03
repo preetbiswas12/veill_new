@@ -11,7 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../navigation/types';
 import { SCREEN_CONSTANTS } from '../../utils/AppConstants';
-import { useTheme } from '@cometchat/chat-ui-kit-react-native';
+import { useTheme } from '@cometchat/chat-uikit-react-native';
 
 type SettingsNavigationProp = StackNavigationProp<RootStackParamList>;
 
