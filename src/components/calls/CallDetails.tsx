@@ -6,7 +6,7 @@ import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from '../../navigation/types';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import dailyCallService from '../../utils/daily';
+import dailyCallService from '../../../utils/daily';
 
 type Props = StackScreenProps<RootStackParamList, 'CallDetails'>;
 
