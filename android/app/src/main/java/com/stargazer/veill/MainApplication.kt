@@ -47,18 +47,6 @@ class MainApplication : Application(), ReactApplication {
     }
     loadReactNative(this)
     ApplicationLifecycleDispatcher.onApplicationCreate(this)
-
-    // OneSignal init — JS side also calls initialize(), this ensures the native
-    // SDK is ready before the JS bridge attaches.
-    try {
-      val ossPkg = Class.forName("com.onesignal.OneSignal")
-      val initMethod = ossPkg.getMethod("initWithContext", android.content.Context::class.java)
-      initMethod.invoke(null, this)
-      val setIdMethod = ossPkg.getMethod("setAppId", String::class.java)
-      setIdMethod.invoke(null, "5adbea4b-6a1c-4ff8-8289-84dd7ecc9595")
-    } catch (ignored: Throwable) {
-      // OneSignal not available yet — JS init will cover it
-    }
   }
 
   override fun onConfigurationChanged(newConfig: Configuration) {
