@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { useTheme } from '@cometchat/chat-ui-kit-react-native';
+import { useTheme } from '@cometchat/chat-uikit-react-native';
 import { useConfig } from '../../config/store';
 import { createTypography } from '../../utils/themeTypography';
 
