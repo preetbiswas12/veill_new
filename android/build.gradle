@@ -32,13 +32,11 @@ allprojects {
   // blocks (e.g. CometChat with AGP 4.2.0) use the same versions as the
   // root project instead of conflicting old versions.
   afterEvaluate { project ->
-    if (project.buildscript.file) {
-      project.buildscript.repositories {
-        google()
-        mavenCentral()
-      }
-      project.buildscript.dependencies.add("classpath", "com.android.tools.build:gradle:8.7.3")
-      project.buildscript.dependencies.add("classpath", "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.24")
+    project.buildscript.repositories {
+      google()
+      mavenCentral()
     }
+    project.buildscript.dependencies.add("classpath", "com.android.tools.build:gradle:8.7.3")
+    project.buildscript.dependencies.add("classpath", "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.24")
   }
 }
