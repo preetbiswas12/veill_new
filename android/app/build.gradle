@@ -1,8 +1,12 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
-apply plugin: "com.facebook.react"
 
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
+
+// Use the React Native gradle script directly instead of the
+// com.facebook.react Gradle plugin, which can't be resolved from
+// the composite build in this Gradle version.
+apply from: new File(projectRoot, "node_modules/react-native/react.gradle")
 
 /**
  * This is the configuration block to customize your React Native Android app.
