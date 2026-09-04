@@ -9,7 +9,6 @@ buildscript {
   dependencies {
     classpath("com.android.tools.build:gradle:8.7.3")
     classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.24")
-    classpath("com.facebook.react:react-native-gradle-plugin")
   }
 }
 
@@ -26,19 +25,5 @@ allprojects {
     google()
     mavenCentral()
     maven { url 'https://www.jitpack.io' }
-  }
-
-  // Inject AGP, Kotlin and the React Native Gradle plugin into every subproject's buildscript classpath.
-  // This ensures third-party libraries that declare their own buildscript
-  // blocks (e.g. CometChat with AGP 4.2.0) use the same versions as the
-  // root project instead of conflicting old versions.
-  afterEvaluate { project ->
-    project.buildscript.repositories {
-      google()
-      mavenCentral()
-    }
-    project.buildscript.dependencies.add("classpath", "com.android.tools.build:gradle:8.7.3")
-    project.buildscript.dependencies.add("classpath", "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.24")
-    project.buildscript.dependencies.add("classpath", "com.facebook.react:react-native-gradle-plugin")
   }
 }
