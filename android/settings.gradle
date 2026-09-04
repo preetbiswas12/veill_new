@@ -4,13 +4,6 @@ pluginManagement {
     mavenCentral()
     gradlePluginPortal()
   }
-  def reactNativeGradlePlugin = new File(
-    providers.exec {
-      workingDir(rootDir)
-      commandLine("node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })")
-    }.standardOutput.asText.get().trim()
-  ).getParentFile().absolutePath
-  includeBuild(reactNativeGradlePlugin)
 }
 
 // Include the React Native Gradle plugin composite build at the top level
@@ -23,6 +16,10 @@ def reactNativeGradlePlugin = new File(
   }.standardOutput.asText.get().trim()
 ).getParentFile().absolutePath
 includeBuild(reactNativeGradlePlugin)
+
+plugins {
+  id("com.facebook.react.settings")
+}
 
 ext {
   buildToolsVersion = "34.0.0"
@@ -45,7 +42,7 @@ gradle.beforeProject { project ->
   project.buildscript.dependencies.add("classpath", "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.24")
 }
 
-extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
+extensions.configure("com.facebook.react.settings") { ex ->
   ex.autolinkLibrariesFromCommand()
 }
 
