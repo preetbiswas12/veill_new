@@ -28,23 +28,4 @@ allprojects {
   }
 }
 
-subprojects {
-  afterEvaluate { project ->
-    if (project.hasProperty("android")) {
-      project.android {
-        if (!project.ext.has('compileSdkVersion')) {
-          compileSdkVersion rootProject.ext.compileSdkVersion
-        }
-        if (!project.ext.has('buildToolsVersion')) {
-          buildToolsVersion rootProject.ext.buildToolsVersion
-        }
-        if (!project.ext.has('minSdkVersion')) {
-          minSdkVersion rootProject.ext.minSdkVersion
-        }
-        if (!project.ext.has('targetSdkVersion')) {
-          targetSdkVersion rootProject.ext.targetSdkVersion
-        }
-      }
-    }
-  }
-}
+
