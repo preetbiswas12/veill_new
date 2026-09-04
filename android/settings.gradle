@@ -34,6 +34,10 @@ gradle.beforeProject { project ->
   project.buildscript.dependencies.add("classpath", "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.24")
 }
 
+extensions.configure("com.facebook.react.settings") { ex ->
+  ex.autolinkLibrariesFromCommand()
+}
+
 rootProject.name = 'veill'
 
 include ':app'
