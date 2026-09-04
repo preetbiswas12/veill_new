@@ -1,4 +1,3 @@
-import * as SecureStore from 'expo-secure-store';
 import StorageService from './storage';
 import { registerPushToken, unregisterPushToken } from './onesignal';
 import { CometChat } from '@cometchat/chat-sdk-react-native';
@@ -12,7 +11,7 @@ export type AuthState = {
   token: string | null;
 };
 
-const API_BASE = (process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
+const API_BASE = (process.env.API_BASE_URL || 'https://veill-backend.onrender.com').replace(/\/$/, '');
 const TOKEN_KEY = 'veill_auth_token';
 const USER_KEY = 'veill_user';
 

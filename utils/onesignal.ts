@@ -1,4 +1,4 @@
-const PUSH_SERVER_URL = (process.env.EXPO_PUBLIC_PUSH_SERVER_URL || process.env.EXPO_PUBLIC_API_BASE_URL || '').replace(/\/$/, '');
+const PUSH_SERVER_URL = (process.env.PUSH_SERVER_URL || process.env.API_BASE_URL || '').replace(/\/$/, '');
 
 export type RingCallRequest = {
   calleeIds: string[];
@@ -11,7 +11,7 @@ export type RingCallRequest = {
 
 async function post<T = any>(path: string, body: unknown): Promise<{ ok: boolean; data?: T; error?: string }> {
   if (!PUSH_SERVER_URL) {
-    return { ok: false, error: 'Push server not configured — set EXPO_PUBLIC_PUSH_SERVER_URL' };
+    return { ok: false, error: 'Push server not configured — set PUSH_SERVER_URL' };
   }
   try {
     const resp = await fetch(`${PUSH_SERVER_URL}${path}`, {

@@ -45,8 +45,12 @@ declare module '*.png' {
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
-      EXPO_PUBLIC_SERVER_URL: string;
-      EXPO_PUBLIC_ONESIGNAL_APP_ID: string;
+      API_BASE_URL: string;
+      PUSH_SERVER_URL: string;
+      ONESIGNAL_APP_ID: string;
+      COMETCHAT_APP_ID: string;
+      COMETCHAT_REGION: string;
+      DAILY_DOMAIN: string;
     }
   }
 }

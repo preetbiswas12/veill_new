@@ -50,7 +50,7 @@ export function setupIOSPushKit() {
 }
 
 async function sendVoipTokenToBackend(token: string) {
-  const PUSH_SERVER_URL = (process.env.EXPO_PUBLIC_PUSH_SERVER_URL || process.env.EXPO_PUBLIC_API_BASE_URL || '').replace(/\/$/, '');
+  const PUSH_SERVER_URL = (process.env.PUSH_SERVER_URL || process.env.API_BASE_URL || '').replace(/\/$/, '');
   if (!PUSH_SERVER_URL) return;
   try {
     await fetch(`${PUSH_SERVER_URL}/api/register-voip-token`, {

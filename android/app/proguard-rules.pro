@@ -12,18 +12,3 @@
 -keep class com.facebook.react.turbomodule.** { *; }
 
 # Add any project specific keep options here:
-
-# OneSignal SDK (react-native-onesignal v5.x bundles OneSignal SDK v5.9.9)
--keep class com.onesignal.** { *; }
--dontwarn com.onesignal.**
-
-# CometChat SDK
--keep class com.cometchat.** { *; }
--dontwarn com.cometchat.**
-
-# Notifee
--keep class com.notifee.** { *; }
--dontwarn com.notifee.**
-
-# Firebase Messaging
--keep class com.google.firebase.messaging.** { *; }

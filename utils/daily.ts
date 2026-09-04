@@ -1,7 +1,7 @@
 import StorageService from './storage';
 import { cancelRing, ringCall } from './onesignal';
 import AuthService from './auth';
-import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type ActiveCall = {
   callId: string;
@@ -17,11 +17,11 @@ export type CallPhase = 'idle' | 'incoming' | 'connecting' | 'connected' | 'ende
 
 type CallStateHandler = (state: { phase: CallPhase; call: ActiveCall | null }) => void;
 
-const PUSH_SERVER_URL = (process.env.EXPO_PUBLIC_PUSH_SERVER_URL || process.env.EXPO_PUBLIC_API_BASE_URL || '').replace(/\/$/, '');
+const PUSH_SERVER_URL = (process.env.PUSH_SERVER_URL || process.env.API_BASE_URL || '').replace(/\/$/, '');
 
 async function getAuthToken(): Promise<string | null> {
   try {
-    return await SecureStore.getItemAsync('veill_auth_token');
+    return await AsyncStorage.getItem('veill_auth_token');
   } catch {
     return null;
   }

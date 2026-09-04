@@ -5,7 +5,7 @@ import { useTheme } from '@cometchat/chat-uikit-react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from '../../navigation/types';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import dailyCallService from '../../utils/daily';
 
 type Props = StackScreenProps<RootStackParamList, 'CallDetails'>;

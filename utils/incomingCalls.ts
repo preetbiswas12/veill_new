@@ -6,7 +6,7 @@ import dailyCallService from './daily';
 import { navigationRef } from '../src/navigation/NavigationService';
 import { SCREEN_CONSTANTS } from '../src/utils/AppConstants';
 
-const APP_ID = process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || '';
+const APP_ID = process.env.ONESIGNAL_APP_ID || '';
 const CALL_CHANNEL_ID = 'veill_calls';
 const CALL_NOTIFICATION_ID = 'veill_incoming_call';
 let initialized = false;
@@ -94,7 +94,7 @@ export function initIncomingCalls(): void {
     if (APP_ID) {
       OneSignal.initialize(APP_ID);
     } else {
-      console.warn('[incomingCalls] EXPO_PUBLIC_ONESIGNAL_APP_ID not set — push disabled');
+      console.warn('[incomingCalls] ONESIGNAL_APP_ID not set — push disabled');
     }
 
     // When user taps the OS-level notification -> open the IncomingCall screen

@@ -8,7 +8,7 @@
   versionNumber: 'V5.2.2',
   webClientId: '',
   iosClientId: '',
-  apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000',
+  apiBaseUrl: process.env.API_BASE_URL || 'https://veill-backend.onrender.com',
 };
 
 export const SCREEN_CONSTANTS = {
