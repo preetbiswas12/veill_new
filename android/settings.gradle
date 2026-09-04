@@ -17,19 +17,25 @@ plugins {
   id("com.facebook.react.settings")
 }
 
-includeBuild(new File(
-  providers.exec {
-    workingDir(rootDir)
-    commandLine("node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })")
-  }.standardOutput.asText.get().trim()
-).getParentFile().absolutePath)
-
 ext {
   buildToolsVersion = "34.0.0"
   minSdkVersion = 24
   compileSdkVersion = 34
   targetSdkVersion = 34
   ndkVersion = "27.0.12077973"
+}
+
+// Inject AGP and Kotlin into every subproject's buildscript classpath
+// BEFORE their buildscript is evaluated. This prevents third-party
+// libraries (CometChat, Notifee, etc.) from using their own old AGP
+// versions which conflict with the root project's AGP 8.7.3.
+gradle.beforeProject { project ->
+  project.buildscript.repositories {
+    google()
+    mavenCentral()
+  }
+  project.buildscript.dependencies.add("classpath", "com.android.tools.build:gradle:8.7.3")
+  project.buildscript.dependencies.add("classpath", "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.24")
 }
 
 extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
