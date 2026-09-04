@@ -17,6 +17,13 @@ plugins {
   id("com.facebook.react.settings")
 }
 
+includeBuild(new File(
+  providers.exec {
+    workingDir(rootDir)
+    commandLine("node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })")
+  }.standardOutput.asText.get().trim()
+).getParentFile().absolutePath)
+
 ext {
   buildToolsVersion = "34.0.0"
   minSdkVersion = 24
