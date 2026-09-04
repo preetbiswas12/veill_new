@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "685863192705",
+    "project_id": "veill-ec835",
+    "storage_bucket": "veill-ec835.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:685863192705:android:e7723b943aae02085ba580",
+        "android_client_info": {
+          "package_name": "com.stargazer.veill"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKJKFwQISjgFDzTwPgt2_9O_9p1e0TfBQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
