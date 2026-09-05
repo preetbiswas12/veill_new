@@ -69,10 +69,12 @@ dependencies {
 }
 
 
-// Disable autolinking tasks
+// Disable all React Native code generation tasks and autolinking
 tasks.configureEach {
-    if (name.contains("Autolinking")) {
+    if (name.contains("generateReactNativeEntryPoint") || 
+        name.contains("generateCodegen") ||
+        name.contains("generateAutolinking") ||
+        name.contains("Autolinking")) {
         enabled = false
     }
 }
-
