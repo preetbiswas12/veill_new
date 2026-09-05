@@ -1,6 +1,0 @@
-allowBuilds:
-  browser-tabs-lock: true
-  bufferutil: true
-  core-js: true
-  protobufjs: true
-  utf-8-validate: true
