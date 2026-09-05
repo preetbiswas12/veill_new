@@ -37,6 +37,9 @@ jobs:
       - name: Disable autolinking
         run: echo "react.native.autoLinkLibrariesAndroidEnabled=false" >> android/gradle.properties
       
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+      
       - name: Build debug APK
         working-directory: android
         run: ./gradlew clean assembleDebug --no-daemon
