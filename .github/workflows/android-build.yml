@@ -34,8 +34,10 @@ jobs:
           ndk-version: 27.1.12297006
           build-tools-version: 35.0.0
       
-      - name: Disable autolinking
-        run: echo "react.native.autoLinkLibrariesAndroidEnabled=false" >> android/gradle.properties
+      - name: Disable New Architecture and autolinking
+        run: |
+          echo "newArchEnabled=false" >> android/gradle.properties
+          echo "react.native.autoLinkLibrariesAndroidEnabled=false" >> android/gradle.properties
       
       - name: Make gradlew executable
         run: chmod +x android/gradlew
@@ -57,5 +59,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-logs
-          path: android/app/build/reports/
+          path: android/build/reports/
           retention-days: 7
