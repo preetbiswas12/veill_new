@@ -67,3 +67,11 @@ dependencies {
         implementation(jscFlavor)
     }
 }
+
+
+// Disable autolinking tasks
+tasks.whenTaskAdded { task ->
+    if (task.name.contains("Autolinking")) {
+        task.enabled = false
+    }
+}
