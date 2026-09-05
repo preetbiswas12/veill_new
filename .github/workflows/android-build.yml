@@ -51,11 +51,12 @@ jobs:
       
       - name: Make gradlew executable
         run: chmod +x android/gradlew
+      
       - name: Create autolinking config
         run: |
-        mkdir -p android/build/generated/autolinking
-        echo '{}' > android/build/generated/autolinking/autolinking.json
-
+          mkdir -p android/build/generated/autolinking
+          echo '{}' > android/build/generated/autolinking/autolinking.json
+      
       - name: Build debug APK
         working-directory: android
         run: ./gradlew clean assembleDebug --no-daemon
