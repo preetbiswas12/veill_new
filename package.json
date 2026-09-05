@@ -50,6 +50,7 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@react-native/gradle-plugin": "~0.73.4",
     "@babel/core": "^7.20.0",
     "@babel/plugin-transform-class-properties": "^7.29.7",
     "@babel/plugin-transform-private-methods": "^7.29.7",
