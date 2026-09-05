@@ -32,7 +32,7 @@ jobs:
           build-tools-version: 35.0.0
       
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: npm install --legacy-peer-deps --fetch-timeout=120000
       
       - name: Make gradlew executable
         run: chmod +x android/gradlew
