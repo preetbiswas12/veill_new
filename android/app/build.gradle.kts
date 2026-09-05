@@ -70,8 +70,8 @@ dependencies {
 
 
 // Disable autolinking tasks
-tasks.whenTaskAdded { task ->
-    if (task.name.contains("Autolinking")) {
-        task.enabled = false
+tasks.configureEach {
+    if (name.contains("Autolinking")) {
+        enabled = false
     }
 }
