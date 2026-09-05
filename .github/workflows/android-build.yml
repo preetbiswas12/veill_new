@@ -19,9 +19,6 @@ jobs:
           node-version: 18
           cache: npm
       
-      - name: Install dependencies
-        run: npm ci --legacy-peer-deps
-      
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -34,10 +31,23 @@ jobs:
           ndk-version: 27.1.12297006
           build-tools-version: 35.0.0
       
-      - name: Disable New Architecture and autolinking
+      - name: Configure gradle.properties
         run: |
-          echo "newArchEnabled=false" >> android/gradle.properties
-          echo "react.native.autoLinkLibrariesAndroidEnabled=false" >> android/gradle.properties
+          mkdir -p android
+          cat > android/gradle.properties << EOF
+          org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m
+          org.gradle.parallel=true
+          android.useAndroidX=true
+          android.enablePngCrunchInReleaseBuilds=true
+          reactNativeArchitectures=armeabi-v7a,arm64-v8a,x86,x86_64
+          newArchEnabled=false
+          hermesEnabled=true
+          edgeToEdgeEnabled=true
+          react.native.autoLinkLibrariesAndroidEnabled=false
+          EOF
+      
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
       
       - name: Make gradlew executable
         run: chmod +x android/gradlew
@@ -49,6 +59,7 @@ jobs:
       
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: app-debug
           path: android/app/build/outputs/apk/debug/*.apk
