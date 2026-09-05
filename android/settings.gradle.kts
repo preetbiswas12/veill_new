@@ -14,3 +14,6 @@ plugins {
 rootProject.name = "veill"
 
 include(":app")
+
+// Disable autolinking for problematic packages
+project(":app").projectDir = file("app")
