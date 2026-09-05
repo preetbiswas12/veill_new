@@ -8,12 +8,18 @@ pluginManagement {
 }
 
 plugins {
-    id("com.facebook.react.settings") version "0.73.6"
+    id("com.facebook.react.settings")
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://www.jitpack.io") }
+    }
 }
 
 rootProject.name = "veill"
 
 include(":app")
-
-// Disable autolinking for problematic packages
-project(":app").projectDir = file("app")
