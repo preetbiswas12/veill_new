@@ -8,7 +8,7 @@ pluginManagement {
 }
 
 plugins {
-    id("com.facebook.react.settings")
+    id("com.facebook.react.settings") version "0.73.6"
 }
 
 rootProject.name = "veill"
