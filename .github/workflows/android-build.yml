@@ -10,41 +10,49 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
     steps:
       - uses: actions/checkout@v4
-
+      
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 18
           cache: npm
-
+      
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
-
+      
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
-
+      
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
           ndk-version: 27.1.12297006
           build-tools-version: 35.0.0
-
-      - name: Generate autolinking config
-        run: npx react-native config > android/build/generated/autolinking/autolinking.json
-        shell: bash
-
+      
+      - name: Disable autolinking
+        run: echo "react.native.autoLinkLibrariesAndroidEnabled=false" >> android/gradle.properties
+      
       - name: Build debug APK
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew clean assembleDebug --no-daemon
         shell: bash
-
+      
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: android/app/build/outputs/apk/debug/*.apk
           retention-days: 14
+      
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: android/app/build/reports/
+          retention-days: 7
