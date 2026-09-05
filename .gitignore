@@ -40,6 +40,8 @@ backend/
 .env
 
 # Native build directories
-android/
-ios/
+android/build/
+android/.gradle/
+android/app/build/
+ios/build/
 veill_relay/
