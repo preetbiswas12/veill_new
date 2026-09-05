@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@babel/runtime':
+        specifier: ^7.20.0
+        version: 7.29.7
       '@cometchat/chat-sdk-react-native':
         specifier: ^4.0.29
         version: 4.0.29
