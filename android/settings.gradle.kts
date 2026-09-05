@@ -7,10 +7,6 @@ pluginManagement {
     includeBuild("../node_modules/@react-native/gradle-plugin")
 }
 
-plugins {
-    id("com.facebook.react.settings")
-}
-
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
@@ -21,5 +17,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "veill"
-
 include(":app")
