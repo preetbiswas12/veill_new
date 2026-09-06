@@ -12,3 +12,26 @@
 -keep class com.facebook.react.turbomodule.** { *; }
 
 # Add any project specific keep options here:
+
+# Daily.co
+-keep class com.daily.** { *; }
+-keep class com.daily.react.** { *; }
+
+# OneSignal
+-keep class com.onesignal.** { *; }
+
+# React Native
+-keep class com.reactnative.** { *; }
+-keep interface com.reactnative.** { *; }
+
+# Socket.io
+-keep class io.socket.** { *; }
+-keep interface io.socket.** { *; }
+
+# Keep BuildConfig
+-keep class **.BuildConfig { *; }
+
+# Preserve line numbers for crash reporting
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
+

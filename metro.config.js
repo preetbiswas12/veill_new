@@ -1,10 +1,18 @@
-const { getDefaultConfig } = require('@react-native/metro-config');
+const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
 
-const config = getDefaultConfig(__dirname);
+const defaultConfig = getDefaultConfig(__dirname);
 
-config.resolver.sourceExts = [...config.resolver.sourceExts, 'mjs'];
+const config = {
+  resolver: {
+    ...defaultConfig.resolver,
 
-// RN 0.81 requires explicit platform registration
-config.resolver.platforms = ['android', 'ios', 'native'];
+    // Support .mjs files
+    sourceExts: [...defaultConfig.resolver.sourceExts, 'mjs'],
+  },
 
-module.exports = config;
+  transformer: {
+    ...defaultConfig.transformer,
+  },
+};
+
+module.exports = mergeConfig(defaultConfig, config);
