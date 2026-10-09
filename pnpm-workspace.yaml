@@ -1,5 +1,10 @@
+# pnpm 11 reads build-script policy from pnpm-workspace.yaml.
+# Entries were already approved for the CometChat dependency tree; the
+# @firebase/* and protobufjs lines cover the push dependencies added later
+# (both are plain JS with no native step).
 allowBuilds:
   '@clerk/shared': true
+  '@firebase/util': true
   browser-tabs-lock: true
   bufferutil: true
   core-js: true
@@ -7,4 +12,4 @@ allowBuilds:
   strophejs-plugin-stream-management@https://codeload.github.com/jitsi/strophejs-plugin-stream-management/tar.gz/679be5902097ed612fb5062b5549f3f32b6f5f47: true
   unrs-resolver: true
   utf-8-validate: true
-
+  protobufjs: true

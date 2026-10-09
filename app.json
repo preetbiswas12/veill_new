@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "signal-clone",
-    "slug": "signal-clone",
+    "name": "veill",
+    "slug": "veill",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.tropicolx.signal-clone",
+      "bundleIdentifier": "com.stargazer.veill",
       "infoPlist": {
         "NSCameraUsageDescription": "$(PRODUCT_NAME) requires camera access for video calls.",
         "NSMicrophoneUsageDescription": "$(PRODUCT_NAME) requires microphone access for voice and video calls."
@@ -23,7 +23,7 @@
         "android.permission.BLUETOOTH",
         "android.permission.BLUETOOTH_CONNECT"
       ],
-      "package": "com.tropicolx.signalclone",
+      "package": "com.stargazer.veill",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -78,7 +78,10 @@
         "expo-build-properties",
         {
           "android": {
-            "minSdkVersion": 24
+            "minSdkVersion": 24,
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "buildToolsVersion": "35.0.0"
           }
         }
       ],
@@ -93,6 +96,6 @@
         "projectId": "72a69280-8159-425a-a36b-503031bbedcc"
       }
     },
-    "owner": "tropicolx"
+    "owner": "preetbiswas12"
   }
 }
