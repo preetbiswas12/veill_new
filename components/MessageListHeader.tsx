@@ -1,7 +1,7 @@
-import { MaterialIcons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { Text, View } from 'react-native';
-import ChannelTitle from './ChannelTitle';
-import PreviewAvatar from './PreviewAvatar';
+
+import Avatar from './Avatar';
 
 interface MessageListHeaderProps {
   channel: { id: string; name?: string; image?: string };
@@ -12,16 +12,24 @@ const MessageListHeader = ({ channel, isDMChannel = true }: MessageListHeaderPro
   const channelName = channel.name || channel.id || 'Unknown';
 
   const text = isDMChannel
-    ? `This conversation is just between ${channelName} and you`
-    : 'This conversation is just between the members of this channel';
+    ? `This is the beginning of your conversation with ${channelName}. Messages are end-to-end encrypted.`
+    : 'This is the beginning of this group conversation.';
 
   return (
-    <View className="items-center gap-3 mt-14 mb-8">
-      <PreviewAvatar channel={channel} size={80} fontSize={40} />
-      <ChannelTitle channel={channel} className="text-2xl font-semibold" />
-      <View className="w-[280px] items-start justify-center inline-flex flex-row px-6 py-4 bg-white rounded-xl border-[2px] border-gray-100 shadow shadow-gray-100">
-        <MaterialIcons name="people-outline" size={18} color="black" />
-        <Text className="text-center">{text}</Text>
+    <View className="items-center gap-2 mb-6 mt-2 px-8">
+      <Avatar
+        name={channelName}
+        imageUrl={channel.image}
+        size={72}
+        fontSize={32}
+        placeholderType={isDMChannel ? 'text' : 'icon'}
+      />
+      <Text className="text-lg font-semibold text-gray-800" numberOfLines={1}>
+        {channelName}
+      </Text>
+      <View className="items-center gap-1.5 mt-1">
+        <Feather name="lock" size={13} color="#9ca3af" />
+        <Text className="text-xs text-gray-500 text-center leading-4">{text}</Text>
       </View>
     </View>
   );

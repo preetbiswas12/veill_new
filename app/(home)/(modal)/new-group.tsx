@@ -11,7 +11,7 @@ import UserCheckbox from '@/components/UserCheckbox';
 import useContacts from '@/hooks/useContacts';
 
 const NewGroupScreen = () => {
-  const { chatClient, createGroup } = useCometChat();
+  const { createGroup } = useCometChat();
   const router = useRouter();
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [query, setQuery] = useState('');
@@ -19,10 +19,7 @@ const NewGroupScreen = () => {
   const [users, setUsers] = useState<Array<{ id: string; name?: string; image?: string; username?: string }>>([]);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
-  const { contacts, loadingContacts, debounceSearch } = useContacts(
-    chatClient,
-    setUsers
-  );
+  const { contacts, loadingContacts, debounceSearch } = useContacts(setUsers);
 
   const resetUsers = () => {
     setUsers(contacts);
@@ -44,12 +41,10 @@ const NewGroupScreen = () => {
     debounceSearch(text, resetUsers, search);
   };
 
-  const leave = () => {
-    setCreatingGroup(false);
+  const resetForm = () => {
     setGroupName('');
     setQuery('');
     setSelectedUsers([]);
-    router.dismissTo('/chats');
   };
 
   const createNewGroup = async () => {
@@ -66,7 +61,11 @@ const NewGroupScreen = () => {
 
     try {
       const groupId = await createGroup(groupName, selectedUsers);
-      leave();
+      resetForm();
+      router.dismissTo({
+        pathname: '/chat/[id]',
+        params: { id: groupId, name: groupName, type: 'group' },
+      });
     } catch (error) {
       console.error(error);
       alert('Error creating group');

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
+import { useCometChat } from './useCometChat';
+
 interface Contact {
   id: string;
   name?: string;
@@ -8,61 +10,44 @@ interface Contact {
 }
 
 const useContacts = (
-  client: any,
   setUsers?: (contacts: Contact[]) => void,
   fetchContacts: boolean = true
 ) => {
+  const { searchUsers } = useCometChat();
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [loadingContacts, setLoadingContacts] = useState(true);
+  const [loadingContacts, setLoadingContacts] = useState(fetchContacts);
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelled = useRef(false);
 
   useEffect(() => {
-    const getAllUsers = async () => {
-      if (!client) {
-        setLoadingContacts(false);
-        return;
-      }
+    if (!fetchContacts) {
+      setLoadingContacts(false);
+      return;
+    }
+
+    let disposed = false;
+    const loadUsers = async () => {
       try {
         setLoadingContacts(true);
-        const userId = await client.getCurrentUsername?.();
-        const conversations = await client.chatManager?.getAllConversations?.();
-
-        const dmConversations = conversations?.filter((conv: any) => conv.convType === 'PeerChat') || [];
-
-        const contactList = dmConversations
-          .map((conv: any) => ({
-            id: conv.convId || conv.conversationId || '',
-            name: conv.convId || conv.conversationId || '',
-          }))
-          .filter(Boolean) as Contact[];
-
-        if (contactList.length > 0) {
-          const userIds = contactList.map((c) => c.id);
-          const userInfoMap = await client.userManager?.fetchUserInfoById?.(userIds);
-          contactList.forEach((contact) => {
-            const userInfo = userInfoMap?.get ? userInfoMap.get(contact.id) : undefined;
-            if (userInfo) {
-              contact.name = userInfo.nickName || userInfo.name || contact.name;
-              contact.image = userInfo.avatarUrl || userInfo.image || contact.image;
-              contact.username = userInfo.userId || userInfo.uid || contact.username;
-            }
-          });
-        }
-
-        setContacts(contactList);
-        if (setUsers) {
-          setUsers(contactList);
-        }
-      } catch (error: any) {
+        const users = await searchUsers('');
+        if (disposed) return;
+        setContacts(users);
+        setUsers?.(users);
+      } catch (error) {
         console.error('Error fetching contacts:', error);
       } finally {
-        setLoadingContacts(false);
+        if (!disposed) setLoadingContacts(false);
       }
     };
-    if (fetchContacts) getAllUsers();
+
+    void loadUsers();
+
+    return () => {
+      disposed = true;
+      if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [client, fetchContacts]);
+  }, [fetchContacts]);
 
   const debounceSearch = (
     text: string,

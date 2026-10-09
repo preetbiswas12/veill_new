@@ -7,9 +7,10 @@ export const normalizeCometChatUserId = (userId: string) => {
   return normalized || 'user';
 };
 
-export const getCallChannelId = (peerUserId: string) => {
-  const normalizedUserId = normalizeCometChatUserId(peerUserId);
-  return `call-${normalizedUserId}`.slice(0, 64);
-};
-
-export const getCallMessageEvent = () => 'cometchat_call_invite';
+/**
+ * CometChat has no first-class "stories" product, so stories are backed by
+ * this public group. Every client joins it after login, stories are image or
+ * video media messages sent to it within the last 24 hours, and the resulting
+ * conversation is filtered out of the chats list.
+ */
+export const STORIES_GUID = 'signal-stories';

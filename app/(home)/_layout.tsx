@@ -4,6 +4,7 @@ import { useEffect, useMemo } from 'react';
 
 import ScreenLoading from '@/components/ScreenLoading';
 import { CometChatProvider } from '@/hooks/useCometChat';
+import { PushNotificationGate } from '@/hooks/usePushNotifications';
 
 const HomeLayout = () => {
   const router = useRouter();
@@ -34,6 +35,7 @@ const HomeLayout = () => {
 
   return (
     <CometChatProvider user={cometChatUser}>
+      <PushNotificationGate />
       <Stack>
         <Stack.Screen
           name="(modal)"

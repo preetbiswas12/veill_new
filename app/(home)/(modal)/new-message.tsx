@@ -11,14 +11,23 @@ import useContacts from '@/hooks/useContacts';
 
 const NewMessageScreen = () => {
   const router = useRouter();
-  const { chatClient, getOrCreateConversation } = useCometChat();
-  const { contacts, loadingContacts } = useContacts(chatClient);
+  const { getOrCreateConversation } = useCometChat();
+  const { contacts, loadingContacts } = useContacts();
 
-  const onSelectUser = async (userId: string) => {
-    const conversation = await getOrCreateConversation(userId, 'user');
+  const onSelectUser = async (contact: {
+    id: string;
+    name?: string;
+    image?: string;
+  }) => {
+    const conversation = await getOrCreateConversation(contact.id, 'user');
     router.dismissTo({
       pathname: '/chat/[id]',
-      params: { id: conversation.id },
+      params: {
+        id: conversation.id,
+        name: conversation.name || contact.name || '',
+        image: conversation.image || contact.image || '',
+        type: conversation.type,
+      },
     });
   };
 
@@ -69,7 +78,7 @@ const NewMessageScreen = () => {
             <UserCard
               key={contact.id}
               user={contact}
-              onPress={() => onSelectUser(contact.id)}
+              onPress={() => onSelectUser(contact)}
             />
           ))}
         </View>

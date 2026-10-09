@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useUser } from '@clerk/clerk-expo';
 import { Tabs, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 
@@ -10,8 +9,7 @@ import { useCometChat } from '@/hooks/useCometChat';
 
 const TabsLayout = () => {
   const router = useRouter();
-  const { user } = useUser();
-  const { incomingCall, acceptIncomingCall } = useCometChat();
+  const { incomingCall } = useCometChat();
 
   useEffect(() => {
     if (incomingCall) {
@@ -19,6 +17,10 @@ const TabsLayout = () => {
         pathname: `/call/[id]`,
         params: {
           id: incomingCall.peerUserId,
+          video: incomingCall.video ? '1' : '0',
+          direction: 'incoming',
+          name: incomingCall.callerName || '',
+          image: incomingCall.callerImage || '',
         },
       });
     }

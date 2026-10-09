@@ -10,13 +10,13 @@ import UserCard from '@/components/UserCard';
 import useContacts from '@/hooks/useContacts';
 
 const FindByUsernameScreen = () => {
-  const { chatClient, searchUsers, getOrCreateConversation } = useCometChat();
+  const { searchUsers, getOrCreateConversation } = useCometChat();
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [user, setUser] = useState<{ id: string; name?: string; image?: string; username?: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const { debounceSearch } = useContacts(chatClient, undefined, false);
+  const { debounceSearch } = useContacts(undefined, false);
 
   const resetUser = () => {
     setUser(null);
@@ -45,7 +45,12 @@ const FindByUsernameScreen = () => {
     const conversation = await getOrCreateConversation(userId, 'user');
     router.dismissTo({
       pathname: '/chat/[id]',
-      params: { id: conversation.id },
+      params: {
+        id: conversation.id,
+        name: conversation.name || user?.name || userId,
+        image: conversation.image || user?.image || '',
+        type: conversation.type,
+      },
     });
   };
 
