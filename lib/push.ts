@@ -1,4 +1,4 @@
-import Constants from 'expo-constants';
+import { isRunningInExpoGo } from 'expo';
 import { CometChat, CometChatNotifications } from '@cometchat/chat-sdk-react-native';
 import { Platform, TurboModule, TurboModuleRegistry } from 'react-native';
 
@@ -36,11 +36,12 @@ let notificationsCache: NotificationsModule | null | undefined;
 
 const getNotifications = (): NotificationsModule | null => {
   if (notificationsCache === undefined) {
-    // Expo Go on Android has no remote notifications and logs a hard error the
-    // moment the package is evaluated, so never load it there in the first
-    // place - a try/catch is not enough, because the module reports before it
-    // throws.
-    if (Platform.OS === 'android' && Constants.appOwnership === 'expo') {
+    // expo-notifications throws on Android in Expo Go while the package is being
+    // evaluated (expo-notifications/src/warnOfExpoGoPushUsage.ts), so the
+    // try/catch below is too late to stop the log. Ask the same question the
+    // package asks - isRunningInExpoGo() is true only when the native ExpoGo
+    // module is registered - and skip loading it entirely when it is.
+    if (Platform.OS === 'android' && isRunningInExpoGo()) {
       notificationsCache = null;
       return notificationsCache;
     }
