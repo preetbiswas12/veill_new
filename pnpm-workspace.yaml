@@ -1,7 +1,17 @@
-# pnpm 11 reads build-script policy from pnpm-workspace.yaml.
-# Entries were already approved for the CometChat dependency tree; the
-# @firebase/* and protobufjs lines cover the push dependencies added later
-# (both are plain JS with no native step).
+# pnpm 11 reads its settings from this file, not from .npmrc (and no longer from
+# the `pnpm` field in package.json).
+#
+# nodeLinker: pnpm's default "isolated" layout nests every package as
+#   node_modules/.pnpm/<pkg>@<64-char-hash>/node_modules/<pkg>
+# which pushes CMake/Ninja object paths for react-native-worklets and friends
+# past Windows' 250-character limit. The native build then fails with
+#   ninja: error: manifest 'build.ninja' still dirty after 100 tries
+# The hoisted (npm-style) layout keeps those object paths at ~127 characters.
+nodeLinker: hoisted
+
+# Build-script policy. Entries were already approved for the CometChat
+# dependency tree; the @firebase/* and protobufjs lines cover the push
+# dependencies added later (both are plain JS with no native step).
 allowBuilds:
   '@clerk/shared': true
   '@firebase/util': true

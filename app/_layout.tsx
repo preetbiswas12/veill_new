@@ -1,27 +1,27 @@
-import { ClerkProvider } from '@clerk/clerk-expo';
-import { tokenCache } from '@clerk/clerk-expo/token-cache';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { CometChatProvider } from '@/hooks/useCometChat';
+
 import '../global.css';
 
-const PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
-
+// The CometChat provider sits at the root so the identity screen and the app
+// itself share one session. There is no separate identity provider: signing in
+// is a CometChat UID login (see app/(auth)/sign-in.tsx).
 const RootLayout = () => {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ClerkProvider tokenCache={tokenCache} publishableKey={PUBLISHABLE_KEY}>
+      <CometChatProvider>
         <Stack>
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
           <Stack.Screen name="(home)" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
-      </ClerkProvider>
+      </CometChatProvider>
     </GestureHandlerRootView>
   );
 };
 
 export default RootLayout;
-

@@ -46,3 +46,12 @@ ios/
 # CometChat key. Keep .env.example (placeholders only) tracked.
 .env
 server/.env
+
+# Gradle / build logs captured while iterating on the Android build
+build-*.txt
+debug-*.txt
+*-output.txt
+*-stacktrace.txt
+
+# local tooling config
+opencode.json

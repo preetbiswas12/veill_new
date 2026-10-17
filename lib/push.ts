@@ -1,6 +1,6 @@
 import { CometChat, CometChatNotifications } from '@cometchat/chat-sdk-react-native';
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
+import { Platform, TurboModule, TurboModuleRegistry } from 'react-native';
 
 /**
  * CometChat push delivery.
@@ -24,8 +24,30 @@ type MessagingModule = any;
 
 let messagingCache: MessagingModule | null | undefined;
 
+/**
+ * Firebase is only usable once its native module is in the binary. Requiring
+ * the JS package when it is not linked does not throw synchronously - it fails
+ * later, inside TurboModule lookup, as an uncaught "NativeRNFBTurboApp is not
+ * registered". So check registration first and skip the require entirely.
+ */
+const isFirebaseLinked = (): boolean => {
+  for (const name of ['NativeRNFBTurboApp', 'RNFBAppModule']) {
+    try {
+      TurboModuleRegistry.getEnforcing<TurboModule>(name);
+      return true;
+    } catch {
+      // Not registered under this name - try the next one.
+    }
+  }
+  return false;
+};
+
 const getMessaging = (): MessagingModule | null => {
   if (messagingCache === undefined) {
+    if (!isFirebaseLinked()) {
+      messagingCache = null;
+      return messagingCache;
+    }
     try {
       const mod = require('@react-native-firebase/messaging');
       messagingCache = mod.default ?? mod;

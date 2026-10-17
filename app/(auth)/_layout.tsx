@@ -1,20 +1,24 @@
-import { useAuth } from '@clerk/clerk-expo';
 import { Redirect, Stack } from 'expo-router';
 
-const AuthLayout = () => {
-  const { isSignedIn } = useAuth();
+import { useCometChat } from '@/hooks/useCometChat';
 
-  if (isSignedIn) {
+const AuthLayout = () => {
+  const { user, loading } = useCometChat();
+
+  // While the provider restores a stored identity, render nothing so the login
+  // screen does not flash for returning users. `loading` also clears when there
+  // is no identity at all - that is the first-time path into this screen.
+  if (loading) return null;
+
+  if (user) {
     return <Redirect href={'/chats'} />;
   }
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="sign-in" />
-      <Stack.Screen name="sign-up" />
     </Stack>
   );
 };
 
 export default AuthLayout;
-

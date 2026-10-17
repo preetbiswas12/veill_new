@@ -1,40 +1,29 @@
-import { useUser } from '@clerk/clerk-expo';
 import { Stack, useRouter } from 'expo-router';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 
 import ScreenLoading from '@/components/ScreenLoading';
-import { CometChatProvider } from '@/hooks/useCometChat';
 import { PushNotificationGate } from '@/hooks/usePushNotifications';
+import { useCometChat } from '@/hooks/useCometChat';
 
 const HomeLayout = () => {
   const router = useRouter();
-  const { user, isSignedIn } = useUser();
+  const { user, loading } = useCometChat();
 
+  // Gate on `loading`, not `sessionReady`: with no stored identity the provider
+  // resolves `loading` to false and leaves `sessionReady` false forever, which
+  // would strand this screen on the spinner with no way to reach sign-in.
   useEffect(() => {
-    if (!isSignedIn) {
+    if (!loading && !user) {
       router.replace('/sign-in');
     }
-  }, [isSignedIn, router]);
+  }, [loading, user, router]);
 
-  const cometChatUser = useMemo(
-    () =>
-      user
-        ? {
-            id: user.id,
-            name: user.fullName || user.username || undefined,
-            image: user.hasImage ? user.imageUrl : undefined,
-            username: user.username || undefined,
-          }
-        : null,
-    [user]
-  );
-
-  if (!isSignedIn || !user) {
+  if (!user || loading) {
     return <ScreenLoading />;
   }
 
   return (
-    <CometChatProvider user={cometChatUser}>
+    <>
       <PushNotificationGate />
       <Stack>
         <Stack.Screen
@@ -64,9 +53,8 @@ const HomeLayout = () => {
           }}
         />
       </Stack>
-    </CometChatProvider>
+    </>
   );
 };
 
 export default HomeLayout;
-

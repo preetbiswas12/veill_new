@@ -11,12 +11,10 @@
     "lint": "expo lint"
   },
   "dependencies": {
-    "@clerk/clerk-expo": "^2.20.0",
     "@cometchat/calls-sdk-react-native": "5.0.6",
     "@cometchat/chat-sdk-react-native": "^4.1.0",
     "@config-plugins/react-native-webrtc": "^12.0.0",
     "@expo/vector-icons": "^15.0.2",
-    "@op-engineering/op-sqlite": "^14.1.2",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/netinfo": "12.0.1",
     "@react-native-firebase/app": "^26.4.0",
@@ -26,7 +24,6 @@
     "@react-navigation/native": "^7.1.6",
     "clsx": "^2.1.1",
     "expo": "57.0.22",
-    "expo-av": "~15.1.7",
     "expo-blur": "~57.0.3",
     "expo-build-properties": "~57.0.17",
     "expo-checkbox": "~57.0.0",

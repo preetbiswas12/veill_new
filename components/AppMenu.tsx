@@ -1,4 +1,3 @@
-import { useClerk, useUser } from '@clerk/clerk-expo';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
@@ -7,11 +6,11 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { getError } from '../lib/utils';
 import Avatar from './Avatar';
 import Button from './Button';
+import { useCometChat } from '@/hooks/useCometChat';
 
 const AppMenu = () => {
-  const { signOut } = useClerk();
   const router = useRouter();
-  const { user } = useUser();
+  const { user, signOut } = useCometChat();
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const avatarRef = useRef<View>(null);
@@ -48,10 +47,10 @@ const AppMenu = () => {
     <>
       <Button variant="plain" ref={avatarRef} onPress={toggleMenu}>
         <Avatar
-          imageUrl={user?.imageUrl}
+          imageUrl={user?.image}
           size={28}
           fontSize={12}
-          name={user?.fullName!}
+          name={user?.name || ''}
         />
       </Button>
       <Modal

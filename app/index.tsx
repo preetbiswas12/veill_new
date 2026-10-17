@@ -1,18 +1,21 @@
-import { useUser } from '@clerk/clerk-expo';
 import { Redirect, useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
 
 import AppImage from '@/components/AppImage';
 import Button from '@/components/Button';
 import Screen from '@/components/Screen';
+import { useCometChat } from '@/hooks/useCometChat';
 
 const WelcomeScreen = () => {
-  const { isLoaded, isSignedIn } = useUser();
+  const { user, loading } = useCometChat();
   const router = useRouter();
 
-  if (!isLoaded) return null;
+  // Hold the splash while the provider restores any stored identity. `loading`
+  // clears when there is no identity too, which is what lets a first-time
+  // user reach the login screen instead of hanging on a blank screen.
+  if (loading) return null;
 
-  if (isSignedIn) {
+  if (user) {
     return <Redirect href="/chats" />;
   }
 
@@ -37,7 +40,7 @@ const WelcomeScreen = () => {
         </View>
         <Text className="text-base text-gray-500">Terms & Privacy Policy</Text>
       </View>
-      <Button onPress={() => router.navigate('/sign-up')}>Continue</Button>
+      <Button onPress={() => router.navigate('/sign-in')}>Continue</Button>
     </Screen>
   );
 };

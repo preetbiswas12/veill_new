@@ -104,6 +104,10 @@ interface CometChatContextType {
   chatClient: any | null;
   /** True once the CometChat session is live and listeners are registered. */
   sessionReady: boolean;
+  /** Sign in with a CometChat UID (no password); remembered on the device. */
+  loginAs: (name: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  authError: string | null;
   conversations: CometChatConversation[];
   loadingConversations: boolean;
   loading: boolean;
@@ -463,16 +467,72 @@ const mapConversation = (conversation: any): CometChatConversation => {
   };
 };
 
+/**
+ * Identity for this install. CometChat has no password auth of its own, so the
+ * app signs in directly with a UID: the first launch creates the user with the
+ * App Auth Key, and the choice is remembered so the app reopens straight into
+ * the chats. There is no separate identity provider in the loop.
+ */
+export interface CometIdentity {
+  uid: string;
+  name: string;
+  image?: string;
+}
+
+const IDENTITY_STORAGE_KEY = 'veill.identity';
+
+/** AsyncStorage is a native module, so it is required lazily and optionally. */
+const getStorage = (): any | null => {
+  try {
+    return require('@react-native-async-storage/async-storage').default;
+  } catch {
+    return null;
+  }
+};
+
+const readStoredIdentity = async (): Promise<CometIdentity | null> => {
+  const storage = getStorage();
+  if (!storage) return null;
+  try {
+    const stored = await storage.getItem(IDENTITY_STORAGE_KEY);
+    if (!stored) return null;
+    const parsed = JSON.parse(stored) as CometIdentity;
+    return parsed?.uid ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeStoredIdentity = async (identity: CometIdentity): Promise<void> => {
+  const storage = getStorage();
+  if (!storage) return;
+  try {
+    await storage.setItem(IDENTITY_STORAGE_KEY, JSON.stringify(identity));
+  } catch {
+    // Persisting is best-effort; the session still works this launch.
+  }
+};
+
+const clearStoredIdentity = async (): Promise<void> => {
+  const storage = getStorage();
+  if (!storage) return;
+  try {
+    await storage.removeItem(IDENTITY_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+};
+
 interface CometChatProviderProps {
   children: ReactNode;
-  user: CometChatUser | null;
 }
 
 /** `init` may only run once per JS context, even across remounts. */
 let initPromise: Promise<boolean> | null = null;
 
-export const CometChatProvider = ({ children, user }: CometChatProviderProps) => {
-  const [currentUser, setCurrentUser] = useState<CometChatUser | null>(user);
+export const CometChatProvider = ({ children }: CometChatProviderProps) => {
+  const [identity, setIdentity] = useState<CometIdentity | null>(null);
+  const [currentUser, setCurrentUser] = useState<CometChatUser | null>(null);
   const [conversations, setConversations] = useState<CometChatConversation[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -495,8 +555,10 @@ export const CometChatProvider = ({ children, user }: CometChatProviderProps) =>
   const [loadingCallHistory, setLoadingCallHistory] = useState(false);
   const [stories, setStories] = useState<StoryAuthor[]>([]);
   const [storiesLoading, setStoriesLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
-  const userRef = useRef<CometChatUser | null>(user);
+  const userRef = useRef<CometChatUser | null>(null);
+  const identityLoadingRef = useRef(false);
   const conversationTypesRef = useRef<Map<string, string>>(new Map());
   const conversationsRef = useRef<CometChatConversation[]>([]);
   const ringTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -509,10 +571,38 @@ export const CometChatProvider = ({ children, user }: CometChatProviderProps) =>
     return conversationTypesRef.current.get(conversationId) || 'user';
   }, []);
 
+  // Restore the remembered identity on cold start so returning users skip the
+  // login screen entirely.
   useEffect(() => {
-    userRef.current = user;
-    setCurrentUser(user);
-  }, [user]);
+    let cancelled = false;
+    void readStoredIdentity().then((stored) => {
+      if (stored && !cancelled) setIdentity(stored);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /** Sign in as `name`, creating the CometChat user the first time. */
+  const loginAs = useCallback(async (name: string) => {
+    const trimmed = (name || '').trim();
+    if (!trimmed) {
+      const message = 'Enter a name to continue';
+      setAuthError(message);
+      throw new Error(message);
+    }
+    setAuthError(null);
+    const uid = normalizeCometChatUserId(trimmed.toLowerCase().replace(/\s+/g, '_'));
+    const next: CometIdentity = { uid, name: trimmed };
+    setIdentity(next);
+    await writeStoredIdentity(next);
+  }, []);
+
+  const signOut = useCallback(async () => {
+    await clearStoredIdentity();
+    setIdentity(null);
+    setAuthError(null);
+  }, []);
 
   useEffect(() => {
     conversationsRef.current = conversations;
@@ -1411,11 +1501,13 @@ export const CometChatProvider = ({ children, user }: CometChatProviderProps) =>
   //
 
   useEffect(() => {
-    if (!user) {
+    if (!identity) {
       setLoading(false);
       setLoadingConversations(false);
       setSessionReady(false);
       setChatClient(null);
+      setCurrentUser(null);
+      userRef.current = null;
       setConversations([]);
       setMessagesByConversation(new Map());
       setCallHistory([]);
@@ -1444,7 +1536,7 @@ export const CometChatProvider = ({ children, user }: CometChatProviderProps) =>
           return;
         }
 
-        const normalizedUserId = normalizeCometChatUserId(user.id);
+        const normalizedUserId = identity.uid;
         const settings = new (CometChat.AppSettingsBuilder as any)()
           .subscribePresenceForAllUsers()
           .setRegion(region)
@@ -1458,9 +1550,9 @@ export const CometChatProvider = ({ children, user }: CometChatProviderProps) =>
         const existingUser = await (CometChat.getLoggedinUser as any)();
         if (!existingUser) {
           const cometUser = new (CometChat as any).User(normalizedUserId);
-          cometUser.setName(user.name || normalizedUserId);
-          if (user.image) {
-            cometUser.setAvatar(user.image);
+          cometUser.setName(identity.name || normalizedUserId);
+          if (identity.image) {
+            cometUser.setAvatar(identity.image);
           }
           try {
             await (CometChat.createUser as any)(cometUser, authKey);
@@ -1472,13 +1564,14 @@ export const CometChatProvider = ({ children, user }: CometChatProviderProps) =>
         await (CometChat.login as any)(normalizedUserId, authKey);
         if (cancelled) return;
 
+        const sessionUser = await (CometChat.getLoggedinUser as any)();
         const effectiveUser: CometChatUser = {
-          ...user,
           id: normalizedUserId,
+          name: sessionUser?.getName?.() || identity.name,
+          image: sessionUser?.getAvatar?.() || identity.image,
           username: normalizedUserId,
         };
         userRef.current = effectiveUser;
-        const sessionUser = await (CometChat.getLoggedinUser as any)();
         setChatClient(sessionUser ?? null);
         setCurrentUser(effectiveUser);
         setSessionReady(true);
@@ -1489,9 +1582,24 @@ export const CometChatProvider = ({ children, user }: CometChatProviderProps) =>
         if (!cancelled) setLoading(false);
       } catch (caught) {
         if (!cancelled) {
-          setError(
-            caught instanceof Error ? caught.message : 'Unable to initialize CometChat'
-          );
+          const message = describeError(caught, 'Unable to sign in to CometChat');
+          // CometChat collapses transport, DNS and server faults into the same
+          // "check your internet" style message, so keep the raw shape visible
+          // in Metro - without it a server-side 4xx is indistinguishable from
+          // the device being offline.
+          console.warn('[CometChat] session failed', {
+            message,
+            code: (caught as any)?.code,
+            name: (caught as any)?.name,
+            stack: (caught as any)?.stack,
+          });
+          setError(message);
+          // A UID that cannot be created or logged into is not a usable
+          // identity - drop it so the login screen comes back instead of
+          // leaving the app stuck on a spinner.
+          setAuthError(message);
+          setIdentity(null);
+          void clearStoredIdentity();
           setLoading(false);
         }
       }
@@ -1506,13 +1614,17 @@ export const CometChatProvider = ({ children, user }: CometChatProviderProps) =>
       resetCall();
       storiesGroupReadyRef.current = false;
       void unregisterDeviceFromPush();
-      try {
-        void (CometChat.logout as any)();
-      } catch {
-        // ignore
+      // Only meaningful once a session exists; logging out without one
+      // rejects with USER_NOT_LOGGED_IN, so the rejection is swallowed.
+      if (sessionReady) {
+        try {
+          void Promise.resolve((CometChat.logout as any)()).catch(() => {});
+        } catch {
+          // ignore
+        }
       }
     };
-  }, [user, refreshConversations, clearRingTimer, resetCall]);
+  }, [identity, refreshConversations, clearRingTimer, resetCall]);
 
   useEffect(() => {
     if (!sessionReady) return;
@@ -1654,6 +1766,9 @@ export const CometChatProvider = ({ children, user }: CometChatProviderProps) =>
       user: currentUser,
       chatClient,
       sessionReady,
+      loginAs,
+      signOut,
+      authError,
       conversations,
       loadingConversations,
       loading,
@@ -1706,6 +1821,9 @@ export const CometChatProvider = ({ children, user }: CometChatProviderProps) =>
       currentUser,
       chatClient,
       sessionReady,
+      loginAs,
+      signOut,
+      authError,
       conversations,
       loadingConversations,
       loading,
