@@ -4,6 +4,7 @@ import { useCallback, useEffect } from 'react';
 import { useCometChat } from '@/hooks/useCometChat';
 import {
   getExpoNotifications,
+  getFirebaseMessaging,
   markPushClicked,
   markPushDelivered,
   parsePushPayload,
@@ -31,14 +32,10 @@ export const usePushNotifications = (sessionReady: boolean): void => {
 
   useEffect(() => {
     if (!sessionReady) return;
-    let messaging: any = null;
-    try {
-      const mod = require('@react-native-firebase/messaging');
-      messaging = mod.default ?? mod;
-    } catch {
-      // Firebase is not in this build yet — chat still works over the socket.
-      return;
-    }
+    // Probe first: requiring the JS package without the native module present
+    // throws "NativeRNFBTurboApp is not registered" from inside the require.
+    const messaging = getFirebaseMessaging();
+    if (!messaging) return;
 
     // Foreground pushes never trigger a system notification on their own.
     return messaging().onMessage(async (remoteMessage: any) => {

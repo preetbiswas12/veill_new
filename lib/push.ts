@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { CometChat, CometChatNotifications } from '@cometchat/chat-sdk-react-native';
 import { Platform, TurboModule, TurboModuleRegistry } from 'react-native';
 
@@ -35,6 +36,14 @@ let notificationsCache: NotificationsModule | null | undefined;
 
 const getNotifications = (): NotificationsModule | null => {
   if (notificationsCache === undefined) {
+    // Expo Go on Android has no remote notifications and logs a hard error the
+    // moment the package is evaluated, so never load it there in the first
+    // place - a try/catch is not enough, because the module reports before it
+    // throws.
+    if (Platform.OS === 'android' && Constants.appOwnership === 'expo') {
+      notificationsCache = null;
+      return notificationsCache;
+    }
     try {
       notificationsCache = require('expo-notifications') as NotificationsModule;
     } catch {
@@ -89,6 +98,14 @@ const getMessaging = (): MessagingModule | null => {
 
 /** True when the native Firebase module is present in this build. */
 export const isPushAvailable = (): boolean => getMessaging() !== null;
+
+/**
+ * Shared accessor for the Firebase messaging module. Returns null unless the
+ * native module is actually registered, so callers never have to repeat the
+ * TurboModule probe - requiring the JS package when the module is missing fails
+ * with an uncaught "NativeRNFBTurboApp is not registered".
+ */
+export const getFirebaseMessaging = getMessaging;
 
 const pushPlatform = () =>
   Platform.OS === 'ios'
