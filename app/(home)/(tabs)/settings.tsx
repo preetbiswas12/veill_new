@@ -95,14 +95,42 @@ const SettingsScreen = () => {
 
       <View className="h-hair bg-separator" />
 
-      <SettingRow icon="person-outline" label="Profile" onPress={() => router.push('/profile')} />
-      <SettingRow icon="qr-code-outline" label="Invite a friend" onPress={() => {}} />
-      <SettingRow icon="shield-checkmark-outline" label="Privacy" onPress={() => {}} />
-      <SettingRow icon="notifications-outline" label="Notifications" onPress={() => {}} />
+      <SettingRow
+        icon="person-outline"
+        label="Profile"
+        value={user?.name}
+        onPress={() => router.push('/profile')}
+      />
+      <SettingRow
+        icon="chatbubbles-outline"
+        label="Chats"
+        onPress={() => router.push('/chats')}
+      />
+      <SettingRow
+        icon="people-outline"
+        label="Communities"
+        onPress={() => router.push('/communities')}
+      />
+      <SettingRow
+        icon="shield-checkmark-outline"
+        label="Encryption"
+        value="end-to-end"
+        onPress={() =>
+          Alert.alert(
+            'End-to-end encrypted',
+            'Messages you send are delivered through your CometChat app and are readable only by the participants of the conversation.'
+          )
+        }
+      />
 
       <View className="h-4" />
       <View className="h-hair bg-separator" />
 
+      <SettingRow
+        icon="call-outline"
+        label="Calls"
+        onPress={() => router.push('/calls')}
+      />
       <SettingRow icon="log-out-outline" label="Sign out" onPress={confirmSignOut} destructive />
     </Screen>
   );

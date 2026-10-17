@@ -1,9 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, AlertButton, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
+import {
+  Alert,
+  AlertButton,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
+import AppMenu from '@/components/AppMenu';
 import ConversationRow from '@/components/ConversationRow';
 import Screen from '@/components/Screen';
 import { getMessageText, useCometChat } from '@/hooks/useCometChat';
@@ -21,6 +31,30 @@ interface ConversationItem {
 }
 
 type FilterKey = 'all' | 'unread' | 'groups';
+
+/** 28pt circular control; the trailing one is the solid brand green. */
+const HeaderButton = ({
+  icon,
+  solid,
+  onPress,
+  label,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  solid?: boolean;
+  onPress: () => void;
+  label: string;
+}) => (
+  <Pressable
+    onPress={onPress}
+    accessibilityRole="button"
+    accessibilityLabel={label}
+    className={`h-7 w-7 rounded-full items-center justify-center active:opacity-60 ${
+      solid ? 'bg-primary' : 'bg-surface-cta'
+    }`}
+  >
+    <Ionicons name={icon} size={24} color={solid ? '#ffffff' : '#0a0a0a'} />
+  </Pressable>
+);
 
 /** The design's 34pt filter pill: 19pt radius, 14pt horizontal padding. */
 const FilterChip = ({
@@ -71,6 +105,7 @@ const ChatsScreen = () => {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<FilterKey>('all');
+  const [query, setQuery] = useState('');
 
   const conversationItems = useMemo<ConversationItem[]>(
     () =>
@@ -93,11 +128,19 @@ const ChatsScreen = () => {
     [conversations, user?.id]
   );
 
+  // Chip filter and the search field compose: Unread + "mum" shows unread Mum chats.
   const visibleItems = useMemo(() => {
-    if (filter === 'unread') return conversationItems.filter((item) => item.unreadCount > 0);
-    if (filter === 'groups') return conversationItems.filter((item) => item.type === 'group');
-    return conversationItems;
-  }, [conversationItems, filter]);
+    const needle = query.trim().toLowerCase();
+    return conversationItems.filter((item) => {
+      if (filter === 'unread' && item.unreadCount === 0) return false;
+      if (filter === 'groups' && item.type !== 'group') return false;
+      if (!needle) return true;
+      return (
+        (item.name ?? '').toLowerCase().includes(needle) ||
+        (item.preview ?? '').toLowerCase().includes(needle)
+      );
+    });
+  }, [conversationItems, filter, query]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -163,41 +206,78 @@ const ChatsScreen = () => {
     [markConversationRead, markConversationUnread, router]
   );
 
-  /** Large title, search field and filter chips — the design's `Title` block. */
+  const startSomethingNew = useCallback(() => {
+    const actions: AlertButton[] = [
+      { text: 'New chat', onPress: () => router.push('/new-message') },
+      { text: 'New group', onPress: () => router.push('/new-group') },
+      { text: 'Cancel', style: 'cancel' },
+    ];
+    Alert.alert('New', undefined, actions, { cancelable: true });
+  }, [router]);
+
   const titleBlock = (
-    <View className="gap-2 px-4 pt-[5px] pb-2">
-      <Text className="text-display font-bold text-text-strong">Chats</Text>
+    <>
+      {/* Header from the Figma `Header` component: 28pt circular controls, the
+          trailing one solid brand green. */}
+      <View className="flex-row items-center justify-between h-header px-4 py-2">
+        <AppMenu />
+        <View className="flex-row items-center gap-4">
+          <HeaderButton
+            icon="camera-outline"
+            label="New chat"
+            onPress={() => router.push('/new-message')}
+          />
+          <HeaderButton icon="add" solid label="New" onPress={startSomethingNew} />
+        </View>
+      </View>
 
-      <View className="pt-px">
-        <Link href="/find-by-username" asChild>
-          <Pressable
-            accessibilityRole="search"
-            accessibilityLabel="Search chats"
-            className="flex-row items-center gap-2.5 pb-2"
-          >
-            <View className="flex-1 flex-row items-center gap-0.5 p-[5px] rounded-search bg-surface-muted">
+      <View className="gap-2 px-4 pt-[5px] pb-2">
+        <Text className="text-display font-bold text-text-strong">Chats</Text>
+
+        <View className="pt-px">
+          <View className="flex-row items-center gap-2.5 pb-2">
+            <View className="flex-1 flex-row items-center gap-2.5 p-[5px] rounded-search bg-surface-muted">
               <Ionicons name="search" size={24} color="#767779" />
-              <Text className="text-[16.4px] text-text-muted">Ask Meta AI or Search</Text>
+              <TextInput
+                value={query}
+                onChangeText={setQuery}
+                placeholder="Ask Meta AI or Search"
+                placeholderTextColor="#767779"
+                accessibilityLabel="Search chats"
+                className="flex-1 text-[16.4px] text-text-strong"
+                returnKeyType="search"
+                clearButtonMode="while-editing"
+              />
+              {query.length > 0 ? (
+                <Pressable
+                  onPress={() => setQuery('')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear search"
+                  hitSlop={8}
+                >
+                  <Ionicons name="close-circle" size={20} color="#767779" />
+                </Pressable>
+              ) : null}
             </View>
-          </Pressable>
-        </Link>
-      </View>
+          </View>
+        </View>
 
-      <View className="flex-row gap-2">
-        <FilterChip label="All" active={filter === 'all'} onPress={() => setFilter('all')} />
-        <FilterChip
-          label="Unread"
-          active={filter === 'unread'}
-          onPress={() => setFilter('unread')}
-        />
-        <FilterChip
-          label="Groups"
-          active={filter === 'groups'}
-          onPress={() => setFilter('groups')}
-        />
-        <FilterChip icon />
+        <View className="flex-row gap-2">
+          <FilterChip label="All" active={filter === 'all'} onPress={() => setFilter('all')} />
+          <FilterChip
+            label="Unread"
+            active={filter === 'unread'}
+            onPress={() => setFilter('unread')}
+          />
+          <FilterChip
+            label="Groups"
+            active={filter === 'groups'}
+            onPress={() => setFilter('groups')}
+          />
+          <FilterChip icon />
+        </View>
       </View>
-    </View>
+    </>
   );
 
   if (loadingConversations && conversationItems.length === 0) {
@@ -239,10 +319,12 @@ const ChatsScreen = () => {
           <View className="items-center justify-center py-16 px-10">
             <Ionicons name="chatbubbles-outline" size={36} color="#767779" />
             <Text className="text-body-1 font-semibold text-text-strong mt-3">
-              No conversations yet
+              {query ? 'No matches' : 'No conversations yet'}
             </Text>
             <Text className="text-body-2 text-text-muted text-center mt-1">
-              Start a chat and your messages will show up here.
+              {query
+                ? 'Try a different search.'
+                : 'Tap the green button to start a chat.'}
             </Text>
           </View>
         }
@@ -251,7 +333,8 @@ const ChatsScreen = () => {
           <View className="flex-row items-start justify-center gap-1 py-px px-4">
             <Ionicons name="lock-closed" size={12} color="#767779" />
             <Text className="text-caption text-text-muted">
-              Your personal messages are <Text className="text-text-product">end-to-end encrypted</Text>
+              Your personal messages are{' '}
+              <Text className="text-text-product">end-to-end encrypted</Text>
             </Text>
           </View>
         }
