@@ -72,8 +72,20 @@ const StoriesScreen = () => {
     }
   };
 
-  const addStory = async () => {
+  /**
+   * Adds a status update.
+   *
+   * `fromCamera` routes to the in-app camera, which is the only way to get a
+   * shot without leaving the app. Otherwise the library picker opens, which is
+   * what the pencil button means: pick something already on the device.
+   */
+  const addStory = async (fromCamera?: boolean) => {
     try {
+      if (fromCamera) {
+        router.push('/camera');
+        return;
+      }
+
       const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!granted) {
         Alert.alert(
@@ -109,7 +121,7 @@ const StoriesScreen = () => {
       className={clsx('rounded-full p-[3px]', hasItems ? 'bg-primary' : 'bg-surface-muted')}
       style={{ width: size + 6, height: size + 6 }}
     >
-      <View className="flex-1 rounded-full bg-white p-[2px]">
+      <View className="flex-1 rounded-full bg-surface p-[2px]">
         <Avatar
           imageUrl={user?.image}
           name={user?.name || 'You'}
@@ -122,40 +134,38 @@ const StoriesScreen = () => {
   );
 
   return (
-    <Screen className="bg-white" edges={['left', 'right', 'bottom']}>
-      {/* Header from the Figma Header component: 28pt circular controls. */}
-      <ScreenHeader
-        left={<AppMenu />}
-        right={
-          <View className="flex-row items-center gap-4">
-            <Pressable
-              onPress={() => void addStory()}
-              accessibilityRole="button"
-              accessibilityLabel="Add a status update"
-              className="h-7 w-7 rounded-full bg-surface-cta items-center justify-center active:opacity-60"
-            >
-              <Ionicons name="camera-outline" size={22} color={colors['text-strong']} />
-            </Pressable>
-            <Pressable
-              onPress={() => router.push('/new-group')}
-              accessibilityRole="button"
-              accessibilityLabel="New group"
-              className="h-7 w-7 rounded-full bg-surface-cta items-center justify-center active:opacity-60"
-            >
-              <Ionicons name="create-outline" size={20} color={colors['text-strong']} />
-            </Pressable>
-          </View>
-        }
-      />
+    <Screen edges={['left', 'right', 'bottom']}>
+      {/* The title row below carries the camera and pencil controls, so the
+          header here is only the inset. */}
 
       <ScrollView
         className="flex-1 w-full"
         contentContainerStyle={{ paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Title block: 33.33pt bold, matching the chat list. */}
-        <View className="pt-[5px] pb-2 px-4">
-          <Text className="text-display font-bold text-text-strong">Updates</Text>
+        {/* Large title with the camera and pencil circle buttons beside it. */}
+        <View className="px-4 pt-1 pb-2 flex-row items-center justify-between">
+          <Text className="flex-1 min-w-0 text-display font-bold text-text-strong">Updates</Text>
+          <View className="flex-row items-center gap-4">
+            <Pressable
+              onPress={() => void addStory(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Camera status"
+              hitSlop={8}
+              className="active:opacity-60"
+            >
+              <Ionicons name="camera-outline" size={24} color={colors['teal']} />
+            </Pressable>
+            <Pressable
+              onPress={() => void addStory(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Text status"
+              hitSlop={8}
+              className="active:opacity-60"
+            >
+              <Ionicons name="create-outline" size={24} color={colors['teal']} />
+            </Pressable>
+          </View>
         </View>
 
         <View className="gap-6">
@@ -333,7 +343,7 @@ const StoriesScreen = () => {
                   key={item.id}
                   className={clsx(
                     'h-1 rounded-full',
-                    index === viewer.index ? 'w-5 bg-white' : 'w-2 bg-white/40'
+                    index === viewer.index ? 'w-5 bg-surface' : 'w-2 bg-white/40'
                   )}
                 />
               ))}

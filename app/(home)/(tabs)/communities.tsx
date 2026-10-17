@@ -25,7 +25,7 @@ const CommunitiesScreen = () => {
   }, [refreshGroups]);
 
   return (
-    <Screen viewClassName="bg-white" edges={['left', 'right', 'bottom']}>
+    <Screen viewClassName="bg-surface" edges={['left', 'right', 'bottom']}>
       <View className="px-4 pt-2 pb-3 flex-row items-center justify-between">
         <Text className="text-display font-bold text-text-strong">Communities</Text>
         <Pressable

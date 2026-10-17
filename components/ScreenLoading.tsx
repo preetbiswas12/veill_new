@@ -3,7 +3,7 @@ import Spinner from './Spinner';
 
 const ScreenLoading = () => {
   return (
-    <Screen className="bg-white" viewClassName="items-center justify-center">
+    <Screen className="bg-surface" viewClassName="items-center justify-center">
       <Spinner />
     </Screen>
   );

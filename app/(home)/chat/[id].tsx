@@ -450,7 +450,7 @@ const ChatScreen = () => {
               <Button
                 variant="plain"
                 onPress={jumpToLatest}
-                className="w-11 h-11 rounded-full items-center justify-center bg-white shadow-lg border border-gray-100"
+                className="w-11 h-11 rounded-full items-center justify-center bg-surface shadow-lg border border-gray-100"
                 accessibilityLabel="Jump to latest message"
               >
                 <Feather name="chevron-down" size={22} color={colors['text-muted']} />

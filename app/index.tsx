@@ -21,7 +21,7 @@ const WelcomeScreen = () => {
 
   return (
     <Screen
-      className="bg-white"
+      className="bg-surface"
       viewClassName="px-10 pb-10 w-full items-center justify-end gap-16"
     >
       <AppImage

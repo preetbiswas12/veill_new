@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 
 import Avatar from '@/components/Avatar';
@@ -16,7 +16,6 @@ import { useTheme } from '@/hooks/useTheme';
  */
 
 const formatWhen = (timestamp: number): string => {
-  const { colors } = useTheme();
   if (!timestamp) return '';
   const date = new Date(timestamp);
   const now = new Date();
@@ -37,16 +36,25 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
   </View>
 );
 
+type CallFilter = 'all' | 'missed';
+
 const CallsScreen = () => {
   const { colors } = useTheme();
   const router = useRouter();
   const { callHistory, loadingCallHistory, refreshCallHistory, startCall } = useCometChat();
+  const [callFilter, setCallFilter] = useState<CallFilter>('all');
 
   useFocusEffect(
     useCallback(() => {
       void refreshCallHistory();
     }, [refreshCallHistory])
   );
+
+  // A call is missed when it came in and was never answered.
+  const visibleCalls = useMemo(() => {
+    if (callFilter === 'all') return callHistory;
+    return callHistory.filter((entry) => !entry.outgoing && entry.action !== 'answered');
+  }, [callHistory, callFilter]);
 
   const openCall = (entry: CallHistoryEntry) => {
     router.push({
@@ -62,11 +70,47 @@ const CallsScreen = () => {
   };
 
   return (
-    <Screen className="bg-white">
-      <ScrollView contentContainerStyle={{ paddingBottom: 16 }} keyboardShouldPersistTaps="handled">
-        {/* Title block: 33.33pt bold, matching the chat list. */}
-        <View className="pt-[5px] pb-2 px-4">
-          <Text className="text-display font-bold text-text-strong">Calls</Text>
+    <Screen className="bg-surface">
+      <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+        {/* Large title with the trailing compose control, as iOS does. */}
+        <View className="px-4 pt-1 pb-2 flex-row items-center justify-between">
+          <Text className="flex-1 min-w-0 text-display font-bold text-text-strong">Calls</Text>
+          <Pressable
+            onPress={() => router.push('/find-by-username')}
+            accessibilityRole="button"
+            accessibilityLabel="Start a call"
+            hitSlop={8}
+            className="active:opacity-60"
+          >
+            <Ionicons name="add" size={26} color={colors['teal']} />
+          </Pressable>
+        </View>
+
+        {/* Segmented control: All / Missed. */}
+        <View className="px-4 pb-3">
+          <View className="flex-row p-0.5 rounded-chip bg-surface-muted">
+            {(['all', 'missed'] as const).map((option) => {
+              const active = callFilter === option;
+              return (
+                <Pressable
+                  key={option}
+                  onPress={() => setCallFilter(option)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  className={`flex-1 h-9 items-center justify-center rounded-full ${
+                    active ? 'bg-surface' : ''
+                  }`}
+                >
+                  <Text
+                    className="text-body-2 font-medium"
+                    style={{ color: active ? colors['text-strong'] : colors['text-muted'] }}
+                  >
+                    {option === 'all' ? 'All' : 'Missed'}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
 
         <View className="gap-4 pb-4">
@@ -87,33 +131,37 @@ const CallsScreen = () => {
         <View className="gap-2">
           <SectionTitle>Recent</SectionTitle>
 
+          {visibleCalls.length === 0 && !loadingCallHistory ? (
+            <View className="items-center gap-2 px-10 py-10">
+              <Ionicons name="call-outline" size={36} color={colors['text-muted']} />
+              <Text className="text-body-1 font-semibold text-text-strong">
+                {callFilter === 'missed' ? 'No missed calls' : 'No calls yet'}
+              </Text>
+              <Text className="text-body-2 text-text-muted text-center">
+                {callFilter === 'missed'
+                  ? 'Calls you did not answer will collect here.'
+                  : 'Start a call from a chat and it will show up here.'}
+              </Text>
+            </View>
+          ) : null}
+
           {loadingCallHistory && callHistory.length === 0 ? (
             <View className="py-10 items-center">
               <ActivityIndicator color={colors['product']} />
             </View>
           ) : null}
 
-          {!loadingCallHistory && callHistory.length === 0 ? (
-            <View className="items-center gap-2 px-10 py-10">
-              <Ionicons name="call-outline" size={36} color={colors['text-muted']} />
-              <Text className="text-body-1 font-semibold text-text-strong">No calls yet</Text>
-              <Text className="text-body-2 text-text-muted text-center">
-                Start a call from a chat and it will show up here.
-              </Text>
-            </View>
-          ) : null}
-
-          {callHistory.map((entry) => {
+          {visibleCalls.map((entry) => {
             const missed = !entry.outgoing && entry.action !== 'answered';
             const label = missed ? 'Missed' : entry.outgoing ? 'Outgoing' : 'Incoming';
             return (
               <Pressable
                 key={entry.id}
-                onPress={() => void startCall(entry.peerId, entry.video)}
+                onPress={() => openCall(entry)}
                 accessibilityRole="button"
                 accessibilityLabel={`${label} ${entry.video ? 'video' : 'voice'} call with ${
                   entry.peerName || entry.peerId
-                }`}
+                }. Tap to call again.`}
                 className="flex-row items-start gap-[16.66px] pl-4 h-[56.66px] active:bg-surface-muted"
               >
                 <View className="pt-[9.66px]">
@@ -155,16 +203,18 @@ const CallsScreen = () => {
                   </View>
                 </View>
 
+                {/* The info affordance from the design's call row. */}
                 <Pressable
                   onPress={() => openCall(entry)}
                   accessibilityRole="button"
-                  accessibilityLabel={`Open call with ${entry.peerName || entry.peerId}`}
+                  accessibilityLabel={`Call ${entry.peerName || entry.peerId} again`}
                   hitSlop={10}
-                  className="pt-[13px]"
+                  className="pt-[9px] pr-4 flex-row items-center gap-2"
                 >
                   <Text className="text-body-2 text-text-muted">
                     {formatWhen(entry.timestamp)}
                   </Text>
+                  <Ionicons name="information-circle-outline" size={18} color={colors['text-muted']} />
                 </Pressable>
               </Pressable>
             );

@@ -248,7 +248,7 @@ const CustomMessageInput = ({
 
           <View className="flex-row items-center gap-2 pl-[7px] pr-[9px] py-[5.5px]">
             <AttachButton disabled={sending || disabled} onPress={promptAttachment} />
-            <View className="flex-1 flex-row items-end gap-4 pl-[10px] pr-[9px] pt-[3px] pb-[2px] rounded-[15px] bg-white border-hair border-input-border">
+            <View className="flex-1 flex-row items-end gap-4 pl-[10px] pr-[9px] pt-[3px] pb-[2px] rounded-[15px] bg-surface border-hair border-input-border">
               <TextInput
                 value={text}
                 onChangeText={handleChangeText}

@@ -70,7 +70,7 @@ const AppMenu = () => {
         <Pressable style={StyleSheet.absoluteFill} onPress={() => setMenuVisible(false)}>
           <View
             style={{ top: menuPosition.top, left: menuPosition.left }}
-            className="absolute min-w-[200px] rounded-[10px] bg-white border-hair border-separator"
+            className="absolute min-w-[200px] rounded-[10px] bg-surface border-hair border-separator"
           >
             <Pressable
               onPress={goToProfile}

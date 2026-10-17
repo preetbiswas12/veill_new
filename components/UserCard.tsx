@@ -13,7 +13,7 @@ const UserCard = ({ children, onPress, user }: UserCardProps) => {
     <Button
       variant="plain"
       onPress={onPress}
-      className="bg-white flex-row items-center gap-2 py-3 px-4 rounded-xl"
+      className="bg-surface flex-row items-center gap-2 py-3 px-4 rounded-xl"
     >
       <View className="h-10 w-10">
         <Avatar name={name} imageUrl={user?.image} size={40} />

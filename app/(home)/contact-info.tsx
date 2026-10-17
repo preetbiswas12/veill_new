@@ -218,7 +218,7 @@ const ContactInfoScreen = () => {
   };
 
   return (
-    <Screen className="bg-white" edges={['left', 'right', 'bottom']}>
+    <Screen className="bg-surface" edges={['left', 'right', 'bottom']}>
       <ScreenHeader
         left={
           <Pressable

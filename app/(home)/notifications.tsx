@@ -86,7 +86,7 @@ const NotificationsScreen = () => {
   }, [refreshPushPreferences]);
 
   return (
-    <Screen viewClassName="bg-white" edges={['left', 'right', 'bottom']}>
+    <Screen viewClassName="bg-surface" edges={['left', 'right', 'bottom']}>
       <ScreenHeader
         left={
           <Pressable

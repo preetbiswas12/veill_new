@@ -320,7 +320,7 @@ const ChatsScreen = () => {
 
   if (loadingConversations && conversationItems.length === 0) {
     return (
-      <Screen className="bg-white" edges={['left', 'right', 'bottom']}>
+      <Screen className="bg-surface" edges={['left', 'right', 'bottom']}>
         {titleBlock}
         <View className="flex-1 items-center justify-center">
           <Text className="text-body-2 text-text-muted">Loading chats…</Text>
@@ -330,7 +330,7 @@ const ChatsScreen = () => {
   }
 
   return (
-    <Screen className="bg-white" edges={['left', 'right', 'bottom']}>
+    <Screen className="bg-surface" edges={['left', 'right', 'bottom']}>
       {titleBlock}
       <FlatList
         data={visibleItems}

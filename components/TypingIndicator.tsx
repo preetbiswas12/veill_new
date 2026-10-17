@@ -37,7 +37,7 @@ const TypingIndicator = () => {
 
   return (
     <View className="flex-row px-4 mb-1">
-      <View className="flex-row items-center gap-1.5 px-4 py-3.5 rounded-2xl rounded-bl-md bg-white border border-gray-100">
+      <View className="flex-row items-center gap-1.5 px-4 py-3.5 rounded-2xl rounded-bl-md bg-surface border border-gray-100">
         {dots.map((dot, index) => (
           <Animated.View
             key={index}

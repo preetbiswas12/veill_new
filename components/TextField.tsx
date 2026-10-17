@@ -15,7 +15,7 @@ const TextField = ({
   return (
     <View
       style={{ width }}
-      className="relative px-4 flex-row bg-white items-center justify-between rounded-xl py-3 android:py-0 border border-white"
+      className="relative px-4 flex-row bg-surface items-center justify-between rounded-xl py-3 android:py-0 border border-white"
     >
       {label && (
         <View>
