@@ -1,23 +1,23 @@
-import { Feather } from '@expo/vector-icons';
-import clsx from 'clsx';
-import Button from './Button';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable } from 'react-native';
 
 interface AttachButtonProps {
   disabled?: boolean;
   onPress?: () => void;
 }
 
-const AttachButton = ({ disabled = false, onPress }: AttachButtonProps) => {
-  return (
-    <Button
-      variant="plain"
-      disabled={disabled}
-      onPress={onPress}
-      className={clsx('p-0.5 rotate-[0deg]')}
-    >
-      <Feather name="plus" size={24} color="black" />
-    </Button>
-  );
-};
+/** The design's `ico-32-plus` on the composer's leading edge. */
+const AttachButton = ({ disabled = false, onPress }: AttachButtonProps) => (
+  <Pressable
+    disabled={disabled}
+    onPress={onPress}
+    accessibilityRole="button"
+    accessibilityLabel="Attach"
+    hitSlop={6}
+    className="active:opacity-60"
+  >
+    <Ionicons name="add" size={32} color={disabled ? '#b2b2b2' : '#0a0a0a'} />
+  </Pressable>
+);
 
 export default AttachButton;

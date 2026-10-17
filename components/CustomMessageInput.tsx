@@ -236,19 +236,62 @@ const CustomMessageInput = ({
                 onSubmitEditing={handleSend}
                 blurOnSubmit={false}
               />
+              {/* The design parks a 24pt sticker glyph on the input's trailing
+                  edge until there is something to send. */}
+              {text.trim() ? (
+                <Pressable
+                  onPress={handleSend}
+                  disabled={disabled || sending}
+                  accessibilityRole="button"
+                  accessibilityLabel="Send"
+                  hitSlop={8}
+                >
+                  <Feather
+                    name="arrow-up-circle"
+                    size={24}
+                    color={disabled || sending ? '#b2b2b2' : '#1dab61'}
+                  />
+                </Pressable>
+              ) : (
+                <Pressable
+                  onPress={() =>
+                    Alert.alert('Stickers', 'Stickers are not connected to CometChat yet.')
+                  }
+                  accessibilityRole="button"
+                  accessibilityLabel="Stickers"
+                  hitSlop={8}
+                >
+                  <Feather name="smile" size={24} color="#767779" />
+                </Pressable>
+              )}
+            </View>
+
+            {/* Camera and mic at 32pt on the trailing edge; the mic yields to the
+                send button's slot in the input once there is text. */}
+            <View className="flex-row items-start pl-1.5">
               <Pressable
-                onPress={handleSend}
-                disabled={!text.trim() || disabled || sending}
+                onPress={() => {
+                  setSheetOpen(false);
+                  void pickAndSend('camera');
+                }}
+                disabled={sending || disabled}
                 accessibilityRole="button"
-                accessibilityLabel="Send"
-                hitSlop={8}
+                accessibilityLabel="Camera"
+                hitSlop={6}
               >
-                <Feather
-                  name="arrow-up"
-                  size={24}
-                  color={!text.trim() || disabled || sending ? '#b2b2b2' : '#1dab61'}
-                />
+                <Ionicons name="camera-outline" size={32} color="#0a0a0a" />
               </Pressable>
+              {!text.trim() ? (
+                <Pressable
+                  onPress={() => Alert.alert('Voice messages', 'Hold to record is not wired up yet.')}
+                  disabled={sending || disabled}
+                  accessibilityRole="button"
+                  accessibilityLabel="Voice message"
+                  hitSlop={6}
+                >
+                  <Ionicons name="mic-outline" size={32} color="#0a0a0a" />
+                </Pressable>
+              ) : null}
             </View>
           </View>
         </View>

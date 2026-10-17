@@ -148,7 +148,7 @@ const MessageBubble = ({
           onLongPress={onLongPress}
           delayLongPress={300}
           className={clsx(
-            'rounded-[12px] border-hair',
+            'rounded-[12px] border-bubble',
             isOwn ? 'bg-bubble-out border-bubble-shadow' : 'bg-bubble-in border-bubble-shadow',
             hasInlineMedia ? 'p-1' : 'pt-[13px] pl-[7px] pr-[8px] pb-[3px]'
           )}
@@ -189,7 +189,7 @@ const MessageBubble = ({
                 key={item.reaction}
                 onPress={() => onReact?.(item.reaction)}
                 className={clsx(
-                  'flex-row items-center gap-1 px-2 py-0.5 rounded-full border-hair bg-bubble-in',
+                  'flex-row items-center gap-1 px-2 py-0.5 rounded-full border-bubble bg-bubble-in',
                   item.mine ? 'border-product' : 'border-bubble-shadow'
                 )}
                 accessibilityLabel={`${item.reaction} ${item.count}`}

@@ -73,7 +73,7 @@ const ConversationRow = ({
       onPress={onPress}
       onLongPress={onLongPress}
       delayLongPress={280}
-      className="flex-row items-start pl-4 pr-4 h-row active:bg-surface-muted"
+      className="flex-row items-start pl-4 h-row active:bg-surface-muted"
       accessibilityRole="button"
       accessibilityLabel={`Chat with ${title}`}
     >
@@ -93,7 +93,7 @@ const ConversationRow = ({
             {title}
           </Text>
 
-          <View className="flex-row items-start gap-1">
+          <View className="flex-row items-start gap-[3px]">
             {isOwnLatest ? <DeliveryTicks status={latestStatus} /> : null}
             <Text
               className={clsx(

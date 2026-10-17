@@ -74,8 +74,10 @@ module.exports = {
         header: '98px',
       },
       borderWidth: {
-        // the design uses 0.33px hairlines for its separators
+        // 0.33pt separators on the chat list and rows
         hair: '0.33px',
+        // the thread draws its bubbles and date pills with a heavier 0.66pt line
+        bubble: '0.66px',
       },
     },
   },
