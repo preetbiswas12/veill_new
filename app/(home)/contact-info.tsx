@@ -6,6 +6,7 @@ import { Alert, Pressable, ScrollView, Share, Switch, Text, View } from 'react-n
 
 import Avatar from '@/components/Avatar';
 import Screen from '@/components/Screen';
+import { useFavourites } from '@/hooks/useFavourites';
 import { useCometChat } from '@/hooks/useCometChat';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -120,6 +121,7 @@ const ContactInfoScreen = () => {
     type?: string;
   }>();
   const { user, createGroup } = useCometChat();
+  const { isFavourite, toggle } = useFavourites();
 
   const [muted, setMuted] = useState(false);
   const [locked, setLocked] = useState(false);
@@ -312,8 +314,14 @@ const ContactInfoScreen = () => {
             />
             <Row
               icon="star-outline"
-              label="Add to favourites"
-              onPress={() => Alert.alert('Added', `${title} is now a favourite.`)}
+              label={isFavourite(String(id)) ? 'Remove from favourites' : 'Add to favourites'}
+              onPress={async () => {
+                const added = await toggle(String(id));
+                Alert.alert(
+                  added ? 'Added to favourites' : 'Removed from favourites',
+                  `${title} ${added ? 'now shows' : 'no longer shows'} under the Favourites filter.`
+                );
+              }}
             />
             <Row
               icon="download-outline"

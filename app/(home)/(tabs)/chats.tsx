@@ -16,6 +16,7 @@ import {
 import AppMenu from '@/components/AppMenu';
 import ConversationRow from '@/components/ConversationRow';
 import Screen from '@/components/Screen';
+import { useFavourites } from '@/hooks/useFavourites';
 import { getMessageText, useCometChat } from '@/hooks/useCometChat';
 
 interface ConversationItem {
@@ -30,7 +31,7 @@ interface ConversationItem {
   latestStatus?: string;
 }
 
-type FilterKey = 'all' | 'unread' | 'groups';
+type FilterKey = 'all' | 'unread' | 'favourites' | 'groups';
 
 /** 28pt circular control; the trailing one is the solid brand green. */
 const HeaderButton = ({
@@ -103,6 +104,7 @@ const ChatsScreen = () => {
     user,
   } = useCometChat();
   const router = useRouter();
+  const { ids: favouriteIds } = useFavourites();
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<FilterKey>('all');
   const [query, setQuery] = useState('');
@@ -133,6 +135,7 @@ const ChatsScreen = () => {
     const needle = query.trim().toLowerCase();
     return conversationItems.filter((item) => {
       if (filter === 'unread' && item.unreadCount === 0) return false;
+      if (filter === 'favourites' && !favouriteIds.includes(item.id)) return false;
       if (filter === 'groups' && item.type !== 'group') return false;
       if (!needle) return true;
       return (
@@ -140,7 +143,7 @@ const ChatsScreen = () => {
         (item.preview ?? '').toLowerCase().includes(needle)
       );
     });
-  }, [conversationItems, filter, query]);
+  }, [conversationItems, filter, query, favouriteIds]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -283,6 +286,11 @@ const ChatsScreen = () => {
             onPress={() => setFilter('unread')}
           />
           <FilterChip
+            label="Favourites"
+            active={filter === 'favourites'}
+            onPress={() => setFilter('favourites')}
+          />
+          <FilterChip
             label="Groups"
             active={filter === 'groups'}
             onPress={() => setFilter('groups')}
@@ -290,6 +298,22 @@ const ChatsScreen = () => {
           <FilterChip icon />
         </View>
       </View>
+
+      {/* Archived row from the design's chat list. */}
+      <Pressable
+        onPress={() =>
+          Alert.alert(
+            'Archived',
+            'CometChat does not archive conversations from the client SDK, so this list is not available yet.'
+          )
+        }
+        accessibilityRole="button"
+        accessibilityLabel="Archived"
+        className="flex-row items-start pl-8 pr-4 pt-2.5 pb-3 border-b-hair border-separator active:bg-surface-muted"
+      >
+        <Ionicons name="archive-outline" size={24} color="#0a0a0a" />
+        <Text className="flex-1 text-body-1 font-semibold text-text-strong">Archived</Text>
+      </Pressable>
     </>
   );
 

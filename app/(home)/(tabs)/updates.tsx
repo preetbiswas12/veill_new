@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import clsx from 'clsx';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -27,6 +28,7 @@ const formatWhen = (timestamp: number): string => {
 };
 
 const StoriesScreen = () => {
+  const router = useRouter();
   const { user, stories, storiesLoading, refreshStories, sendStory } = useCometChat();
   const [viewer, setViewer] = useState<{ senderId: string; index: number } | null>(null);
 
@@ -92,10 +94,7 @@ const StoriesScreen = () => {
 
   const storyRing = (hasItems: boolean, size = 56) => (
     <View
-      className={clsx(
-        'rounded-full p-[3px]',
-        hasItems ? 'bg-blue-500' : 'bg-gray-200'
-      )}
+      className={clsx('rounded-full p-[3px]', hasItems ? 'bg-primary' : 'bg-surface-muted')}
       style={{ width: size + 6, height: size + 6 }}
     >
       <View className="flex-1 rounded-full bg-white p-[2px]">
@@ -111,13 +110,27 @@ const StoriesScreen = () => {
   );
 
   return (
-    <Screen className="bg-white" viewClassName="px-4 pt-1">
-      <View className="flex flex-row items-center justify-between w-full h-8">
+    <Screen className="bg-white">
+      {/* Header from the Figma Header component: 28pt circular controls. */}
+      <View className="flex-row items-center justify-between h-header px-4 py-2">
         <AppMenu />
-        <View className="flex flex-row items-center gap-8">
-          <Button variant="plain" onPress={() => void addStory()} accessibilityLabel="Add story">
-            <Feather name="camera" size={20} color="black" />
-          </Button>
+        <View className="flex-row items-center gap-4">
+          <Pressable
+            onPress={() => void addStory()}
+            accessibilityRole="button"
+            accessibilityLabel="Add a status update"
+            className="h-7 w-7 rounded-full bg-surface-cta items-center justify-center active:opacity-60"
+          >
+            <Feather name="camera" size={20} color="#0a0a0a" />
+          </Pressable>
+          <Pressable
+            onPress={() => router.push('/new-group')}
+            accessibilityRole="button"
+            accessibilityLabel="New channel"
+            className="h-7 w-7 rounded-full bg-surface-cta items-center justify-center active:opacity-60"
+          >
+            <Feather name="edit-3" size={18} color="#0a0a0a" />
+          </Pressable>
         </View>
       </View>
 
@@ -126,92 +139,122 @@ const StoriesScreen = () => {
         contentContainerStyle={{ paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* My story */}
-        <Pressable
-          onPress={() => void addStory()}
-          className="flex-row items-center gap-3 mt-4 w-full"
-        >
-          <View className="relative">
-            {storyRing(Boolean(myStories?.items.length))}
-            {!myStories?.items.length ? (
-              <View className="absolute -bottom-1 -right-1 w-[22px] h-[22px] rounded-full border-[3px] border-white bg-blue-600 items-center justify-center">
-                <Feather name="plus" size={13} color="white" />
-              </View>
-            ) : null}
-          </View>
-          <View className="flex-1">
-            <Text className="font-semibold">My Stories</Text>
-            <Text className="text-xs text-text-muted">
-              {myStories?.items.length
-                ? `${myStories.items.length} item${myStories.items.length > 1 ? 's' : ''} · Tap to add`
-                : 'Tap to add'}
-            </Text>
-          </View>
-          {myStories?.items.length ? (
-            <Button
-              variant="plain"
-              onPress={() => setViewer({ senderId: myStories.senderId, index: 0 })}
-            >
-              <Text className="text-blue-600 text-sm font-semibold">View</Text>
-            </Button>
-          ) : (
-            <Feather name="chevron-right" size={20} color="#9ca3af" />
-          )}
-        </Pressable>
+        {/* Title block: 33.33pt bold, matching the chat list. */}
+        <View className="pt-[5px] pb-2 px-4">
+          <Text className="text-display font-bold text-text-strong">Updates</Text>
+        </View>
 
-        {storiesLoading && stories.length === 0 ? (
-          <View className="items-center py-10">
-            <ActivityIndicator color="#1dab61" />
+        <View className="gap-6">
+          {/* My update - Status */}
+          <View className="gap-[13px]">
+            <View className="h-[25px] px-4 justify-center">
+              <Text className="text-[18.33px] font-semibold text-text-strong">Status</Text>
+            </View>
+            <Pressable
+              onPress={() =>
+                myStories?.items.length
+                  ? setViewer({ senderId: myStories.senderId, index: 0 })
+                  : void addStory()
+              }
+              accessibilityRole="button"
+              accessibilityLabel="My status"
+              className="flex-row items-center gap-[9px] pl-[15px] pr-4 active:opacity-70"
+            >
+              <View>
+                {storyRing(Boolean(myStories?.items.length), 64)}
+                {!myStories?.items.length ? (
+                  <View className="absolute -bottom-1 -right-1 w-[22px] h-[22px] rounded-full border-[3px] border-white bg-primary items-center justify-center">
+                    <Feather name="plus" size={13} color="#ffffff" />
+                  </View>
+                ) : null}
+              </View>
+              <View className="flex-1 min-w-0">
+                <Text className="text-body-1 font-semibold text-text-strong" numberOfLines={1}>
+                  My status
+                </Text>
+                <Text className="text-body-2 text-text-muted" numberOfLines={1}>
+                  {myStories?.items.length ? 'Tap to view your updates' : 'Add to my status'}
+                </Text>
+              </View>
+            </Pressable>
           </View>
-        ) : otherStories.length === 0 ? (
-          <View className="items-center py-10 gap-1">
-            <Text className="font-semibold">No recent stories</Text>
-            <Text className="text-sm text-text-muted text-center">
-              When people share photos and videos, they show up here for 24 hours.
-            </Text>
-          </View>
-        ) : (
-          <>
-            <Text className="text-xs font-semibold text-gray-400 uppercase mt-6 mb-1">
-              Recent
-            </Text>
-            {otherStories.map((author) => {
-              const newest = author.items[author.items.length - 1];
-              return (
-                <Pressable
-                  key={author.senderId}
-                  onPress={() => setViewer({ senderId: author.senderId, index: 0 })}
-                  className="flex-row items-center gap-3 mt-3 w-full"
-                >
-                  <View
-                    className="rounded-full bg-blue-500 p-[3px]"
-                    style={{ width: 62, height: 62 }}
+
+          {/* Recent updates */}
+          <View className="gap-[13px]">
+            <View className="px-4">
+              <Text className="text-[15.8px] font-semibold text-text-muted">Recent updates</Text>
+            </View>
+
+            {storiesLoading && stories.length === 0 ? (
+              <View className="items-center py-10">
+                <ActivityIndicator color="#1dab61" />
+              </View>
+            ) : otherStories.length === 0 ? (
+              <View className="items-center py-8 gap-1 px-8">
+                <Text className="text-body-1 font-semibold text-text-strong">
+                  No recent updates
+                </Text>
+                <Text className="text-body-2 text-text-muted text-center">
+                  When people share photos and videos, they show up here for 24 hours.
+                </Text>
+              </View>
+            ) : (
+              otherStories.map((author) => {
+                const newest = author.items[author.items.length - 1];
+                return (
+                  <Pressable
+                    key={author.senderId}
+                    onPress={() => setViewer({ senderId: author.senderId, index: 0 })}
+                    accessibilityRole="button"
+                    accessibilityLabel={`View ${author.name || author.senderId}'s updates`}
+                    className="flex-row items-center gap-3 pl-4 pr-4 active:bg-surface-muted"
                   >
-                    <View className="flex-1 rounded-full bg-white p-[2px]">
-                      <Avatar
-                        imageUrl={author.image}
-                        name={author.name || author.senderId}
-                        size={56}
-                        fontSize={22}
-                        placeholderType="text"
-                      />
+                    {storyRing(true, 56)}
+                    <View className="flex-1 min-w-0 py-3">
+                      <Text className="text-body-1 text-text-strong" numberOfLines={1}>
+                        {author.name || author.senderId}
+                      </Text>
+                      <Text className="text-body-2 text-text-muted">
+                        {formatWhen(newest?.at || 0)}
+                      </Text>
                     </View>
-                  </View>
-                  <View className="flex-1 min-w-0">
-                    <Text className="font-semibold" numberOfLines={1}>
-                      {author.name || author.senderId}
-                    </Text>
-                    <Text className="text-xs text-text-muted">
-                      {author.items.length} item{author.items.length > 1 ? 's' : ''} ·{' '}
-                      {formatWhen(newest?.at || 0)}
-                    </Text>
-                  </View>
-                  <Feather name="chevron-right" size={20} color="#9ca3af" />
-                </Pressable>
-              );
-            })}
-          </>
-        )}
+                  </Pressable>
+                );
+              })
+            )}
+          </View>
+
+          {/* Channels */}
+          <View className="gap-4">
+            <View className="h-[25px] px-4 justify-center">
+              <Text className="text-[18.33px] font-semibold text-text-strong">Channels</Text>
+            </View>
+            <View className="gap-4">
+              <Text className="text-body-2 text-text-muted">
+                Stay updated on topics that matter to you. Find groups to follow below.
+              </Text>
+              <Pressable
+                onPress={() => router.push('/communities')}
+                accessibilityRole="button"
+                accessibilityLabel="Find groups to follow"
+                className="flex-row items-center gap-2.5 active:opacity-70"
+              >
+                <Text className="flex-1 text-[15.8px] font-semibold text-text-muted">
+                  Find groups to follow
+                </Text>
+                <Feather name="chevron-down" size={16} color="#767779" />
+              </Pressable>
+              <Pressable
+                onPress={() => router.push('/communities')}
+                accessibilityRole="button"
+                accessibilityLabel="Explore more"
+                className="self-start px-4 py-2 rounded-full bg-primary active:opacity-80"
+              >
+                <Text className="text-body-1 text-white">Explore more</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
       </ScrollView>
 
       {/* Full-screen story viewer */}

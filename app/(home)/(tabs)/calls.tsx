@@ -1,14 +1,18 @@
-import { Feather } from '@expo/vector-icons';
-import clsx from 'clsx';
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 
-import AppMenu from '@/components/AppMenu';
 import Avatar from '@/components/Avatar';
-import Button from '@/components/Button';
 import Screen from '@/components/Screen';
-import { CallHistoryEntry, getCallStatusText, useCometChat } from '@/hooks/useCometChat';
+import { CallHistoryEntry, useCometChat } from '@/hooks/useCometChat';
+
+/**
+ * Calls, built from the Figma frame "Calls" (156:4133): a 33.33pt bold large
+ * title, then a Favourites section and a Recent section, each headed by an
+ * 18.33pt semibold label. Recent rows are 56.66pt with a 40pt avatar and the
+ * call direction under the name; missed calls render the name in red.
+ */
 
 const formatWhen = (timestamp: number): string => {
   if (!timestamp) return '';
@@ -21,12 +25,19 @@ const formatWhen = (timestamp: number): string => {
   if (timestamp >= startOfToday - 6 * 24 * 60 * 60 * 1000) {
     return date.toLocaleDateString([], { weekday: 'short' });
   }
-  return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString([], { month: '2-digit', day: '2-digit', year: '2-digit' });
 };
+
+/** 18.33pt semibold section label. */
+const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+  <View className="h-[25px] px-4 justify-center">
+    <Text className="text-[18.33px] font-semibold text-text-strong">{children}</Text>
+  </View>
+);
 
 const CallsScreen = () => {
   const router = useRouter();
-  const { callHistory, loadingCallHistory, refreshCallHistory } = useCometChat();
+  const { callHistory, loadingCallHistory, refreshCallHistory, startCall } = useCometChat();
 
   useFocusEffect(
     useCallback(() => {
@@ -39,7 +50,7 @@ const CallsScreen = () => {
       pathname: '/call/[id]',
       params: {
         id: entry.peerId,
-        name: entry.peerName || entry.peerId,
+        name: entry.peerName || '',
         image: entry.peerImage || '',
         video: entry.video ? '1' : '0',
         direction: 'outgoing',
@@ -47,95 +58,123 @@ const CallsScreen = () => {
     });
   };
 
-  const describe = (entry: CallHistoryEntry) => {
-    const status =
-      getCallStatusText(entry.action) || (entry.outgoing ? 'Outgoing' : 'Incoming');
-    return `${status} · ${formatWhen(entry.timestamp)}`;
-  };
-
-  const missed = (entry: CallHistoryEntry) =>
-    !entry.outgoing && ['unanswered', 'initiated', 'busy'].includes(entry.action);
-
-  const showEmpty = !loadingCallHistory && callHistory.length === 0;
-
   return (
-    <Screen className="bg-white" viewClassName="px-4 items-start">
-      <View className="flex flex-row items-center justify-between w-full h-10">
-        <AppMenu />
-        <View className="flex flex-row items-center gap-8">
-          <Button variant="plain">
-            <Feather name="phone" size={20} color="black" />
-          </Button>
+    <Screen className="bg-white">
+      <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
+        {/* Title block: 33.33pt bold, matching the chat list. */}
+        <View className="pt-[5px] pb-2 px-4">
+          <Text className="text-display font-bold text-text-strong">Calls</Text>
         </View>
-      </View>
-      <Button
-        variant="plain"
-        className="flex flex-row items-center justify-center gap-4 mt-4"
-        onPress={() => router.push('/new-message')}
-      >
-        <Feather name="phone-call" size={20} color="black" />
-        <Text className="font-semibold">Start a call</Text>
-      </Button>
 
-      {loadingCallHistory && callHistory.length === 0 ? (
-        <View className="flex-1 w-full items-center justify-center">
-          <ActivityIndicator color="#1dab61" />
+        <View className="gap-4 pb-4">
+          <SectionTitle>Favourites</SectionTitle>
+          <Pressable
+            onPress={() => router.push('/find-by-username')}
+            accessibilityRole="button"
+            accessibilityLabel="Add favourite"
+            className="flex-row items-center gap-4 px-4 rounded-[10px] active:opacity-70"
+          >
+            <View className="h-10 w-10 rounded-full bg-surface-cta items-center justify-center">
+              <Ionicons name="add" size={24} color="#0a0a0a" />
+            </View>
+            <Text className="text-[15.8px] text-text-strong">Add favourite</Text>
+          </Pressable>
         </View>
-      ) : showEmpty ? (
-        <View className="flex-1 w-full flex-col items-center justify-center mt-8">
-          <Text className="font-semibold">No recent calls</Text>
-          <Text className="text-sm text-gray-600">
-            Get started by calling a friend
-          </Text>
-        </View>
-      ) : (
-        <ScrollView className="flex-1 w-full mt-2" showsVerticalScrollIndicator={false}>
+
+        <View className="gap-2">
+          <SectionTitle>Recent</SectionTitle>
+
+          {loadingCallHistory && callHistory.length === 0 ? (
+            <View className="py-10 items-center">
+              <ActivityIndicator color="#1dab61" />
+            </View>
+          ) : null}
+
+          {!loadingCallHistory && callHistory.length === 0 ? (
+            <View className="items-center gap-2 px-10 py-10">
+              <Ionicons name="call-outline" size={36} color="#767779" />
+              <Text className="text-body-1 font-semibold text-text-strong">No calls yet</Text>
+              <Text className="text-body-2 text-text-muted text-center">
+                Start a call from a chat and it will show up here.
+              </Text>
+            </View>
+          ) : null}
+
           {callHistory.map((entry) => {
-            const isMissed = missed(entry);
+            const missed = !entry.outgoing && entry.action !== 'answered';
+            const label = missed ? 'Missed' : entry.outgoing ? 'Outgoing' : 'Incoming';
             return (
-              <Button
+              <Pressable
                 key={entry.id}
-                variant="plain"
-                className="flex-row items-center gap-3 w-full py-2"
-                onPress={() => openCall(entry)}
-                accessibilityLabel={`Call ${entry.peerName || entry.peerId}`}
+                onPress={() => void startCall(entry.peerId, entry.video)}
+                accessibilityRole="button"
+                accessibilityLabel={`${label} ${entry.video ? 'video' : 'voice'} call with ${
+                  entry.peerName || entry.peerId
+                }`}
+                className="flex-row items-start gap-[16.66px] pl-4 h-[56.66px] active:bg-surface-muted"
               >
-                <Avatar
-                  name={entry.peerName || entry.peerId}
-                  imageUrl={entry.peerImage}
-                  size={44}
-                  fontSize={18}
-                  placeholderType="text"
-                />
-                <View className="flex-1 min-w-0">
-                  <Text className="font-semibold text-[15px]" numberOfLines={1}>
+                <View className="pt-[9.66px]">
+                  <Avatar
+                    name={entry.peerName || entry.peerId}
+                    imageUrl={entry.peerImage}
+                    size={40}
+                    fontSize={17}
+                  />
+                </View>
+
+                <View className="flex-1 min-w-0 pr-4 pt-[10px] gap-[1.5px]">
+                  <Text
+                    className="text-body-1"
+                    style={{ color: missed ? '#ea0038' : '#0a0a0a' }}
+                    numberOfLines={1}
+                  >
                     {entry.peerName || entry.peerId}
                   </Text>
-                  <View className="flex-row items-center gap-1 mt-0.5">
-                    <Feather
-                      name={entry.outgoing ? 'arrow-up-right' : 'arrow-down-left'}
-                      size={13}
-                      color={isMissed ? '#ef4444' : '#9ca3af'}
+                  <View className="flex-row items-center gap-1">
+                    <Ionicons
+                      name={
+                        entry.video
+                          ? missed
+                            ? 'videocam-outline'
+                            : entry.outgoing
+                              ? 'arrow-up'
+                              : 'arrow-down'
+                          : missed
+                            ? 'call-outline'
+                            : entry.outgoing
+                              ? 'arrow-up'
+                              : 'arrow-down'
+                      }
+                      size={16}
+                      color="#767779"
                     />
-                    <Text
-                      className={clsx('text-xs', isMissed ? 'text-red-500' : 'text-text-muted')}
-                      numberOfLines={1}
-                    >
-                      {describe(entry)}
-                    </Text>
+                    <Text className="text-body-2 text-text-muted">{label}</Text>
                   </View>
                 </View>
-                <Feather
-                  name={entry.video ? 'video' : 'phone'}
-                  size={18}
-                  color="#1dab61"
-                />
-              </Button>
+
+                <Pressable
+                  onPress={() => openCall(entry)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open call with ${entry.peerName || entry.peerId}`}
+                  hitSlop={10}
+                  className="pt-[13px]"
+                >
+                  <Text className="text-body-2 text-text-muted">
+                    {formatWhen(entry.timestamp)}
+                  </Text>
+                </Pressable>
+              </Pressable>
             );
           })}
-          <View className="h-4" />
-        </ScrollView>
-      )}
+        </View>
+
+        <View className="flex-row items-start justify-center gap-1 py-px px-4 mt-2">
+          <Ionicons name="lock-closed" size={12} color="#767779" />
+          <Text className="text-caption text-text-muted">
+            Your calls are <Text className="text-text-product">end-to-end encrypted</Text>
+          </Text>
+        </View>
+      </ScrollView>
     </Screen>
   );
 };
