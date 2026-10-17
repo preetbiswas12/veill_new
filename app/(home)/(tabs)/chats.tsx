@@ -180,6 +180,19 @@ const ChatsScreen = () => {
             else void markConversationUnread(item.id, item.type);
           },
         },
+        {
+          text: 'Contact info',
+          onPress: () =>
+            router.push({
+              pathname: '/contact-info',
+              params: {
+                id: item.id,
+                name: item.name || '',
+                image: item.image || '',
+                type: item.type,
+              },
+            }),
+        },
       ];
 
       // Calling is 1:1 only — a group has no single peer to ring.

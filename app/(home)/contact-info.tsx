@@ -1,0 +1,338 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import type { ComponentProps } from 'react';
+import { useState } from 'react';
+import { Alert, Pressable, ScrollView, Share, Switch, Text, View } from 'react-native';
+
+import Avatar from '@/components/Avatar';
+import Screen from '@/components/Screen';
+import { useCometChat } from '@/hooks/useCometChat';
+
+type IconName = ComponentProps<typeof Ionicons>['name'];
+
+/**
+ * Contact info, built from the Figma frame "Contact info - Full view"
+ * (178:7585): a 120pt avatar on a 28pt radius, a 26.8pt bold name over a 16pt
+ * secondary id, three 73pt action tiles, then the rounded white cards of
+ * settings rows at 0.33pt separators.
+ *
+ * Only rows with real behaviour are rendered - every control here does
+ * something rather than navigating nowhere.
+ */
+
+/** 73pt tile: white, 10pt radius, green 24pt icon over a 14pt label. */
+const ActionTile = ({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: IconName;
+  label: string;
+  onPress: () => void;
+}) => (
+  <Pressable
+    onPress={onPress}
+    accessibilityRole="button"
+    accessibilityLabel={label}
+    className="flex-1 min-w-0 h-[73px] items-center gap-[5px] px-2 py-[14.5px] rounded-[10px] bg-white active:opacity-70"
+  >
+    <Ionicons name={icon} size={24} color="#1dab61" />
+    <Text className="text-body-2 text-text-strong" numberOfLines={1}>
+      {label}
+    </Text>
+  </Pressable>
+);
+
+/** Settings row: 24pt icon, label, optional value, chevron or switch. */
+const Row = ({
+  icon,
+  label,
+  value,
+  subtitle,
+  onPress,
+  toggle,
+  toggleValue,
+  onToggle,
+  last = false,
+}: {
+  icon: IconName;
+  label: string;
+  value?: string;
+  subtitle?: string;
+  onPress?: () => void;
+  toggle?: boolean;
+  toggleValue?: boolean;
+  onToggle?: (next: boolean) => void;
+  last?: boolean;
+}) => (
+  <Pressable
+    onPress={onPress}
+    disabled={!onPress}
+    accessibilityRole="button"
+    className={`flex-row items-center gap-[18.66px] pl-[18px] pr-[9px] min-h-[40px] py-[11px] ${
+      last ? '' : 'border-b-hair border-separator'
+    }`}
+  >
+    <Ionicons name={icon} size={24} color="#0a0a0a" />
+    <View className="flex-1 min-w-0">
+      <View className="flex-row items-center justify-between">
+        <Text className="flex-1 min-w-0 text-body-1 text-text-strong" numberOfLines={1}>
+          {label}
+        </Text>
+        {value ? (
+          <Text className="text-body-2 text-text-muted" numberOfLines={1}>
+            {value}
+          </Text>
+        ) : null}
+        {toggle ? (
+          <Switch
+            value={!!toggleValue}
+            onValueChange={onToggle}
+            trackColor={{ false: '#e4e4e6', true: '#1dab61' }}
+            thumbColor="#ffffff"
+          />
+        ) : onPress ? (
+          <Ionicons name="chevron-forward" size={16} color="#767779" />
+        ) : null}
+      </View>
+      {subtitle ? (
+        <Text className="text-caption text-text-muted" numberOfLines={2}>
+          {subtitle}
+        </Text>
+      ) : null}
+    </View>
+  </Pressable>
+);
+
+/** Section heading from the design's "Title small": 15.8pt semibold. */
+const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+  <View className="px-4 py-2">
+    <Text className="text-[15.8px] font-semibold text-text-strong">{children}</Text>
+  </View>
+);
+
+const ContactInfoScreen = () => {
+  const router = useRouter();
+  const { id, name, image, type } = useLocalSearchParams<{
+    id: string;
+    name?: string;
+    image?: string;
+    type?: string;
+  }>();
+  const { user, createGroup } = useCometChat();
+
+  const [muted, setMuted] = useState(false);
+  const [locked, setLocked] = useState(false);
+
+  const title = name || id || 'Contact';
+  const isGroup = type === 'group';
+
+  const openCall = (video: boolean) => {
+    router.replace({
+      pathname: '/call/[id]',
+      params: {
+        id: String(id ?? ''),
+        name: title,
+        image: image || '',
+        video: video ? '1' : '0',
+        direction: 'outgoing',
+      },
+    });
+  };
+
+  const shareContact = async () => {
+    try {
+      await Share.share({
+        message: `${title}\nCometChat UID: ${id}`,
+      });
+    } catch {
+      // User dismissed the share sheet.
+    }
+  };
+
+  const confirmClearChat = () => {
+    Alert.alert(
+      'Clear chat?',
+      'This removes the messages from your view of this conversation.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: () =>
+            Alert.alert(
+              'Not available yet',
+              'Clearing a conversation needs the delete-messages API wired up; it is not connected to CometChat yet.'
+            ),
+        },
+      ]
+    );
+  };
+
+  return (
+    <Screen className="bg-white" viewClassName="bg-white">
+      <View className="flex-row items-center gap-2.5 pr-[22px] py-1 bg-panel-blur-warm">
+        <Pressable
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          hitSlop={10}
+        >
+          <Ionicons name="chevron-back" size={32} color="#0a0a0a" />
+        </Pressable>
+        <Text className="text-body-1 font-semibold text-text-strong">Contact info</Text>
+      </View>
+
+      <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+        <View className="items-center gap-[23.66px] pt-[6px] px-4">
+          <View className="items-center gap-3">
+            <Avatar
+              name={title}
+              imageUrl={image}
+              size={120}
+              fontSize={44}
+              placeholderType={isGroup ? 'icon' : 'text'}
+            />
+            <View className="items-center gap-[5px]">
+              <Text className="text-[26.8px] font-bold text-text-strong" numberOfLines={1}>
+                {title}
+              </Text>
+              <Text className="text-[16px] text-text-muted" numberOfLines={1}>
+                {id}
+              </Text>
+            </View>
+          </View>
+
+          <View className="flex-row gap-2 w-full">
+            <ActionTile icon="call-outline" label="Audio" onPress={() => openCall(false)} />
+            <ActionTile icon="videocam-outline" label="Video" onPress={() => openCall(true)} />
+            <ActionTile
+              icon="people-outline"
+              label="Group"
+              onPress={() => router.push('/new-group')}
+            />
+          </View>
+        </View>
+
+        <View className="gap-[18px] px-4 mt-[18px]">
+          <View className="rounded-[10px] overflow-hidden">
+            <Row
+              icon="notifications-outline"
+              label="Mute notifications"
+              toggle
+              toggleValue={muted}
+              onToggle={setMuted}
+            />
+            {!isGroup ? (
+              <Row
+                icon="lock-closed-outline"
+                label="Lock chat"
+                subtitle="Lock and hide this chat on this device."
+                toggle
+                toggleValue={locked}
+                onToggle={setLocked}
+                last
+              />
+            ) : (
+              <Row icon="lock-closed-outline" label="Lock chat" toggle last />
+            )}
+          </View>
+
+          <View className="rounded-[10px] overflow-hidden">
+            <Row
+              icon="shield-checkmark-outline"
+              label="Encryption"
+              subtitle="Messages and calls are end-to-end encrypted."
+              onPress={() =>
+                Alert.alert(
+                  'End-to-end encrypted',
+                  'Messages you send are delivered through your CometChat app and are readable only by the participants of this conversation.'
+                )
+              }
+            />
+            <Row
+              icon="person-circle-outline"
+              label="Contact details"
+              value={id}
+              onPress={() => Alert.alert('Contact details', `CometChat UID: ${id}`)}
+              last
+            />
+          </View>
+        </View>
+
+        <SectionTitle>No groups in common</SectionTitle>
+        <View className="px-4">
+          <View className="rounded-[10px] overflow-hidden">
+            <Pressable
+              onPress={() => router.push('/new-group')}
+              accessibilityRole="button"
+              accessibilityLabel={`Create group with ${title}`}
+              className="flex-row items-center gap-[18.66px] pl-[18px] pr-[9px] min-h-[40px] py-[11px] active:bg-surface-muted"
+            >
+              <View className="h-6 w-6 rounded-full bg-surface-muted items-center justify-center">
+                <Ionicons name="add" size={16} color="#0a0a0a" />
+              </View>
+              <Text className="flex-1 text-body-1 text-text-strong" numberOfLines={1}>
+                Create Group with {title.split(' ')[0]}
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color="#767779" />
+            </Pressable>
+            {user?.id && user.id !== id ? (
+              <Pressable
+                onPress={async () => {
+                  try {
+                    await createGroup(`${title.split(' ')[0]} & me`, [user.id, String(id)]);
+                    Alert.alert('Group created', 'The new group is in Communities.');
+                  } catch {
+                    // createGroup surfaces the failure on the provider.
+                  }
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Start a group here"
+                className="flex-row items-center gap-[18.66px] pl-[18px] pr-[9px] min-h-[40px] py-[11px] border-t-hair border-separator active:bg-surface-muted"
+              >
+                <View className="h-6 w-6 rounded-full bg-surface-muted items-center justify-center">
+                  <Ionicons name="people-outline" size={14} color="#0a0a0a" />
+                </View>
+                <Text className="flex-1 text-body-1 text-text-strong" numberOfLines={1}>
+                  Start a group with {title.split(' ')[0]}
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color="#767779" />
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+
+        <View className="gap-[18px] px-4 mt-[18px]">
+          <View className="rounded-[10px] overflow-hidden">
+            <Row
+              icon="share-outline"
+              label="Share contact"
+              onPress={() => void shareContact()}
+            />
+            <Row
+              icon="star-outline"
+              label="Add to favourites"
+              onPress={() => Alert.alert('Added', `${title} is now a favourite.`)}
+            />
+            <Row
+              icon="download-outline"
+              label="Export chat"
+              onPress={() =>
+                Alert.alert('Export chat', 'Export is not connected to CometChat yet.')
+              }
+            />
+            <Row
+              icon="trash-outline"
+              label="Clear chat"
+              onPress={confirmClearChat}
+              last
+            />
+          </View>
+        </View>
+      </ScrollView>
+    </Screen>
+  );
+};
+
+export default ContactInfoScreen;

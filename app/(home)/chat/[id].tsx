@@ -9,6 +9,7 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   Text,
   View,
 } from 'react-native';
@@ -267,25 +268,37 @@ const ChatScreen = () => {
         <Button variant="plain" onPress={() => router.back()} className="p-1" hitSlop={8}>
           <Feather name="chevron-left" size={32} color="black" />
         </Button>
-        <Avatar
-          name={title}
-          imageUrl={imageUrl}
-          size={36}
-          fontSize={15}
-          placeholderType={conversationType === 'group' ? 'icon' : 'text'}
-        />
-        <View className="flex-1 min-w-0">
-          <Text className="text-body-1 font-semibold text-text-strong" numberOfLines={1}>
-            {title}
-          </Text>
-          <Text
-            className="text-body-3"
-            style={{ color: isTyping ? '#1dab61' : 'rgba(0,0,0,0.5)' }}
-            numberOfLines={1}
-          >
-            {isTyping ? 'typing…' : 'tap here for contact info'}
-          </Text>
-        </View>
+        <Pressable
+          onPress={() =>
+            router.push({
+              pathname: '/contact-info',
+              params: { id: conversationId, name: title, image: imageUrl, type: conversationType },
+            })
+          }
+          accessibilityRole="button"
+          accessibilityLabel={`Contact info for ${title}`}
+          className="flex-1 min-w-0 flex-row items-center gap-2.5 active:opacity-70"
+        >
+          <Avatar
+            name={title}
+            imageUrl={imageUrl}
+            size={36}
+            fontSize={15}
+            placeholderType={conversationType === 'group' ? 'icon' : 'text'}
+          />
+          <View className="flex-1 min-w-0">
+            <Text className="text-body-1 font-semibold text-text-strong" numberOfLines={1}>
+              {title}
+            </Text>
+            <Text
+              className="text-body-3"
+              style={{ color: isTyping ? '#1dab61' : 'rgba(0,0,0,0.5)' }}
+              numberOfLines={1}
+            >
+              {isTyping ? 'typing…' : 'tap here for contact info'}
+            </Text>
+          </View>
+        </Pressable>
         {conversationType === 'user' ? (
           <View className="flex-row items-center gap-5">
             <Button
