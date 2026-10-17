@@ -3,6 +3,8 @@ import type { ComponentProps, ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useTheme } from '@/hooks/useTheme';
+
 /**
  * The design's `Header` component (Figma 6:1510) is 98pt tall, but that height
  * *includes* a 54pt status bar - the visible content row is only 44pt.
@@ -71,6 +73,7 @@ export function HeaderButton({
   children?: ReactNode;
   size?: number;
 }) {
+  const { colors } = useTheme();
   return (
     <Pressable
       onPress={onPress}
@@ -82,7 +85,13 @@ export function HeaderButton({
         solid ? 'bg-primary' : 'bg-surface-cta'
       }`}
     >
-      {children ?? <Ionicons name={icon ?? 'add'} size={24} color={solid ? '#ffffff' : '#0a0a0a'} />}
+      {children ?? (
+        <Ionicons
+          name={icon ?? 'add'}
+          size={24}
+          color={solid ? colors['text-invert'] : colors['text-strong']}
+        />
+      )}
     </Pressable>
   );
 }

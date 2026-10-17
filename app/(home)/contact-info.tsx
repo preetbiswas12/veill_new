@@ -9,6 +9,7 @@ import Screen from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { useFavourites } from '@/hooks/useFavourites';
 import { useCometChat, getMessageBody, getMessageText, getMessageTimestamp } from '@/hooks/useCometChat';
+import { useTheme } from '@/hooks/useTheme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -31,19 +32,24 @@ const ActionTile = ({
   icon: IconName;
   label: string;
   onPress: () => void;
-}) => (
+}) => {
+  // A helper component reads the palette itself rather than borrowing the
+  // screen's `colors`, which is not in scope here.
+  const { colors } = useTheme();
+  return (
   <Pressable
     onPress={onPress}
     accessibilityRole="button"
     accessibilityLabel={label}
-    className="flex-1 min-w-0 h-[73px] items-center gap-[5px] px-2 py-[14.5px] rounded-[10px] bg-white active:opacity-70"
+    className="flex-1 min-w-0 h-[73px] items-center gap-[5px] px-2 py-[14.5px] rounded-[10px] bg-surface-muted active:opacity-70"
   >
-    <Ionicons name={icon} size={24} color="#1dab61" />
+    <Ionicons name={icon} size={24} color={colors['product']} />
     <Text className="text-body-2 text-text-strong" numberOfLines={1}>
       {label}
     </Text>
   </Pressable>
-);
+  );
+};
 
 /** Settings row: 24pt icon, label, optional value, chevron or switch. */
 const Row = ({
@@ -68,7 +74,9 @@ const Row = ({
   onToggle?: (next: boolean) => void;
   destructive?: boolean;
   last?: boolean;
-}) => (
+}) => {
+  const { colors } = useTheme();
+  return (
   <Pressable
     onPress={onPress}
     disabled={!onPress}
@@ -77,12 +85,16 @@ const Row = ({
       last ? '' : 'border-b-hair border-separator'
     }`}
   >
-    <Ionicons name={icon} size={24} color={destructive ? '#ea0038' : '#0a0a0a'} />
+    <Ionicons
+      name={icon}
+      size={24}
+      color={destructive ? colors['text-error'] : colors['text-strong']}
+    />
     <View className="flex-1 min-w-0">
       <View className="flex-row items-center justify-between">
         <Text
           className="flex-1 min-w-0 text-body-1"
-          style={{ color: destructive ? '#ea0038' : '#0a0a0a' }}
+          style={{ color: destructive ? colors['text-error'] : colors['text-strong'] }}
           numberOfLines={1}
         >
           {label}
@@ -96,11 +108,12 @@ const Row = ({
           <Switch
             value={!!toggleValue}
             onValueChange={onToggle}
-            trackColor={{ false: '#e4e4e6', true: '#1dab61' }}
+            trackColor={{ false: colors['separator'], true: colors['product'] }}
+            // The thumb stays light in both modes, which is what iOS does.
             thumbColor="#ffffff"
           />
         ) : onPress ? (
-          <Ionicons name="chevron-forward" size={16} color="#767779" />
+          <Ionicons name="chevron-forward" size={16} color={colors['text-muted']} />
         ) : null}
       </View>
       {subtitle ? (
@@ -110,7 +123,8 @@ const Row = ({
       ) : null}
     </View>
   </Pressable>
-);
+  );
+};
 
 /** Section heading from the design's "Title small": 15.8pt semibold. */
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (
@@ -120,6 +134,7 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
 );
 
 const ContactInfoScreen = () => {
+  const { colors } = useTheme();
   const router = useRouter();
   const { id, name, image, type } = useLocalSearchParams<{
     id: string;
@@ -213,7 +228,7 @@ const ContactInfoScreen = () => {
             hitSlop={10}
             className="pr-1 active:opacity-60"
           >
-            <Ionicons name="chevron-back" size={32} color="#0a0a0a" />
+            <Ionicons name="chevron-back" size={32} color={colors['text-strong']} />
           </Pressable>
         }
         title="Contact info"
@@ -306,12 +321,12 @@ const ContactInfoScreen = () => {
               className="flex-row items-center gap-[18.66px] pl-[18px] pr-[9px] min-h-[40px] py-[11px] active:bg-surface-muted"
             >
               <View className="h-6 w-6 rounded-full bg-surface-muted items-center justify-center">
-                <Ionicons name="add" size={16} color="#0a0a0a" />
+                <Ionicons name="add" size={16} color={colors['text-strong']} />
               </View>
               <Text className="flex-1 text-body-1 text-text-strong" numberOfLines={1}>
                 Create Group with {title.split(' ')[0]}
               </Text>
-              <Ionicons name="chevron-forward" size={16} color="#767779" />
+              <Ionicons name="chevron-forward" size={16} color={colors['text-muted']} />
             </Pressable>
             {user?.id && user.id !== id ? (
               <Pressable
@@ -328,12 +343,12 @@ const ContactInfoScreen = () => {
                 className="flex-row items-center gap-[18.66px] pl-[18px] pr-[9px] min-h-[40px] py-[11px] border-t-hair border-separator active:bg-surface-muted"
               >
                 <View className="h-6 w-6 rounded-full bg-surface-muted items-center justify-center">
-                  <Ionicons name="people-outline" size={14} color="#0a0a0a" />
+                  <Ionicons name="people-outline" size={14} color={colors['text-strong']} />
                 </View>
                 <Text className="flex-1 text-body-1 text-text-strong" numberOfLines={1}>
                   Start a group with {title.split(' ')[0]}
                 </Text>
-                <Ionicons name="chevron-forward" size={16} color="#767779" />
+                <Ionicons name="chevron-forward" size={16} color={colors['text-muted']} />
               </Pressable>
             ) : null}
           </View>

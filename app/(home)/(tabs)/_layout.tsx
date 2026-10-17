@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HapticTab } from '@/components/HapticTab';
 import { useCometChat } from '@/hooks/useCometChat';
+import { useTheme } from '@/hooks/useTheme';
 
 /**
  * Tab bar built from the Figma file "WhatsApp Screens 2025 with Meta AI - UI for
@@ -45,24 +46,32 @@ const WhatsAppTabIcon = ({
   focusedName: TabIconName;
   label: string;
   width: number;
-}) => (
+}) => {
+  const { colors } = useTheme();
+  return (
   <View className="items-center" style={{ width }}>
-    <Ionicons name={focused ? focusedName : name} size={TAB_ICON} color={focused ? '#0a0a0a' : '#767779'} />
+    <Ionicons
+      name={focused ? focusedName : name}
+      size={TAB_ICON}
+      color={focused ? colors['teal'] : colors['text-muted']}
+    />
     <Text
       className="text-tabbar"
       numberOfLines={1}
-      style={{ color: focused ? '#0a0a0a' : '#767779', fontWeight: '500' }}
+      style={{ color: focused ? colors['teal'] : colors['text-muted'], fontWeight: '500' }}
     >
       {label}
     </Text>
   </View>
-);
+  );
+};
 
 const TabsLayout = () => {
   const router = useRouter();
   const { incomingCall, conversations } = useCometChat();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const { colors } = useTheme();
 
   // The design pins each item to a 32pt column and lets the row distribute the
   // slack with justify-between. Hard-coding 32 makes the wider labels collide
@@ -108,12 +117,15 @@ const TabsLayout = () => {
             // The design's button row ends 2pt above the home indicator.
             paddingBottom: insets.bottom + 2,
             paddingHorizontal: TAB_BAR_PADDING,
-            backgroundColor: 'rgba(244,244,244,0.95)',
-            borderTopWidth: 0.33,
-            borderTopColor: 'rgba(0,0,0,0.3)',
+            // Translucent so list content reads through it the way it does on
+            // iOS, with a solid token behind it in case the alpha composites
+            // oddly on a given surface.
+            backgroundColor: colors['panel-blur'],
+            borderTopWidth: 0.5,
+            borderTopColor: colors['separator'],
             elevation: 0,
           },
-        sceneStyle: { backgroundColor: '#ffffff' },
+        sceneStyle: { backgroundColor: colors['surface'] },
       }}
     >
       <Tabs.Screen

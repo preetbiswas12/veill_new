@@ -2,6 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import clsx from 'clsx';
 import { Pressable, Text, View } from 'react-native';
 
+import { useTheme } from '@/hooks/useTheme';
+
 import Avatar from './Avatar';
 
 interface ConversationRowProps {
@@ -36,13 +38,16 @@ const formatTimestamp = (timestamp?: number): string => {
 };
 
 /** A single tick for sent, a blue double tick once the peer has read it. */
-const DeliveryTicks = ({ status }: { status?: string }) => (
-  <Ionicons
-    name={status === 'read' ? 'checkmark-done' : 'checkmark'}
-    size={16}
-    color={status === 'read' ? '#53BDEB' : '#667781'}
-  />
-);
+const DeliveryTicks = ({ status }: { status?: string }) => {
+  const { colors } = useTheme();
+  return (
+    <Ionicons
+      name={status === 'read' ? 'checkmark-done' : 'checkmark'}
+      size={16}
+      color={status === 'read' ? colors['tick-read'] : colors['text-muted']}
+    />
+  );
+};
 
 /**
  * Conversation row, matching the design at 393pt:

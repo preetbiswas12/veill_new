@@ -1,76 +1,85 @@
 /** @type {import('tailwindcss').Config} */
 
-// Design tokens for a WhatsApp-class iOS messenger.
-//
-// Source of truth is the generated design system's `:root` block (Inter type,
-// 393x852 artboard), cross-checked against the written spec for the values the
-// stylesheet does not name: the green #25D366 used for badges and unread
-// timestamps, teal #008069 for nav-bar actions, and the read-receipt blue.
-//
-// This supersedes the earlier Figma community kit, whose type ran a step small
-// (33.33/16/14 with negative tracking) and whose rows were 77.33pt tall. Those
-// numbers assumed SF Pro's advance widths while the app renders Roboto, which is
-// wider, so text measured wider than every fixed value derived from it. Inter is
-// metrically much closer to SF Pro, and the scale below carries no negative
-// tracking.
-const wa = {
-  // surfaces
-  surface: '#ffffff',
-  'surface-muted': '#f2f2f7', // grouped background, unselected chips
-  'surface-input': '#f0f2f5', // search field and text inputs
-  'surface-active': '#d9fdd3', // selected chip, green tint
-  'surface-cta': 'rgba(17,27,33,0.03)', // circular icon button
-  'panel-blur': 'rgba(242,242,247,0.82)', // nav and tab bar material
-  'panel-blur-warm': 'rgba(239,234,226,0.82)', // thread header and composer
-  'chat-bg': '#efeae2', // thread wallpaper, doodles drawn over it at ~6%
-  'input-border': '#b2b2b2',
-
-  // brand
-  product: '#25d366', // primary green: unread badges, active tab, send button
-  teal: '#008069', // nav-bar actions, focus ring, timestamp accent
-  'product-deep': '#00a884', // pressed/active states
-
-  // text
-  'text-strong': '#111b21',
-  'text-muted': '#667781',
-  'text-faint': 'rgba(17,27,33,0.5)',
-  'text-invert': '#ffffff',
-  'text-error': '#d93025', // destructive, Block/Report/Exit
-  link: '#027eb5', // iOS blue for "Broadcast Lists" and other text links
-  'tick-read': '#53bdeb', // read receipts
-  'sound-off': 'rgba(17,27,33,0.2)', // unplayed waveform bars
-
-  // lines, 0.5pt hairlines
-  separator: '#e9edef',
-  'panel-border': 'rgba(17,27,33,0.12)',
-  'avatar-border': 'rgba(17,27,33,0.1)',
-
-  // message bubbles
-  'bubble-out': '#d9fdd3',
-  'bubble-in': '#ffffff',
-  'bubble-shadow': 'rgba(17,27,33,0.06)',
-
-  // replying
-  quote: '#d42a66', // quote bar and its title
-  'cta-options': '#ffffff', // circles on the attach sheet
-};
+/*
+ * Every colour resolves through a CSS variable defined in global.css, which
+ * holds both the light and the dark value. That is deliberate: it means adding
+ * dark mode to a screen costs nothing, because `bg-surface` and `text-text-muted`
+ * already flip when `.dark` is applied. Writing `dark:` variants per screen would
+ * have doubled every stylesheet and guaranteed the two modes drifted apart.
+ *
+ * The scale itself came from the design system's `:root` block, cross-checked
+ * against the written spec for the values it does not name: the green #25D366
+ * used for unread badges and active tabs, teal #008069 for nav-bar actions, and
+ * the read-receipt blue #53BDEB.
+ *
+ * The type scale carries no negative tracking. An earlier pass used SF Pro's
+ * values (33.33/16/14 at -1.33/-0.32), which assume SF's advance widths; the app
+ * renders Roboto, which is wider, so every fixed measurement derived from the
+ * design came out too small and text overflowed its row.
+ */
+const token = (name) => `rgb(var(--color-${name}) / <alpha-value>)`;
+// A few tokens are translucent by nature, so their alpha is fixed here while the
+// colour still follows the active mode.
+const translucent = (name, alpha) => `rgb(var(--color-${name}) / ${alpha})`;
 
 module.exports = {
   content: ['./app/**/*.{js,jsx,ts,tsx}', './components/**/*.{js,ts,tsx}'],
   presets: [require('nativewind/preset')],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        ...wa,
+        // surfaces
+        surface: token('surface'),
+        'surface-muted': token('surface-muted'),
+        'surface-input': token('surface-input'),
+        'surface-active': token('surface-active'),
+        'surface-cta': token('surface-cta'),
+        'panel-blur': translucent('panel-blur', 0.82),
+        'panel-blur-warm': translucent('panel-blur-warm', 0.86),
+        'chat-bg': token('chat-bg'),
+        'input-border': token('input-border'),
+
+        // brand
+        product: token('product'),
+        teal: token('teal'),
+        'product-deep': token('product-deep'),
+
+        // text
+        'text-strong': token('text-strong'),
+        'text-muted': token('text-muted'),
+        'text-invert': token('text-invert'),
+        'text-error': token('text-error'),
+        link: token('link'),
+        'tick-read': token('tick-read'),
+
+        // lines
+        separator: token('separator'),
+        'panel-border': token('panel-border'),
+        'avatar-border': token('avatar-border'),
+
+        // bubbles
+        'bubble-out': token('bubble-out'),
+        'bubble-in': token('bubble-in'),
+        'bubble-shadow': translucent('bubble-shadow', 0.06),
+
+        // replying
+        quote: token('quote'),
+        'cta-options': token('cta-options'),
+
+        // derived, translucent
+        'text-faint': translucent('text-strong', 0.5),
+        'sound-off': translucent('text-strong', 0.2),
+
         // The app previously used Signal blue here. Pointing `primary` at the
         // WhatsApp green re-skins every existing bg-primary / text-primary in one
         // place instead of hunting them down.
-        primary: wa.product,
+        primary: token('product'),
+        transparent: 'transparent',
+        current: 'currentColor',
       },
       fontSize: {
-        // size / line-height. No negative tracking: the design specifies none,
-        // and carrying SF's tracking over onto a wider fallback font is what made
-        // rows overflow in the first place.
+        // size / line-height
         display: ['34px', { lineHeight: '41px' }], // large title
         'body-1': ['17px', { lineHeight: '22px' }], // nav title, row name, body
         'body-2': ['15px', { lineHeight: '20px' }], // preview, subtitle, chips
@@ -80,16 +89,16 @@ module.exports = {
       },
       borderRadius: {
         search: '10px',
-        chip: '16px', // chips are full pills; this covers partial-radius cases
+        chip: '16px', // chips are full pills; covers partial-radius cases
         card: '14px', // cards and sheets
         avatar: '28px', // 56pt avatar
         bubble: '12px',
       },
       spacing: {
-        row: '76px', // conversation row: 56pt avatar + 2 lines
+        row: '76px', // conversation row: 56pt avatar over two text lines
         statusbar: '54px',
         navbar: '44px',
-        header: '98px', // status bar + nav bar
+        header: '98px', // status bar plus nav bar
         tabbar: '83px',
       },
       borderWidth: {
@@ -97,8 +106,7 @@ module.exports = {
         bubble: '0.5px',
       },
       minHeight: {
-        // 44pt minimum tap target, per the accessibility requirement
-        tap: '44px',
+        tap: '44px', // 44pt minimum tap target
       },
     },
   },

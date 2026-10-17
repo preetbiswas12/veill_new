@@ -6,6 +6,7 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-nati
 import Avatar from '@/components/Avatar';
 import Screen from '@/components/Screen';
 import { CallHistoryEntry, useCometChat } from '@/hooks/useCometChat';
+import { useTheme } from '@/hooks/useTheme';
 
 /**
  * Calls, built from the Figma frame "Calls" (156:4133): a 33.33pt bold large
@@ -15,6 +16,7 @@ import { CallHistoryEntry, useCometChat } from '@/hooks/useCometChat';
  */
 
 const formatWhen = (timestamp: number): string => {
+  const { colors } = useTheme();
   if (!timestamp) return '';
   const date = new Date(timestamp);
   const now = new Date();
@@ -36,6 +38,7 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
 );
 
 const CallsScreen = () => {
+  const { colors } = useTheme();
   const router = useRouter();
   const { callHistory, loadingCallHistory, refreshCallHistory, startCall } = useCometChat();
 
@@ -75,7 +78,7 @@ const CallsScreen = () => {
             className="flex-row items-center gap-4 px-4 rounded-[10px] active:opacity-70"
           >
             <View className="h-10 w-10 rounded-full bg-surface-cta items-center justify-center">
-              <Ionicons name="add" size={24} color="#0a0a0a" />
+              <Ionicons name="add" size={24} color={colors['text-strong']} />
             </View>
             <Text className="text-[15.8px] text-text-strong">Add favourite</Text>
           </Pressable>
@@ -86,13 +89,13 @@ const CallsScreen = () => {
 
           {loadingCallHistory && callHistory.length === 0 ? (
             <View className="py-10 items-center">
-              <ActivityIndicator color="#1dab61" />
+              <ActivityIndicator color={colors['product']} />
             </View>
           ) : null}
 
           {!loadingCallHistory && callHistory.length === 0 ? (
             <View className="items-center gap-2 px-10 py-10">
-              <Ionicons name="call-outline" size={36} color="#767779" />
+              <Ionicons name="call-outline" size={36} color={colors['text-muted']} />
               <Text className="text-body-1 font-semibold text-text-strong">No calls yet</Text>
               <Text className="text-body-2 text-text-muted text-center">
                 Start a call from a chat and it will show up here.
@@ -125,7 +128,7 @@ const CallsScreen = () => {
                 <View className="flex-1 min-w-0 pr-4 pt-[10px] gap-[1.5px]">
                   <Text
                     className="text-body-1"
-                    style={{ color: missed ? '#ea0038' : '#0a0a0a' }}
+                    style={{ color: missed ? colors['text-error'] : colors['text-strong'] }}
                     numberOfLines={1}
                   >
                     {entry.peerName || entry.peerId}
@@ -146,7 +149,7 @@ const CallsScreen = () => {
                               : 'arrow-down'
                       }
                       size={16}
-                      color="#767779"
+                      color={colors['text-muted']}
                     />
                     <Text className="text-body-2 text-text-muted">{label}</Text>
                   </View>
@@ -169,7 +172,7 @@ const CallsScreen = () => {
         </View>
 
         <View className="flex-row items-start justify-center gap-1 py-px px-4 mt-2">
-          <Ionicons name="lock-closed" size={12} color="#767779" />
+          <Ionicons name="lock-closed" size={12} color={colors['text-muted']} />
           <Text className="text-caption text-text-muted">
             Your calls are <Text className="text-text-product">end-to-end encrypted</Text>
           </Text>

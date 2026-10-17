@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { Text, View } from 'react-native';
 
 import Avatar from './Avatar';
+import { useTheme } from '@/hooks/useTheme';
 
 interface MessageListHeaderProps {
   channel: { id: string; name?: string; image?: string };
@@ -9,6 +10,7 @@ interface MessageListHeaderProps {
 }
 
 const MessageListHeader = ({ channel, isDMChannel = true }: MessageListHeaderProps) => {
+  const { colors } = useTheme();
   const channelName = channel.name || channel.id || 'Unknown';
 
   const text = isDMChannel
@@ -28,7 +30,7 @@ const MessageListHeader = ({ channel, isDMChannel = true }: MessageListHeaderPro
         {channelName}
       </Text>
       <View className="items-center gap-1.5 mt-1">
-        <Feather name="lock" size={13} color="#767779" />
+        <Feather name="lock" size={13} color={colors['text-muted']} />
         <Text className="text-xs text-text-muted text-center leading-4">{text}</Text>
       </View>
     </View>

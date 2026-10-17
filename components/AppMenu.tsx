@@ -6,12 +6,14 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { getError } from '../lib/utils';
 import Avatar from './Avatar';
 import { useCometChat } from '@/hooks/useCometChat';
+import { useTheme } from '@/hooks/useTheme';
 
 /**
  * Account menu used by the design's `Header` component. The trigger is the
  * signed-in avatar; the sheet carries the profile shortcut and sign out.
  */
 const AppMenu = () => {
+  const { colors } = useTheme();
   const router = useRouter();
   const { user, signOut } = useCometChat();
   const [menuVisible, setMenuVisible] = useState(false);
@@ -76,7 +78,7 @@ const AppMenu = () => {
               className="flex-row items-center justify-between px-4 py-3 border-b-hair border-separator active:bg-surface-muted"
             >
               <Text className="text-body-1 text-text-strong">Profile</Text>
-              <Ionicons name="person-outline" size={20} color="#0a0a0a" />
+              <Ionicons name="person-outline" size={20} color={colors['text-strong']} />
             </Pressable>
             <Pressable
               onPress={() => void handleSignOut()}
@@ -84,7 +86,7 @@ const AppMenu = () => {
               className="flex-row items-center justify-between px-4 py-3 active:bg-surface-muted"
             >
               <Text className="text-body-1 text-text-error">Sign out</Text>
-              <Ionicons name="log-out-outline" size={20} color="#ea0038" />
+              <Ionicons name="log-out-outline" size={20} color={colors['text-error']} />
             </Pressable>
           </View>
         </Pressable>

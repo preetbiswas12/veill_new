@@ -6,6 +6,7 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import Avatar from '@/components/Avatar';
 import Screen from '@/components/Screen';
 import { useCometChat } from '@/hooks/useCometChat';
+import { useTheme } from '@/hooks/useTheme';
 
 /**
  * Communities, rebuilt from the Figma frame "Communities" (188:3102): a 33.33pt
@@ -15,6 +16,7 @@ import { useCometChat } from '@/hooks/useCometChat';
  * groups the account actually belongs to once there are any.
  */
 const CommunitiesScreen = () => {
+  const { colors } = useTheme();
   const router = useRouter();
   const { groups, loadingGroups, refreshGroups } = useCometChat();
 
@@ -32,13 +34,13 @@ const CommunitiesScreen = () => {
           accessibilityLabel="New community"
           className="h-7 w-7 rounded-full bg-surface-cta items-center justify-center active:opacity-60"
         >
-          <Ionicons name="add" size={20} color="#0a0a0a" />
+          <Ionicons name="add" size={20} color={colors['text-strong']} />
         </Pressable>
       </View>
 
       {loadingGroups && groups.length === 0 ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color="#1dab61" />
+          <ActivityIndicator color={colors['product']} />
         </View>
       ) : null}
 
@@ -48,7 +50,7 @@ const CommunitiesScreen = () => {
               brand-coloured glyph so the layout keeps its 162x151 footprint. */}
           <View className="items-center pt-[22px]">
             <View className="h-[151px] w-[162px] items-center justify-center">
-              <Ionicons name="people" size={120} color="#d0fecf" />
+              <Ionicons name="people" size={120} color={colors['surface-active']} />
             </View>
           </View>
 
@@ -68,7 +70,7 @@ const CommunitiesScreen = () => {
               className="flex-row items-center gap-0.5 active:opacity-70"
             >
               <Text className="text-body-2 text-text-product">See example communities</Text>
-              <Ionicons name="chevron-forward" size={12} color="#1dab61" />
+              <Ionicons name="chevron-forward" size={12} color={colors['product']} />
             </Pressable>
 
             <View className="w-full pt-[30px] px-2">
@@ -78,7 +80,7 @@ const CommunitiesScreen = () => {
                 accessibilityLabel="New Community"
                 className="flex-row items-center justify-center gap-1.5 px-6 py-2.5 rounded-[14px] bg-primary active:opacity-80"
               >
-                <Ionicons name="add" size={24} color="#ffffff" />
+                <Ionicons name="add" size={24} color={colors['text-invert']} />
                 <Text className="text-body-1 text-white">New Community</Text>
               </Pressable>
             </View>
@@ -109,7 +111,7 @@ const CommunitiesScreen = () => {
               {group.memberCount} {group.memberCount === 1 ? 'member' : 'members'}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#767779" />
+          <Ionicons name="chevron-forward" size={18} color={colors['text-muted']} />
         </Pressable>
       ))}
     </Screen>

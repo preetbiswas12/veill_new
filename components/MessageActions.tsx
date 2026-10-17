@@ -1,5 +1,7 @@
-import { Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+
+import { useTheme } from '@/hooks/useTheme';
 
 import Button from './Button';
 
@@ -27,19 +29,26 @@ const Row = ({
   destructive = false,
   onPress,
 }: {
-  icon: React.ComponentProps<typeof Feather>['name'];
+  icon: React.ComponentProps<typeof Ionicons>['name'];
   label: string;
   destructive?: boolean;
   onPress: () => void;
-}) => (
+}) => {
+  const { colors } = useTheme();
+  return (
   <Pressable
     onPress={onPress}
     className="flex-row items-center gap-4 px-5 py-4 active:bg-surface-muted"
   >
-    <Feather name={icon} size={20} color={destructive ? '#ea0038' : '#0a0a0a'} />
+    <Ionicons
+      name={icon}
+      size={20}
+      color={destructive ? colors['text-error'] : colors['text-strong']}
+    />
     <Text className={`text-body-1 ${destructive ? 'text-text-error' : 'text-text-strong'}`}>{label}</Text>
   </Pressable>
-);
+  );
+};
 
 /** Bottom sheet for per-message actions, on the design's white surface. */
 const MessageActions = ({
@@ -96,11 +105,11 @@ const MessageActions = ({
 
       {canCopy ? <Row icon="copy" label="Copy text" onPress={() => { onCopy?.(); onClose(); }} /> : null}
       {canReply ? (
-        <Row icon="corner-up-left" label="Reply" onPress={() => { onReply?.(); onClose(); }} />
+        <Row icon="return-down-forward" label="Reply" onPress={() => { onReply?.(); onClose(); }} />
       ) : null}
       {canDelete ? (
         <Row
-          icon="trash-2"
+          icon="trash-outline"
           label="Delete message"
           destructive
           onPress={() => { onDelete?.(); onClose(); }}

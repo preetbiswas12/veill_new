@@ -13,6 +13,7 @@ import {
 
 import MessageAvatar from './MessageAvatar';
 import VideoAttachment from './VideoAttachment';
+import { useTheme } from '@/hooks/useTheme';
 
 interface MessageBubbleProps {
   message: any;
@@ -32,6 +33,7 @@ interface MessageBubbleProps {
 const MEDIA_SIZE = { width: 216, height: 236 };
 
 const formatTime = (timestamp: number) => {
+  const { colors } = useTheme();
   if (!timestamp) return '';
   return new Date(timestamp).toLocaleTimeString([], {
     hour: '2-digit',
@@ -41,7 +43,7 @@ const formatTime = (timestamp: number) => {
 
 /**
  * Bubble from the Figma thread: 12pt radius, a 0.66pt rgba(0,0,0,0.06) hairline,
- * outgoing #d0fecf against the warm #f5f2eb wallpaper and incoming white, with
+ * outgoing #D9FDD3 against the warm #EFEAE2 wallpaper and incoming white, with
  * the time and read ticks sitting inside the bubble on the trailing edge.
  */
 const MessageBubble = ({
@@ -55,6 +57,7 @@ const MessageBubble = ({
   onLongPress,
   onReact,
 }: MessageBubbleProps) => {
+  const { colors } = useTheme();
   const category =
     typeof message?.getCategory === 'function' ? message.getCategory() : message?.category;
   const kind = typeof message?.getType === 'function' ? message.getType() : message?.type;
@@ -66,7 +69,7 @@ const MessageBubble = ({
     if (!label) return null;
     return (
       <View className="flex-row items-center justify-center gap-1.5 my-1 px-6">
-        <Ionicons name={kind === 'video' ? 'videocam-outline' : 'call-outline'} size={13} color="#767779" />
+        <Ionicons name={kind === 'video' ? 'videocam-outline' : 'call-outline'} size={13} color={colors['text-muted']} />
         <Text className="text-body-3 text-text-muted">
           {label}
           {timestamp ? ` · ${formatTime(timestamp)}` : ''}
@@ -112,7 +115,7 @@ const MessageBubble = ({
         className="flex-row items-center gap-2 py-1"
         accessibilityLabel="Open attachment"
       >
-        <Ionicons name="document-text-outline" size={22} color="#0a0a0a" />
+        <Ionicons name="document-text-outline" size={22} color={colors['text-strong']} />
         <View className="flex-1 min-w-0">
           <Text className="text-body-2 font-medium text-text-strong" numberOfLines={2}>
             {attachment.name || 'Attachment'}
@@ -167,12 +170,12 @@ const MessageBubble = ({
             <Text className="text-caption text-text-faint">{formatTime(timestamp)}</Text>
             {isOwn ? (
               status === 'sending' ? (
-                <Ionicons name="time-outline" size={12} color="rgba(0,0,0,0.5)" />
+                <Ionicons name="time-outline" size={12} color={colors['text-muted']} />
               ) : (
                 <Ionicons
                   name={isRead ? 'checkmark-done' : 'checkmark'}
                   size={15}
-                  color={isRead ? '#53bdeb' : 'rgba(0,0,0,0.5)'}
+                  color={isRead ? colors['tick-read'] : colors['text-muted']}
                 />
               )
             ) : null}

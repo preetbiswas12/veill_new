@@ -8,6 +8,7 @@ import Screen from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { useCometChat } from '@/hooks/useCometChat';
 import { isPushAvailable } from '@/lib/push';
+import { useTheme } from '@/hooks/useTheme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -34,13 +35,16 @@ const ToggleRow = ({
   value: boolean;
   onChange: (next: boolean) => void;
   last?: boolean;
-}) => (
+}) => {
+  // Reads the palette itself rather than borrowing the screen's `colors`.
+  const { colors } = useTheme();
+  return (
   <View
     className={`flex-row items-center gap-3 pl-4 pr-4 min-h-[40px] py-2.5 ${
       last ? '' : 'border-b-hair border-separator'
     }`}
   >
-    <Ionicons name={icon} size={24} color="#0a0a0a" />
+    <Ionicons name={icon} size={24} color={colors['text-strong']} />
     <View className="flex-1 min-w-0">
       <Text className="text-body-1 text-text-strong" numberOfLines={1}>
         {label}
@@ -54,14 +58,17 @@ const ToggleRow = ({
     <Switch
       value={value}
       onValueChange={onChange}
-      trackColor={{ false: '#e4e4e6', true: '#1dab61' }}
+      trackColor={{ false: colors['separator'], true: colors['product'] }}
+      // The thumb stays light in both modes, which is what iOS does.
       thumbColor="#ffffff"
       accessibilityLabel={label}
     />
   </View>
-);
+  );
+};
 
 const NotificationsScreen = () => {
+  const { colors } = useTheme();
   const router = useRouter();
   const {
     pushEnabled,
@@ -89,7 +96,7 @@ const NotificationsScreen = () => {
             hitSlop={10}
             className="pr-1 active:opacity-60"
           >
-            <Ionicons name="chevron-back" size={32} color="#0a0a0a" />
+            <Ionicons name="chevron-back" size={32} color={colors['text-strong']} />
           </Pressable>
         }
         title="Notifications"
@@ -138,7 +145,7 @@ const NotificationsScreen = () => {
 
         {conversations.length === 0 ? (
           <View className="mx-4 rounded-[10px] px-4 py-6 items-center gap-2">
-            <Ionicons name="chatbubbles-outline" size={32} color="#767779" />
+            <Ionicons name="chatbubbles-outline" size={32} color={colors['text-muted']} />
             <Text className="text-body-2 text-text-muted text-center">
               No conversations to mute yet.
             </Text>

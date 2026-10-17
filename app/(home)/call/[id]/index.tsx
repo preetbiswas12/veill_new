@@ -7,8 +7,10 @@ import Avatar from '@/components/Avatar';
 import Button from '@/components/Button';
 import Screen from '@/components/Screen';
 import { getCallingSdk, useCometChat } from '@/hooks/useCometChat';
+import { useTheme } from '@/hooks/useTheme';
 
 const CallScreen = () => {
+  const { colors } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams<{
     id: string;
@@ -173,7 +175,7 @@ const CallScreen = () => {
             </View>
           ) : ended ? (
             <View className="items-center gap-2">
-              <Feather name="phone-off" size={30} color="#9ca3af" />
+              <Feather name="phone-off" size={30} color={colors['text-muted']} />
               <Text className="text-sm text-text-muted">{callError || 'Call ended'}</Text>
             </View>
           ) : (

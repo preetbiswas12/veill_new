@@ -20,6 +20,7 @@ import Screen from '@/components/Screen';
 import { HeaderButton, ScreenHeader } from '@/components/ScreenHeader';
 import { useFavourites } from '@/hooks/useFavourites';
 import { getMessageText, useCometChat } from '@/hooks/useCometChat';
+import { useTheme } from '@/hooks/useTheme';
 
 interface ConversationItem {
   id: string;
@@ -36,42 +37,45 @@ interface ConversationItem {
 type FilterKey = 'all' | 'unread' | 'favourites' | 'groups';
 
 /** The design's 34pt filter pill: 19pt radius, 14pt horizontal padding. */
+/**
+ * Filter chip from the design: `px-3 h-8 rounded-full`, 15/20 medium, selected
+ * on the green tint.
+ *
+ * An earlier version had an icon-only variant driven by an `icon` prop, which
+ * rendered disabled and did nothing anywhere it was used. There is no chip list
+ * feature behind it, so the variant is gone rather than left as a dead control.
+ */
 const FilterChip = ({
   label,
   active,
-  icon,
   onPress,
 }: {
-  label?: string;
-  active?: boolean;
-  icon?: boolean;
+  label: string;
+  active: boolean;
   onPress?: () => void;
 }) => (
   <Pressable
     onPress={onPress}
-    disabled={icon}
     accessibilityRole="button"
-    accessibilityState={{ selected: !!active }}
+    accessibilityState={{ selected: active }}
     className={[
-      'flex-row items-center justify-center shrink-0 rounded-chip',
-      icon ? 'size-[34px]' : 'h-[34px] px-[14px]',
+      'shrink-0 h-8 px-3 rounded-full items-center justify-center',
       active ? 'bg-surface-active' : 'bg-surface-muted',
     ].join(' ')}
   >
-    {icon ? (
-      <Ionicons name="add" size={24} color="#0a0a0a" />
-    ) : (
-      <Text
-        className="text-body-2 font-semibold"
-        style={{ color: active ? '#15603e' : '#767779' }}
-      >
-        {label}
-      </Text>
-    )}
+    <Text
+      className={[
+        'text-body-2 font-medium',
+        active ? 'text-text-strong' : 'text-text-muted',
+      ].join(' ')}
+    >
+      {label}
+    </Text>
   </Pressable>
 );
 
 const ChatsScreen = () => {
+  const { colors } = useTheme();
   const {
     conversations,
     loadingConversations,
@@ -233,12 +237,12 @@ const ChatsScreen = () => {
         <View className="pt-px">
           <View className="flex-row items-center gap-2.5 pb-2">
             <View className="flex-1 flex-row items-center gap-2.5 p-[5px] rounded-search bg-surface-muted">
-              <Ionicons name="search" size={24} color="#767779" />
+              <Ionicons name="search" size={24} color={colors['text-muted']} />
               <TextInput
                 value={query}
                 onChangeText={setQuery}
                 placeholder="Ask Meta AI or Search"
-                placeholderTextColor="#767779"
+                placeholderTextColor={colors['text-muted']}
                 accessibilityLabel="Search chats"
                 className="flex-1 text-[16.4px] text-text-strong"
                 returnKeyType="search"
@@ -251,7 +255,7 @@ const ChatsScreen = () => {
                   accessibilityLabel="Clear search"
                   hitSlop={8}
                 >
-                  <Ionicons name="close-circle" size={20} color="#767779" />
+                  <Ionicons name="close-circle" size={20} color={colors['text-muted']} />
                 </Pressable>
               ) : null}
             </View>
@@ -299,7 +303,7 @@ const ChatsScreen = () => {
         className="flex-row items-center gap-3 pl-8 pr-4 py-2.5 border-b-hair border-separator active:bg-surface-muted"
       >
         <View className="w-8 h-6 items-center justify-center">
-          <Ionicons name="archive-outline" size={24} color="#0a0a0a" />
+          <Ionicons name="archive-outline" size={24} color={colors['text-strong']} />
         </View>
         <Text className="text-body-1 font-semibold text-text-strong" numberOfLines={1}>
           Archived
@@ -346,7 +350,7 @@ const ChatsScreen = () => {
         }
         ListEmptyComponent={
           <View className="items-center justify-center py-16 px-10">
-            <Ionicons name="chatbubbles-outline" size={36} color="#767779" />
+            <Ionicons name="chatbubbles-outline" size={36} color={colors['text-muted']} />
             <Text className="text-body-1 font-semibold text-text-strong mt-3">
               {query ? 'No matches' : 'No conversations yet'}
             </Text>
@@ -360,7 +364,7 @@ const ChatsScreen = () => {
         // The design pins the encryption note under the list.
         ListFooterComponent={
           <View className="flex-row items-start justify-center gap-1 py-px px-4">
-            <Ionicons name="lock-closed" size={12} color="#767779" />
+            <Ionicons name="lock-closed" size={12} color={colors['text-muted']} />
             <Text className="text-caption text-text-muted">
               Your personal messages are{' '}
               <Text className="text-text-product">end-to-end encrypted</Text>

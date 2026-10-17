@@ -9,6 +9,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import AddMoreSheet from './AddMoreSheet';
 import AttachButton from './AttachButton';
 import { takePendingCapture } from '@/lib/capture';
+import { useTheme } from '@/hooks/useTheme';
 
 /** Typing signals are throttled: one "started" per window, "stopped" on idle. */
 const TYPING_THROTTLE_MS = 3_000;
@@ -41,6 +42,7 @@ const CustomMessageInput = ({
   replyTo = null,
   onClearReply,
 }: CustomMessageInputProps) => {
+  const { colors } = useTheme();
   const router = useRouter();
   const { sendTextMessage, sendMediaMessage, sendTyping } = useCometChat();
   const [text, setText] = useState('');
@@ -238,7 +240,7 @@ const CustomMessageInput = ({
                   accessibilityLabel="Cancel reply"
                   hitSlop={8}
                 >
-                  <Ionicons name="close-circle" size={24} color="#767779" />
+                  <Ionicons name="close-circle" size={24} color={colors['text-muted']} />
                 </Pressable>
               </View>
             </View>
@@ -251,7 +253,7 @@ const CustomMessageInput = ({
                 value={text}
                 onChangeText={handleChangeText}
                 placeholder={placeholder}
-                placeholderTextColor="#767779"
+                placeholderTextColor={colors['text-muted']}
                 className="flex-1 text-[16px] leading-[21px] text-text-strong"
                 style={{ letterSpacing: -0.32 }}
                 maxLength={1000}
@@ -283,7 +285,7 @@ const CustomMessageInput = ({
                   accessibilityLabel="Emoji and stickers"
                   hitSlop={8}
                 >
-                  <Ionicons name="happy-outline" size={24} color="#767779" />
+                  <Ionicons name="happy-outline" size={24} color={colors['text-muted']} />
                 </Pressable>
               )}
             </View>
@@ -301,7 +303,7 @@ const CustomMessageInput = ({
                 accessibilityLabel="Camera"
                 hitSlop={6}
               >
-                <Ionicons name="camera-outline" size={32} color="#0a0a0a" />
+                <Ionicons name="camera-outline" size={32} color={colors['text-strong']} />
               </Pressable>
               {!text.trim() ? (
                 <Pressable
@@ -311,7 +313,7 @@ const CustomMessageInput = ({
                   accessibilityLabel="Voice message"
                   hitSlop={6}
                 >
-                  <Ionicons name="mic-outline" size={32} color="#0a0a0a" />
+                  <Ionicons name="mic-outline" size={32} color={colors['text-strong']} />
                 </Pressable>
               ) : null}
             </View>

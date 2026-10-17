@@ -21,9 +21,11 @@ import Screen from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import VideoAttachment from '@/components/VideoAttachment';
 import { OutgoingMedia, useCometChat } from '@/hooks/useCometChat';
+import { useTheme } from '@/hooks/useTheme';
 
 /** The design shows relative time under a status ("4h ago"), not a clock. */
 const formatWhen = (timestamp: number): string => {
+  const { colors } = useTheme();
   if (!timestamp) return '';
   const diffMs = Date.now() - timestamp;
   const minutes = Math.round(diffMs / 60000);
@@ -37,6 +39,7 @@ const formatWhen = (timestamp: number): string => {
 };
 
 const StoriesScreen = () => {
+  const { colors } = useTheme();
   const router = useRouter();
   const { user, stories, storiesLoading, refreshStories, sendStory } = useCometChat();
   const [viewer, setViewer] = useState<{ senderId: string; index: number } | null>(null);
@@ -131,7 +134,7 @@ const StoriesScreen = () => {
               accessibilityLabel="Add a status update"
               className="h-7 w-7 rounded-full bg-surface-cta items-center justify-center active:opacity-60"
             >
-              <Ionicons name="camera-outline" size={22} color="#0a0a0a" />
+              <Ionicons name="camera-outline" size={22} color={colors['text-strong']} />
             </Pressable>
             <Pressable
               onPress={() => router.push('/new-group')}
@@ -139,7 +142,7 @@ const StoriesScreen = () => {
               accessibilityLabel="New group"
               className="h-7 w-7 rounded-full bg-surface-cta items-center justify-center active:opacity-60"
             >
-              <Ionicons name="create-outline" size={20} color="#0a0a0a" />
+              <Ionicons name="create-outline" size={20} color={colors['text-strong']} />
             </Pressable>
           </View>
         }
@@ -175,7 +178,7 @@ const StoriesScreen = () => {
                 {storyRing(Boolean(myStories?.items.length), 64)}
                 {!myStories?.items.length ? (
                   <View className="absolute -bottom-1 -right-1 w-[22px] h-[22px] rounded-full border-[3px] border-white bg-primary items-center justify-center">
-                    <Ionicons name="add" size={14} color="#ffffff" />
+                    <Ionicons name="add" size={14} color={colors['text-invert']} />
                   </View>
                 ) : null}
               </View>
@@ -198,7 +201,7 @@ const StoriesScreen = () => {
 
             {storiesLoading && stories.length === 0 ? (
               <View className="items-center py-10">
-                <ActivityIndicator color="#1dab61" />
+                <ActivityIndicator color={colors['product']} />
               </View>
             ) : otherStories.length === 0 ? (
               <View className="items-center py-8 gap-1 px-8">
@@ -253,7 +256,7 @@ const StoriesScreen = () => {
                 <Text className="flex-1 text-[15.8px] font-semibold text-text-muted">
                   Find channels to follow
                 </Text>
-                <Ionicons name="chevron-forward" size={16} color="#767779" />
+                <Ionicons name="chevron-forward" size={16} color={colors['text-muted']} />
               </Pressable>
               <Pressable
                 onPress={() => router.push('/communities')}
@@ -307,7 +310,7 @@ const StoriesScreen = () => {
                 onPress={() => setViewer(null)}
                 accessibilityLabel="Close story"
               >
-                <Ionicons name="close" size={26} color="#ffffff" />
+                <Ionicons name="close" size={26} color={colors['text-invert']} />
               </Button>
             </View>
 

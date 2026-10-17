@@ -16,6 +16,7 @@ import {
 import Avatar from '@/components/Avatar';
 import Screen from '@/components/Screen';
 import { useCometChat } from '@/hooks/useCometChat';
+import { useTheme } from '@/hooks/useTheme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -40,7 +41,11 @@ const Row = ({
   label: string;
   onPress: () => void;
   last?: boolean;
-}) => (
+}) => {
+  // A helper component has to read the palette itself; the screen's own
+  // `colors` is not in scope here.
+  const { colors } = useTheme();
+  return (
   <Pressable
     onPress={onPress}
     accessibilityRole="button"
@@ -49,13 +54,14 @@ const Row = ({
       last ? '' : 'border-b-hair border-separator'
     }`}
   >
-    <Ionicons name={icon} size={24} color="#0a0a0a" />
+    <Ionicons name={icon} size={24} color={colors['text-strong']} />
     <Text className="flex-1 min-w-0 text-body-1 text-text-strong" numberOfLines={1}>
       {label}
     </Text>
-    <Ionicons name="chevron-forward" size={16} color="#767779" />
+    <Ionicons name="chevron-forward" size={16} color={colors['text-muted']} />
   </Pressable>
-);
+  );
+};
 
 const notWired = (what: string) => () =>
   Alert.alert(what, 'This section is not connected to CometChat yet.');
@@ -67,6 +73,7 @@ const openExternal = (url: string) => () => {
 };
 
 const SettingsScreen = () => {
+  const { colors } = useTheme();
   const router = useRouter();
   const { user, conversations, groups, messagesByConversation } = useCometChat();
   const [query, setQuery] = useState('');
@@ -218,12 +225,12 @@ const SettingsScreen = () => {
           <View className="pt-px">
             <View className="flex-row items-center gap-2.5 pb-2">
               <View className="flex-1 flex-row items-center gap-1 p-[5px] rounded-search bg-surface-cta">
-                <Ionicons name="search" size={24} color="#767779" />
+                <Ionicons name="search" size={24} color={colors['text-muted']} />
                 <TextInput
                   value={query}
                   onChangeText={setQuery}
                   placeholder="Search"
-                  placeholderTextColor="#767779"
+                  placeholderTextColor={colors['text-muted']}
                   accessibilityLabel="Search settings"
                   className="flex-1 text-[16.4px] text-text-strong"
                   returnKeyType="search"
@@ -253,7 +260,7 @@ const SettingsScreen = () => {
                 </Text>
               </View>
               <View className="h-7 w-7 rounded-full bg-surface-cta items-center justify-center">
-                <Ionicons name="create-outline" size={18} color="#0a0a0a" />
+                <Ionicons name="create-outline" size={18} color={colors['text-strong']} />
               </View>
             </Pressable>
             <Row
@@ -286,7 +293,7 @@ const SettingsScreen = () => {
 
         {visibleGroups.length === 0 ? (
           <View className="items-center gap-2 px-10 py-12">
-            <Ionicons name="search-outline" size={36} color="#767779" />
+            <Ionicons name="search-outline" size={36} color={colors['text-muted']} />
             <Text className="text-body-2 text-text-muted text-center">
               No settings match &quot;{query.trim()}&quot;.
             </Text>

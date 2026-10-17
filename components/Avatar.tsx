@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Text, TextStyle, View } from 'react-native';
 import AppImage from './AppImage';
+import { useTheme } from '@/hooks/useTheme';
 
 interface AvatarProps {
   name: string;
@@ -19,6 +20,7 @@ const Avatar = ({
   fontWeight = '500',
   placeholderType = 'text',
 }: AvatarProps) => {
+  const { colors } = useTheme();
   if (imageUrl)
     return (
       <View
@@ -39,7 +41,7 @@ const Avatar = ({
       style={{
         width: size,
         height: size,
-        backgroundColor: '#e6e6e6',
+        backgroundColor: colors['surface-muted'],
       }}
       className="shrink-0 rounded-full aspect-square flex flex-row items-center justify-center overflow-hidden"
     >
@@ -49,13 +51,13 @@ const Avatar = ({
             fontSize,
             fontWeight,
           }}
-          className="leading-[2] text-[#767779] uppercase"
+          className="leading-[2] text-text-muted uppercase"
         >
           {name ? name[0] : ''}
         </Text>
       )}
       {placeholderType === 'icon' && (
-        <Ionicons name="people-outline" size={fontSize} color="#767779" />
+        <Ionicons name="people-outline" size={fontSize} color={colors['text-muted']} />
       )}
     </View>
   );

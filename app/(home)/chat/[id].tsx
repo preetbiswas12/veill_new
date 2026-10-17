@@ -20,6 +20,7 @@ import Button from '@/components/Button';
 import CustomMessageInput from '@/components/CustomMessageInput';
 import DateDivider, { getDateKey } from '@/components/DateDivider';
 import MessageActions from '@/components/MessageActions';
+import ChatWallpaper from '@/components/ChatWallpaper';
 import MessageBubble from '@/components/MessageBubble';
 import MessageListHeader from '@/components/MessageListHeader';
 import Screen from '@/components/Screen';
@@ -32,6 +33,7 @@ import {
   getMessageTimestamp,
   useCometChat,
 } from '@/hooks/useCometChat';
+import { useTheme } from '@/hooks/useTheme';
 
 /** Messages closer together than this collapse into one visual group. */
 const GROUP_WINDOW_MS = 5 * 60 * 1000;
@@ -53,6 +55,7 @@ type ThreadItem =
 const senderOf = (message: any) => message?.getSender?.()?.getUid?.() || '';
 
 const ChatScreen = () => {
+  const { colors } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
@@ -323,10 +326,10 @@ const ChatScreen = () => {
             </Text>
             <Text
               className="text-body-3"
-              style={{ color: isTyping ? '#1dab61' : 'rgba(0,0,0,0.5)' }}
+              style={{ color: isTyping ? colors['product'] : colors['text-muted'] }}
               numberOfLines={1}
             >
-              {isTyping ? 'typing…' : 'tap here for contact info'}
+              {isTyping ? 'typing\u2026' : 'tap here for contact info'}
             </Text>
           </View>
         </Pressable>
@@ -361,10 +364,12 @@ const ChatScreen = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
       >
-        <View className="flex-1">
+        <View className="flex-1 bg-chat-bg">
+          {/* The design's wallpaper is #EFEAE2 with a doodle pattern at ~6%. */}
+          <ChatWallpaper />
           {isLoadingMessages && messages.length === 0 ? (
             <View className="flex-1 items-center justify-center">
-              <ActivityIndicator color="#1dab61" />
+              <ActivityIndicator color={colors['product']} />
             </View>
           ) : (
             <FlatList
@@ -410,7 +415,7 @@ const ChatScreen = () => {
                 className="w-11 h-11 rounded-full items-center justify-center bg-white shadow-lg border border-gray-100"
                 accessibilityLabel="Jump to latest message"
               >
-                <Feather name="chevron-down" size={22} color="#767779" />
+                <Feather name="chevron-down" size={22} color={colors['text-muted']} />
                 {unreadOnEntry > 0 ? (
                   <View className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-primary items-center justify-center">
                     <Text className="text-[10px] font-semibold text-white">
