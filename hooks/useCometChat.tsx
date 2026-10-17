@@ -20,6 +20,15 @@ export interface CometChatUser {
   username?: string;
 }
 
+export interface CometChatGroup {
+  id: string;
+  name: string;
+  image?: string;
+  memberCount: number;
+  /** The shared stories group backs the Updates tab and is not a real group. */
+  isStoriesBacking?: boolean;
+}
+
 export interface CometChatConversation {
   id: string;
   type: string;
@@ -118,6 +127,10 @@ interface CometChatContextType {
   sendMediaMessage: (targetId: string, media: OutgoingMedia, chatType?: string) => Promise<void>;
   getOrCreateConversation: (targetId: string, chatType?: string) => Promise<CometChatConversation>;
   createGroup: (name: string, memberIds: string[]) => Promise<string>;
+  /** Groups the signed-in user is a member of, for the Communities tab. */
+  groups: CometChatGroup[];
+  loadingGroups: boolean;
+  refreshGroups: () => Promise<void>;
   searchUsers: (query: string) => Promise<CometChatUser[]>;
   updateCurrentUserProfile: (fields: { nickName?: string; avatarUrl?: string }) => Promise<void>;
   refreshConversations: () => Promise<void>;
@@ -555,6 +568,8 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
   const [loadingCallHistory, setLoadingCallHistory] = useState(false);
   const [stories, setStories] = useState<StoryAuthor[]>([]);
   const [storiesLoading, setStoriesLoading] = useState(false);
+  const [groups, setGroups] = useState<CometChatGroup[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
   const userRef = useRef<CometChatUser | null>(null);
@@ -759,6 +774,30 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
     },
     [refreshConversations]
   );
+
+  const refreshGroups = useCallback(async () => {
+    setLoadingGroups(true);
+    try {
+      const builder: any = new (CometChat as any).GroupsRequestBuilder().setLimit(100);
+      const result = (await builder.build().fetchNext()) || [];
+      setGroups(
+        result
+          .map((remoteGroup: any) => ({
+            id: typeof remoteGroup.getGuid === 'function' ? remoteGroup.getGuid() : remoteGroup.guid || '',
+            name: typeof remoteGroup.getName === 'function' ? remoteGroup.getName() : remoteGroup.name || '',
+            image: typeof remoteGroup.getAvatar === 'function' ? remoteGroup.getAvatar() : remoteGroup.avatar || undefined,
+            memberCount:
+              typeof remoteGroup.getMembersCount === 'function' ? remoteGroup.getMembersCount() : 0,
+            isStoriesBacking: remoteGroup.guid === STORIES_GUID,
+          }))
+          .filter((group: CometChatGroup) => group.id && !group.isStoriesBacking)
+      );
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Unable to load groups');
+    } finally {
+      setLoadingGroups(false);
+    }
+  }, []);
 
   const searchUsers = useCallback(async (query: string) => {
     try {
@@ -1779,6 +1818,9 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
       sendMediaMessage,
       getOrCreateConversation,
       createGroup,
+      groups,
+      loadingGroups,
+      refreshGroups,
       searchUsers,
       updateCurrentUserProfile,
       refreshConversations,
@@ -1834,6 +1876,9 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
       sendMediaMessage,
       getOrCreateConversation,
       createGroup,
+      groups,
+      loadingGroups,
+      refreshGroups,
       searchUsers,
       updateCurrentUserProfile,
       refreshConversations,
