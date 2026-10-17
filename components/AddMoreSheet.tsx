@@ -11,10 +11,12 @@ type IconName = ComponentProps<typeof Ionicons>['name'];
  */
 const AddMoreSheet = ({
   onPick,
+  onOpenCamera,
   onClose,
   unavailable,
 }: {
-  onPick: (kind: 'library' | 'camera' | 'document') => void;
+  onPick: (kind: 'library' | 'document') => void;
+  onOpenCamera: () => void;
   onClose: () => void;
   unavailable: (what: string) => void;
 }) => {
@@ -24,8 +26,8 @@ const AddMoreSheet = ({
     onPress: () => void;
     tint?: string;
   }[] = [
-    { label: 'Photo', icon: 'image-outline', onPress: () => onPick('library'), tint: '#1a7ee8' },
-    { label: 'Camera', icon: 'camera-outline', onPress: () => onPick('camera') },
+    { label: 'Photo', icon: 'images-outline', onPress: () => onPick('library'), tint: '#1a7ee8' },
+    { label: 'Camera', icon: 'camera-outline', onPress: onOpenCamera },
     { label: 'Location', icon: 'location-outline', onPress: () => unavailable('Location') },
     { label: 'Contact', icon: 'person-outline', onPress: () => unavailable('Contact sharing') },
     { label: 'Document', icon: 'document-text-outline', onPress: () => onPick('document') },

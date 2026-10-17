@@ -1,13 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { View, TextInput, Alert, Pressable, Text } from 'react-native';
 import { OutgoingMedia, useCometChat } from '@/hooks/useCometChat';
+import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import AddMoreSheet from './AddMoreSheet';
 import AttachButton from './AttachButton';
+import { takePendingCapture } from '@/lib/capture';
 
 /** Typing signals are throttled: one "started" per window, "stopped" on idle. */
 const TYPING_THROTTLE_MS = 3_000;
@@ -40,6 +41,7 @@ const CustomMessageInput = ({
   replyTo = null,
   onClearReply,
 }: CustomMessageInputProps) => {
+  const router = useRouter();
   const { sendTextMessage, sendMediaMessage, sendTyping } = useCometChat();
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
@@ -170,6 +172,24 @@ const CustomMessageInput = ({
     }
   };
 
+  // A capture from the in-app camera arrives in this one-slot store, since the
+  // camera is a modal route and cannot hand params back through router.back().
+  useEffect(() => {
+    const capture = takePendingCapture();
+    if (!capture || !conversationId || sending || disabled) return;
+    void sendMediaMessage(
+      conversationId,
+      {
+        uri: capture.uri,
+        name:
+          capture.uri.split('/').pop() ||
+          `capture.${capture.kind === 'video' ? 'mp4' : 'jpg'}`,
+        kind: capture.kind === 'video' ? 'video' : 'image',
+      },
+      chatType
+    );
+  }, [conversationId, chatType, sendMediaMessage, sending, disabled]);
+
   const promptAttachment = () => {
     if (!conversationId || sending || disabled) return;
     setSheetOpen((open) => !open);
@@ -185,6 +205,10 @@ const CustomMessageInput = ({
           onPick={(kind) => {
             setSheetOpen(false);
             void pickAndSend(kind);
+          }}
+          onOpenCamera={() => {
+            setSheetOpen(false);
+            router.push('/camera');
           }}
           onClose={() => setSheetOpen(false)}
           unavailable={(what) =>
@@ -237,7 +261,8 @@ const CustomMessageInput = ({
                 blurOnSubmit={false}
               />
               {/* The design parks a 24pt sticker glyph on the input's trailing
-                  edge until there is something to send. */}
+                  edge until there is something to send; then a solid brand
+                  green circle carrying a white arrow takes its place. */}
               {text.trim() ? (
                 <Pressable
                   onPress={handleSend}
@@ -245,12 +270,9 @@ const CustomMessageInput = ({
                   accessibilityRole="button"
                   accessibilityLabel="Send"
                   hitSlop={8}
+                  className="h-6 w-6 rounded-full bg-primary items-center justify-center active:opacity-70"
                 >
-                  <Feather
-                    name="arrow-up-circle"
-                    size={24}
-                    color={disabled || sending ? '#b2b2b2' : '#1dab61'}
-                  />
+                  <Ionicons name="arrow-up" size={16} color="#ffffff" />
                 </Pressable>
               ) : (
                 <Pressable
@@ -258,10 +280,10 @@ const CustomMessageInput = ({
                     Alert.alert('Stickers', 'Stickers are not connected to CometChat yet.')
                   }
                   accessibilityRole="button"
-                  accessibilityLabel="Stickers"
+                  accessibilityLabel="Emoji and stickers"
                   hitSlop={8}
                 >
-                  <Feather name="smile" size={24} color="#767779" />
+                  <Ionicons name="happy-outline" size={24} color="#767779" />
                 </Pressable>
               )}
             </View>

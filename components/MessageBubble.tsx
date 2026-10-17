@@ -124,10 +124,12 @@ const MessageBubble = ({
   };
 
   return (
+    // Vertical rhythm from the design: 4pt between messages in a run, 12pt
+    // between runs, so grouped bubbles read as one block.
     <View
       className={clsx(
         'flex-row items-end gap-2 px-4',
-        isGroupEnd ? 'mb-1' : 'mb-[-4px]',
+        isGroupEnd ? 'mb-3' : 'mb-1',
         isOwn && 'justify-end'
       )}
     >

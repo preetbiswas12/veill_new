@@ -282,24 +282,28 @@ const ChatsScreen = () => {
             active={filter === 'groups'}
             onPress={() => setFilter('groups')}
           />
-          <FilterChip icon />
         </ScrollView>
       </View>
 
-      {/* Archived row from the design's chat list. */}
+      {/* Archived row: 24pt glyph in a 32pt box, 16/19 semibold label, the
+          design's pl-8 / pb-3 / pt-2.5 insets and its bottom hairline. */}
       <Pressable
         onPress={() =>
           Alert.alert(
             'Archived',
-            'CometChat does not archive conversations from the client SDK, so this list is not available yet.'
+            'CometChat has no archive API, so archived chats cannot be listed here yet.'
           )
         }
         accessibilityRole="button"
         accessibilityLabel="Archived"
-        className="flex-row items-start pl-8 pr-4 pt-2.5 pb-3 border-b-hair border-separator active:bg-surface-muted"
+        className="flex-row items-center gap-3 pl-8 pr-4 py-2.5 border-b-hair border-separator active:bg-surface-muted"
       >
-        <Ionicons name="archive-outline" size={24} color="#0a0a0a" />
-        <Text className="flex-1 text-body-1 font-semibold text-text-strong">Archived</Text>
+        <View className="w-8 h-6 items-center justify-center">
+          <Ionicons name="archive-outline" size={24} color="#0a0a0a" />
+        </View>
+        <Text className="text-body-1 font-semibold text-text-strong" numberOfLines={1}>
+          Archived
+        </Text>
       </Pressable>
     </>
   );

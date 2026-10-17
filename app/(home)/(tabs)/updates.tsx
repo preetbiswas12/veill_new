@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import clsx from 'clsx';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -22,10 +22,18 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import VideoAttachment from '@/components/VideoAttachment';
 import { OutgoingMedia, useCometChat } from '@/hooks/useCometChat';
 
+/** The design shows relative time under a status ("4h ago"), not a clock. */
 const formatWhen = (timestamp: number): string => {
   if (!timestamp) return '';
-  const date = new Date(timestamp);
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const diffMs = Date.now() - timestamp;
+  const minutes = Math.round(diffMs / 60000);
+  if (minutes < 1) return 'now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' });
 };
 
 const StoriesScreen = () => {
@@ -123,7 +131,7 @@ const StoriesScreen = () => {
               accessibilityLabel="Add a status update"
               className="h-7 w-7 rounded-full bg-surface-cta items-center justify-center active:opacity-60"
             >
-              <Feather name="camera" size={20} color="#0a0a0a" />
+              <Ionicons name="camera-outline" size={22} color="#0a0a0a" />
             </Pressable>
             <Pressable
               onPress={() => router.push('/new-group')}
@@ -131,7 +139,7 @@ const StoriesScreen = () => {
               accessibilityLabel="New group"
               className="h-7 w-7 rounded-full bg-surface-cta items-center justify-center active:opacity-60"
             >
-              <Feather name="edit-3" size={18} color="#0a0a0a" />
+              <Ionicons name="create-outline" size={20} color="#0a0a0a" />
             </Pressable>
           </View>
         }
@@ -167,7 +175,7 @@ const StoriesScreen = () => {
                 {storyRing(Boolean(myStories?.items.length), 64)}
                 {!myStories?.items.length ? (
                   <View className="absolute -bottom-1 -right-1 w-[22px] h-[22px] rounded-full border-[3px] border-white bg-primary items-center justify-center">
-                    <Feather name="plus" size={13} color="#ffffff" />
+                    <Ionicons name="add" size={14} color="#ffffff" />
                   </View>
                 ) : null}
               </View>
@@ -234,18 +242,18 @@ const StoriesScreen = () => {
             </View>
             <View className="gap-4">
               <Text className="text-body-2 text-text-muted">
-                Stay updated on topics that matter to you. Find groups to follow below.
+                Stay updated on topics that matter to you. Find channels to follow below.
               </Text>
               <Pressable
                 onPress={() => router.push('/communities')}
                 accessibilityRole="button"
-                accessibilityLabel="Find groups to follow"
+                accessibilityLabel="Find channels to follow"
                 className="flex-row items-center gap-2.5 active:opacity-70"
               >
                 <Text className="flex-1 text-[15.8px] font-semibold text-text-muted">
-                  Find groups to follow
+                  Find channels to follow
                 </Text>
-                <Feather name="chevron-down" size={16} color="#767779" />
+                <Ionicons name="chevron-forward" size={16} color="#767779" />
               </Pressable>
               <Pressable
                 onPress={() => router.push('/communities')}
@@ -299,7 +307,7 @@ const StoriesScreen = () => {
                 onPress={() => setViewer(null)}
                 accessibilityLabel="Close story"
               >
-                <Feather name="x" size={26} color="white" />
+                <Ionicons name="close" size={26} color="#ffffff" />
               </Button>
             </View>
 
