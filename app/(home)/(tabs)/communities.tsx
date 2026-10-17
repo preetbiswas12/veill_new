@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import Avatar from '@/components/Avatar';
 import Screen from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { useCometChat } from '@/hooks/useCometChat';
 
 /**
@@ -20,7 +21,7 @@ const CommunitiesScreen = () => {
   }, [refreshGroups]);
 
   return (
-    <Screen viewClassName="bg-white">
+    <Screen viewClassName="bg-white" edges={['left', 'right', 'bottom']}>
       {/* Large-title header, matching the chat list's 33pt bold title. */}
       <View className="px-4 pt-2 pb-3 flex-row items-center justify-between">
         <Text className="text-display font-bold text-text-strong">Communities</Text>

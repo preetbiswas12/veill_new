@@ -28,7 +28,7 @@ const MessageListHeader = ({ channel, isDMChannel = true }: MessageListHeaderPro
         {channelName}
       </Text>
       <View className="items-center gap-1.5 mt-1">
-        <Feather name="lock" size={13} color="#9ca3af" />
+        <Feather name="lock" size={13} color="#767779" />
         <Text className="text-xs text-text-muted text-center leading-4">{text}</Text>
       </View>
     </View>

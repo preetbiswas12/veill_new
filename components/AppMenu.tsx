@@ -1,13 +1,16 @@
-import { Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { getError } from '../lib/utils';
 import Avatar from './Avatar';
-import Button from './Button';
 import { useCometChat } from '@/hooks/useCometChat';
 
+/**
+ * Account menu used by the design's `Header` component. The trigger is the
+ * signed-in avatar; the sheet carries the profile shortcut and sign out.
+ */
 const AppMenu = () => {
   const router = useRouter();
   const { user, signOut } = useCometChat();
@@ -22,7 +25,7 @@ const AppMenu = () => {
     }
     if (avatarRef.current) {
       avatarRef.current.measure((_x, _y, _width, height, pageX, pageY) => {
-        setMenuPosition({ top: pageY + height + 8, left: pageX - 8 });
+        setMenuPosition({ top: pageY + height + 8, left: Math.max(12, pageX - 8) });
         setMenuVisible(true);
       });
     }
@@ -45,44 +48,44 @@ const AppMenu = () => {
 
   return (
     <>
-      <Button variant="plain" ref={avatarRef} onPress={toggleMenu}>
-        <Avatar
-          imageUrl={user?.image}
-          size={28}
-          fontSize={12}
-          name={user?.name || ''}
-        />
-      </Button>
+      <Pressable
+        onPress={toggleMenu}
+        ref={avatarRef}
+        accessibilityRole="button"
+        accessibilityLabel="Account menu"
+        hitSlop={8}
+        className="active:opacity-60"
+      >
+        <Avatar imageUrl={user?.image} size={28} fontSize={12} name={user?.name || ''} />
+      </Pressable>
+
       <Modal
         transparent
         visible={menuVisible}
         animationType="fade"
         onRequestClose={() => setMenuVisible(false)}
       >
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          onPress={() => setMenuVisible(false)}
-        >
+        <Pressable style={StyleSheet.absoluteFill} onPress={() => setMenuVisible(false)}>
           <View
             style={{ top: menuPosition.top, left: menuPosition.left }}
-            className="absolute bg-white rounded-lg shadow-md shadow-gray-100 min-w-[250px]"
+            className="absolute min-w-[200px] rounded-[10px] bg-white border-hair border-separator"
           >
-            <Button
-              variant="plain"
-              className="flex-row items-center justify-between py-2 px-3 border-b border-gray-200"
+            <Pressable
               onPress={goToProfile}
+              accessibilityRole="button"
+              className="flex-row items-center justify-between px-4 py-3 border-b-hair border-separator active:bg-surface-muted"
             >
-              <Text>Profile</Text>
-              <Feather name="user" size={20} color="black" />
-            </Button>
-            <Button
-              variant="plain"
-              className="flex-row items-center justify-between py-2 px-3"
-              onPress={handleSignOut}
+              <Text className="text-body-1 text-text-strong">Profile</Text>
+              <Ionicons name="person-outline" size={20} color="#0a0a0a" />
+            </Pressable>
+            <Pressable
+              onPress={() => void handleSignOut()}
+              accessibilityRole="button"
+              className="flex-row items-center justify-between px-4 py-3 active:bg-surface-muted"
             >
-              <Text className="text-red-600">Sign Out</Text>
-              <Feather name="log-out" size={20} color="red" />
-            </Button>
+              <Text className="text-body-1 text-text-error">Sign out</Text>
+              <Ionicons name="log-out-outline" size={20} color="#ea0038" />
+            </Pressable>
           </View>
         </Pressable>
       </Modal>
@@ -91,4 +94,3 @@ const AppMenu = () => {
 };
 
 export default AppMenu;
-

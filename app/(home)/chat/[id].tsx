@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -52,6 +53,7 @@ const senderOf = (message: any) => message?.getSender?.()?.getUid?.() || '';
 
 const ChatScreen = () => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     id: string;
     name?: string;
@@ -261,10 +263,15 @@ const ChatScreen = () => {
   };
 
   return (
-    <Screen className="bg-chat-bg" viewClassName="bg-chat-bg">
+    <Screen className="bg-chat-bg" viewClassName="bg-chat-bg" edges={['left', 'right', 'bottom']}>
       {/* Top contact from the Figma thread: blurred warm panel, 36pt avatar,
-          16pt semibold name over a 12pt secondary subtitle, call actions right. */}
-      <View className="flex-row items-center gap-2.5 pr-[22px] py-1 bg-panel-blur-warm">
+          16pt semibold name over a 12pt secondary subtitle, call actions right.
+          The Screen excludes the top edge so this row owns the status-bar inset;
+          44pt is the design's 98pt header minus its 54pt status bar. */}
+      <View
+        className="flex-row items-center gap-2.5 pr-[22px] pb-1 bg-panel-blur-warm border-b-hair border-panel-border"
+        style={{ paddingTop: insets.top + 4, height: insets.top + 48 }}
+      >
         <Button variant="plain" onPress={() => router.back()} className="p-1" hitSlop={8}>
           <Feather name="chevron-left" size={32} color="black" />
         </Button>
@@ -376,7 +383,7 @@ const ChatScreen = () => {
                 className="w-11 h-11 rounded-full items-center justify-center bg-white shadow-lg border border-gray-100"
                 accessibilityLabel="Jump to latest message"
               >
-                <Feather name="chevron-down" size={22} color="#374151" />
+                <Feather name="chevron-down" size={22} color="#767779" />
                 {unreadOnEntry > 0 ? (
                   <View className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-primary items-center justify-center">
                     <Text className="text-[10px] font-semibold text-white">

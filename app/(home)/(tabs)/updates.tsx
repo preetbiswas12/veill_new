@@ -18,6 +18,7 @@ import AppMenu from '@/components/AppMenu';
 import Avatar from '@/components/Avatar';
 import Button from '@/components/Button';
 import Screen from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import VideoAttachment from '@/components/VideoAttachment';
 import { OutgoingMedia, useCometChat } from '@/hooks/useCometChat';
 
@@ -110,29 +111,31 @@ const StoriesScreen = () => {
   );
 
   return (
-    <Screen className="bg-white">
+    <Screen className="bg-white" edges={['left', 'right', 'bottom']}>
       {/* Header from the Figma Header component: 28pt circular controls. */}
-      <View className="flex-row items-center justify-between h-header px-4 py-2">
-        <AppMenu />
-        <View className="flex-row items-center gap-4">
-          <Pressable
-            onPress={() => void addStory()}
-            accessibilityRole="button"
-            accessibilityLabel="Add a status update"
-            className="h-7 w-7 rounded-full bg-surface-cta items-center justify-center active:opacity-60"
-          >
-            <Feather name="camera" size={20} color="#0a0a0a" />
-          </Pressable>
-          <Pressable
-            onPress={() => router.push('/new-group')}
-            accessibilityRole="button"
-            accessibilityLabel="New channel"
-            className="h-7 w-7 rounded-full bg-surface-cta items-center justify-center active:opacity-60"
-          >
-            <Feather name="edit-3" size={18} color="#0a0a0a" />
-          </Pressable>
-        </View>
-      </View>
+      <ScreenHeader
+        left={<AppMenu />}
+        right={
+          <View className="flex-row items-center gap-4">
+            <Pressable
+              onPress={() => void addStory()}
+              accessibilityRole="button"
+              accessibilityLabel="Add a status update"
+              className="h-7 w-7 rounded-full bg-surface-cta items-center justify-center active:opacity-60"
+            >
+              <Feather name="camera" size={20} color="#0a0a0a" />
+            </Pressable>
+            <Pressable
+              onPress={() => router.push('/new-group')}
+              accessibilityRole="button"
+              accessibilityLabel="New group"
+              className="h-7 w-7 rounded-full bg-surface-cta items-center justify-center active:opacity-60"
+            >
+              <Feather name="edit-3" size={18} color="#0a0a0a" />
+            </Pressable>
+          </View>
+        }
+      />
 
       <ScrollView
         className="flex-1 w-full"

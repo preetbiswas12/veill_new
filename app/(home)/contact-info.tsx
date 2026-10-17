@@ -6,6 +6,7 @@ import { Alert, Pressable, ScrollView, Share, Switch, Text, View } from 'react-n
 
 import Avatar from '@/components/Avatar';
 import Screen from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { useFavourites } from '@/hooks/useFavourites';
 import { useCometChat } from '@/hooks/useCometChat';
 
@@ -172,18 +173,21 @@ const ContactInfoScreen = () => {
   };
 
   return (
-    <Screen className="bg-white" viewClassName="bg-white">
-      <View className="flex-row items-center gap-2.5 pr-[22px] py-1 bg-panel-blur-warm">
-        <Pressable
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-          hitSlop={10}
-        >
-          <Ionicons name="chevron-back" size={32} color="#0a0a0a" />
-        </Pressable>
-        <Text className="text-body-1 font-semibold text-text-strong">Contact info</Text>
-      </View>
+    <Screen className="bg-white" edges={['left', 'right', 'bottom']}>
+      <ScreenHeader
+        left={
+          <Pressable
+            onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            hitSlop={10}
+            className="pr-1 active:opacity-60"
+          >
+            <Ionicons name="chevron-back" size={32} color="#0a0a0a" />
+          </Pressable>
+        }
+        title="Contact info"
+      />
 
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         <View className="items-center gap-[23.66px] pt-[6px] px-4">

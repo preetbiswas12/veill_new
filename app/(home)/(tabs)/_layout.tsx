@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs, useRouter } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { useEffect } from 'react';
-import { Platform, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HapticTab } from '@/components/HapticTab';
 import { useCometChat } from '@/hooks/useCometChat';
@@ -23,6 +24,8 @@ import { useCometChat } from '@/hooks/useCometChat';
 
 const TAB_ICON = 32;
 const TAB_LABEL = 10;
+/** The design's bar height, excluding the home-indicator inset. */
+const TAB_BAR_HEIGHT = 83;
 
 type TabIconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -52,6 +55,7 @@ const WhatsAppTabIcon = ({
 const TabsLayout = () => {
   const router = useRouter();
   const { incomingCall, conversations } = useCometChat();
+  const insets = useSafeAreaInsets();
 
   const unreadTotal = conversations.reduce((sum, conversation) => sum + conversation.unreadCount, 0);
 
@@ -81,9 +85,11 @@ const TabsLayout = () => {
         // fails to render, so the panel colour is the base and the bar keeps a
         // normal (non-absolute) position.
         tabBarStyle: {
-          height: 83,
+          // The design's 83pt excludes the home-indicator inset, so add that
+          // back here rather than letting it clip the gesture bar.
+          height: TAB_BAR_HEIGHT + insets.bottom,
           paddingTop: 3,
-          paddingBottom: Platform.OS === 'ios' ? 21 : 8,
+          paddingBottom: insets.bottom + 8,
           backgroundColor: 'rgba(244,244,244,0.95)',
           borderTopWidth: 0.33,
           borderTopColor: 'rgba(0,0,0,0.3)',

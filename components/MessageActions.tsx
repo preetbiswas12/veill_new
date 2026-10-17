@@ -31,14 +31,14 @@ const Row = ({
 }) => (
   <Pressable
     onPress={onPress}
-    className="flex-row items-center gap-4 px-5 py-4 active:bg-gray-50"
+    className="flex-row items-center gap-4 px-5 py-4 active:bg-surface-muted"
   >
-    <Feather name={icon} size={20} color={destructive ? '#ef4444' : '#374151'} />
-    <Text className={`text-base ${destructive ? 'text-red-500' : 'text-gray-800'}`}>{label}</Text>
+    <Feather name={icon} size={20} color={destructive ? '#ea0038' : '#0a0a0a'} />
+    <Text className={`text-body-1 ${destructive ? 'text-text-error' : 'text-text-strong'}`}>{label}</Text>
   </Pressable>
 );
 
-/** Signal-style bottom sheet for per-message actions. */
+/** Bottom sheet for per-message actions, on the design's white surface. */
 const MessageActions = ({
   visible,
   canCopy = false,
@@ -60,14 +60,14 @@ const MessageActions = ({
 
     <View className="bg-white rounded-t-3xl pb-8 pt-3 shadow-2xl">
       <View className="items-center pb-3">
-        <View className="w-10 h-1 rounded-full bg-gray-300" />
+        <View className="w-10 h-1 rounded-full bg-surface-muted" />
       </View>
 
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 12, gap: 8, paddingBottom: 12 }}
-        className="border-b border-gray-100"
+        className="border-b-hair border-separator"
       >
         {QUICK_REACTIONS.map((emoji) => {
           const active = activeReactions.includes(emoji);

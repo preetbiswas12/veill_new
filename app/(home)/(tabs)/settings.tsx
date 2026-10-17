@@ -5,6 +5,7 @@ import { Alert, Pressable, Text, View } from 'react-native';
 
 import Avatar from '@/components/Avatar';
 import Screen from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { useCometChat } from '@/hooks/useCometChat';
 import { getError } from '@/lib/utils';
 
@@ -68,7 +69,7 @@ const SettingsScreen = () => {
   };
 
   return (
-    <Screen viewClassName="bg-white">
+    <Screen viewClassName="bg-white" edges={['left', 'right', 'bottom']}>
       <View className="px-4 pt-2 pb-3">
         <Text className="text-display font-bold text-text-strong">Settings</Text>
       </View>

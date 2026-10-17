@@ -60,7 +60,7 @@ const CallsScreen = () => {
 
   return (
     <Screen className="bg-white">
-      <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 16 }} keyboardShouldPersistTaps="handled">
         {/* Title block: 33.33pt bold, matching the chat list. */}
         <View className="pt-[5px] pb-2 px-4">
           <Text className="text-display font-bold text-text-strong">Calls</Text>

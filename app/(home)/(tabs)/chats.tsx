@@ -16,6 +16,7 @@ import {
 import AppMenu from '@/components/AppMenu';
 import ConversationRow from '@/components/ConversationRow';
 import Screen from '@/components/Screen';
+import { HeaderButton, ScreenHeader } from '@/components/ScreenHeader';
 import { useFavourites } from '@/hooks/useFavourites';
 import { getMessageText, useCometChat } from '@/hooks/useCometChat';
 
@@ -32,30 +33,6 @@ interface ConversationItem {
 }
 
 type FilterKey = 'all' | 'unread' | 'favourites' | 'groups';
-
-/** 28pt circular control; the trailing one is the solid brand green. */
-const HeaderButton = ({
-  icon,
-  solid,
-  onPress,
-  label,
-}: {
-  icon: React.ComponentProps<typeof Ionicons>['name'];
-  solid?: boolean;
-  onPress: () => void;
-  label: string;
-}) => (
-  <Pressable
-    onPress={onPress}
-    accessibilityRole="button"
-    accessibilityLabel={label}
-    className={`h-7 w-7 rounded-full items-center justify-center active:opacity-60 ${
-      solid ? 'bg-primary' : 'bg-surface-cta'
-    }`}
-  >
-    <Ionicons name={icon} size={24} color={solid ? '#ffffff' : '#0a0a0a'} />
-  </Pressable>
-);
 
 /** The design's 34pt filter pill: 19pt radius, 14pt horizontal padding. */
 const FilterChip = ({
@@ -235,17 +212,19 @@ const ChatsScreen = () => {
     <>
       {/* Header from the Figma `Header` component: 28pt circular controls, the
           trailing one solid brand green. */}
-      <View className="flex-row items-center justify-between h-header px-4 py-2">
-        <AppMenu />
-        <View className="flex-row items-center gap-4">
-          <HeaderButton
-            icon="camera-outline"
-            label="New chat"
-            onPress={() => router.push('/new-message')}
-          />
-          <HeaderButton icon="add" solid label="New" onPress={startSomethingNew} />
-        </View>
-      </View>
+      <ScreenHeader
+        left={<AppMenu />}
+        right={
+          <View className="flex-row items-center gap-4">
+            <HeaderButton
+              icon="camera-outline"
+              label="New chat"
+              onPress={() => router.push('/new-message')}
+            />
+            <HeaderButton icon="add" solid label="New" onPress={startSomethingNew} />
+          </View>
+        }
+      />
 
       <View className="gap-2 px-4 pt-[5px] pb-2">
         <Text className="text-display font-bold text-text-strong">Chats</Text>
@@ -319,7 +298,7 @@ const ChatsScreen = () => {
 
   if (loadingConversations && conversationItems.length === 0) {
     return (
-      <Screen className="bg-white">
+      <Screen className="bg-white" edges={['left', 'right', 'bottom']}>
         {titleBlock}
         <View className="flex-1 items-center justify-center">
           <Text className="text-body-2 text-text-muted">Loading chats…</Text>
@@ -329,11 +308,12 @@ const ChatsScreen = () => {
   }
 
   return (
-    <Screen className="bg-white">
+    <Screen className="bg-white" edges={['left', 'right', 'bottom']}>
       {titleBlock}
       <FlatList
         data={visibleItems}
         keyExtractor={(item) => item.id}
+        keyboardShouldPersistTaps="handled"
         renderItem={({ item }) => (
           <ConversationRow
             name={item.name}
