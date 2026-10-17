@@ -107,8 +107,13 @@ const ConversationRow = ({
           </View>
         </View>
 
-        <View className="w-8 items-end gap-[3px]">
-          <Text className="text-body-2 text-text-muted">{formatTimestamp(timestamp)}</Text>
+        {/* The design pins this column to 32pt and lets the timestamp overflow it at
+            80pt, right-aligned. Sizing to the timestamp instead keeps the same
+            look without the fixed 32pt that wraps "Yesterday" on a narrow row. */}
+        <View className="items-end gap-[3px]">
+          <Text className="text-body-2 text-text-muted" numberOfLines={1}>
+            {formatTimestamp(timestamp)}
+          </Text>
           {unread ? (
             <View className="min-w-[18px] h-[18px] px-1.5 rounded-[9px] bg-primary items-center justify-center">
               <Text className="text-body-3 text-white">

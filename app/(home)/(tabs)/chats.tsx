@@ -8,6 +8,7 @@ import {
   FlatList,
   Pressable,
   RefreshControl,
+  ScrollView,
   Text,
   TextInput,
   View,
@@ -257,7 +258,14 @@ const ChatsScreen = () => {
           </View>
         </View>
 
-        <View className="flex-row gap-2">
+        {/* The five chips are ~326pt wide, which overflows a 320pt screen once the
+            16pt gutters are taken, so the row scrolls the way the design's does. */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 8, paddingRight: 16 }}
+          keyboardShouldPersistTaps="handled"
+        >
           <FilterChip label="All" active={filter === 'all'} onPress={() => setFilter('all')} />
           <FilterChip
             label="Unread"
@@ -275,7 +283,7 @@ const ChatsScreen = () => {
             onPress={() => setFilter('groups')}
           />
           <FilterChip icon />
-        </View>
+        </ScrollView>
       </View>
 
       {/* Archived row from the design's chat list. */}

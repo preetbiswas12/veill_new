@@ -137,7 +137,7 @@ const MessageBubble = ({
         </View>
       ) : null}
 
-      <View className={clsx('items-start max-w-[287px]', isOwn && 'items-end')}>
+      <View className="items-start max-w-[73%] min-w-[88px]" style={isOwn ? { alignItems: 'flex-end' } : undefined}>
         {!isOwn && showAvatar && senderName && isGroupStart ? (
           <Text className="text-body-3 font-semibold text-product-deep mb-0.5 ml-3">
             {senderName}

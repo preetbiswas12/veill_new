@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs, useRouter } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { useEffect } from 'react';
-import { Text, View } from 'react-native';
+import { Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HapticTab } from '@/components/HapticTab';
@@ -26,6 +26,9 @@ const TAB_ICON = 32;
 const TAB_LABEL = 10;
 /** The design's bar height, excluding the home-indicator inset. */
 const TAB_BAR_HEIGHT = 83;
+/** The design's 23pt side padding and 5 items across 393pt. */
+const TAB_BAR_PADDING = 23;
+const TAB_COUNT = 5;
 
 type TabIconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -35,16 +38,19 @@ const WhatsAppTabIcon = ({
   name,
   focusedName,
   label,
+  width,
 }: {
   focused: boolean;
   name: TabIconName;
   focusedName: TabIconName;
   label: string;
+  width: number;
 }) => (
-  <View className="items-center" style={{ width: 60 }}>
+  <View className="items-center" style={{ width }}>
     <Ionicons name={focused ? focusedName : name} size={TAB_ICON} color={focused ? '#0a0a0a' : '#767779'} />
     <Text
       className="text-tabbar"
+      numberOfLines={1}
       style={{ color: focused ? '#0a0a0a' : '#767779', fontWeight: '500' }}
     >
       {label}
@@ -56,6 +62,16 @@ const TabsLayout = () => {
   const router = useRouter();
   const { incomingCall, conversations } = useCometChat();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+
+  // The design pins each item to a 32pt column and lets the row distribute the
+  // slack with justify-between. Hard-coding 32 makes the wider labels collide
+  // on a 320pt screen, so grow the column to whatever the width allows, bounded
+  // by the design's 32pt so the spacing never gets tighter than the file shows.
+  const tabItemWidth = Math.max(
+    32,
+    Math.min(64, (width - TAB_BAR_PADDING * 2) / TAB_COUNT)
+  );
 
   const unreadTotal = conversations.reduce((sum, conversation) => sum + conversation.unreadCount, 0);
 
@@ -85,16 +101,18 @@ const TabsLayout = () => {
         // fails to render, so the panel colour is the base and the bar keeps a
         // normal (non-absolute) position.
         tabBarStyle: {
-          // The design's 83pt excludes the home-indicator inset, so add that
-          // back here rather than letting it clip the gesture bar.
-          height: TAB_BAR_HEIGHT + insets.bottom,
-          paddingTop: 3,
-          paddingBottom: insets.bottom + 8,
-          backgroundColor: 'rgba(244,244,244,0.95)',
-          borderTopWidth: 0.33,
-          borderTopColor: 'rgba(0,0,0,0.3)',
-          elevation: 0,
-        },
+            // The design's 83pt excludes the home-indicator inset, so add that
+            // back here rather than letting it clip the gesture bar.
+            height: TAB_BAR_HEIGHT + insets.bottom,
+            paddingTop: 3,
+            // The design's button row ends 2pt above the home indicator.
+            paddingBottom: insets.bottom + 2,
+            paddingHorizontal: TAB_BAR_PADDING,
+            backgroundColor: 'rgba(244,244,244,0.95)',
+            borderTopWidth: 0.33,
+            borderTopColor: 'rgba(0,0,0,0.3)',
+            elevation: 0,
+          },
         sceneStyle: { backgroundColor: '#ffffff' },
       }}
     >
@@ -103,7 +121,7 @@ const TabsLayout = () => {
         options={{
           title: 'Updates',
           tabBarIcon: ({ focused }) => (
-            <WhatsAppTabIcon focused={focused} name="radio-outline" focusedName="radio" label="Updates" />
+            <WhatsAppTabIcon width={tabItemWidth} focused={focused} name="radio-outline" focusedName="radio" label="Updates" />
           ),
         }}
       />
@@ -112,7 +130,7 @@ const TabsLayout = () => {
         options={{
           title: 'Calls',
           tabBarIcon: ({ focused }) => (
-            <WhatsAppTabIcon focused={focused} name="call-outline" focusedName="call" label="Calls" />
+            <WhatsAppTabIcon width={tabItemWidth} focused={focused} name="call-outline" focusedName="call" label="Calls" />
           ),
         }}
       />
@@ -122,6 +140,7 @@ const TabsLayout = () => {
           title: 'Communities',
           tabBarIcon: ({ focused }) => (
             <WhatsAppTabIcon
+              width={tabItemWidth}
               focused={focused}
               name="people-outline"
               focusedName="people"
@@ -136,7 +155,7 @@ const TabsLayout = () => {
           title: 'Chats',
           tabBarIcon: ({ focused }) => (
             <View>
-              <WhatsAppTabIcon focused={focused} name="chatbubbles-outline" focusedName="chatbubbles" label="Chats" />
+              <WhatsAppTabIcon width={tabItemWidth} focused={focused} name="chatbubbles-outline" focusedName="chatbubbles" label="Chats" />
               {unreadTotal > 0 ? (
                 <View className="absolute -top-1 -right-3 min-w-[18px] h-[18px] px-1.5 rounded-full bg-primary items-center justify-center">
                   <Text className="text-body-3 text-white">{unreadTotal > 99 ? '99+' : unreadTotal}</Text>
@@ -151,7 +170,7 @@ const TabsLayout = () => {
         options={{
           title: 'Settings',
           tabBarIcon: ({ focused }) => (
-            <WhatsAppTabIcon focused={focused} name="settings-outline" focusedName="settings" label="Settings" />
+            <WhatsAppTabIcon width={tabItemWidth} focused={focused} name="settings-outline" focusedName="settings" label="Settings" />
           ),
         }}
       />
