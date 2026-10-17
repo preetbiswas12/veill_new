@@ -394,6 +394,9 @@ const ChatScreen = () => {
                 flexGrow: 1,
                 justifyContent: 'flex-end',
                 paddingTop: 12,
+                // Clearance below the last bubble so it never sits flush against
+                // the composer, which is a sibling of this list.
+                paddingBottom: 12,
               }}
               onContentSizeChange={() => scrollToBottom(false)}
             />

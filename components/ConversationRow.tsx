@@ -35,22 +35,33 @@ const formatTimestamp = (timestamp?: number): string => {
   return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 };
 
-/** The design draws a single tick for sent and a blue double tick for read. */
-const DeliveryTicks = ({ status }: { status?: string }) => {
-  const read = status === 'read' || status === 'delivered';
-  return (
-    <Ionicons
-      name={read ? 'checkmark-done' : 'checkmark'}
-      size={15}
-      color={status === 'read' ? '#53bdeb' : '#767779'}
-    />
-  );
-};
+/** A single tick for sent, a blue double tick once the peer has read it. */
+const DeliveryTicks = ({ status }: { status?: string }) => (
+  <Ionicons
+    name={status === 'read' ? 'checkmark-done' : 'checkmark'}
+    size={16}
+    color={status === 'read' ? '#53BDEB' : '#667781'}
+  />
+);
 
 /**
- * Conversation row from the Figma chat list: 56pt avatar at a 28pt radius, a
- * 77.33pt row, 16pt semibold name over a 14/19pt preview, and the time stacked
- * above the unread badge on the right.
+ * Conversation row, matching the design at 393pt:
+ *
+ *   flex items-center gap-3 px-4 h-[76px]      <- the row
+ *     size-14 rounded-full                     <- 56pt avatar
+ *     flex-1 min-w-0
+ *       flex justify-between items-baseline    <- name + timestamp on ONE line
+ *         text-[17px] font-semibold truncate
+ *         text-[15px] font-medium
+ *       flex justify-between items-center mt-0.5  <- preview + badge on ONE line
+ *         text-[15px] truncate
+ *         size-5 rounded-full text-[12px] font-semibold
+ *   h-px bg-border mx-4                        <- separator, inset 16pt both sides
+ *
+ * The separator is a sibling rather than a border on the text column, so it runs
+ * the full width beneath the avatar instead of stopping at the avatar's edge.
+ * Both text lines carry `min-w-0` plus a truncating Text, which is what stops a
+ * long sender name from pushing the timestamp off the row.
  */
 const ConversationRow = ({
   name,
@@ -69,15 +80,15 @@ const ConversationRow = ({
   const title = name || 'Unknown';
 
   return (
-    <Pressable
-      onPress={onPress}
-      onLongPress={onLongPress}
-      delayLongPress={280}
-      className="flex-row items-start pl-4 h-row active:bg-surface-muted"
-      accessibilityRole="button"
-      accessibilityLabel={`Chat with ${title}`}
-    >
-      <View className="pt-[2px]">
+    <View>
+      <Pressable
+        onPress={onPress}
+        onLongPress={onLongPress}
+        delayLongPress={280}
+        className="flex-row items-center gap-3 px-4 h-row active:bg-surface-muted"
+        accessibilityRole="button"
+        accessibilityLabel={`Chat with ${title}`}
+      >
         <Avatar
           name={title}
           imageUrl={image}
@@ -85,45 +96,54 @@ const ConversationRow = ({
           fontSize={22}
           placeholderType={isGroup ? 'icon' : 'text'}
         />
-      </View>
 
-      <View className="flex-1 min-w-0 h-[67.33px] pt-2.5 pr-[15px] justify-center border-b-hair border-separator flex-row items-start gap-2">
-        <View className="flex-1 min-w-0 gap-[1.5px]">
-          <Text className="text-body-1 font-semibold text-text-strong" numberOfLines={1}>
-            {title}
-          </Text>
-
-          <View className="flex-row items-start gap-[3px]">
-            {isOwnLatest ? <DeliveryTicks status={latestStatus} /> : null}
+        <View className="flex-1 min-w-0">
+          {/* Name and timestamp share the first baseline. */}
+          <View className="flex-row items-baseline justify-between gap-2">
+            <Text className="flex-1 min-w-0 text-body-1 font-semibold text-text-strong" numberOfLines={1}>
+              {title}
+            </Text>
             <Text
               className={clsx(
-                'text-body-2 flex-1',
-                typing ? 'italic text-text-muted' : 'text-text-muted'
+                'text-body-2 font-medium',
+                unread ? 'text-primary' : 'text-text-muted'
               )}
               numberOfLines={1}
             >
-              {typing ? 'typing…' : preview || 'No messages yet'}
+              {formatTimestamp(timestamp)}
             </Text>
           </View>
-        </View>
 
-        {/* The design pins this column to 32pt and lets the timestamp overflow it at
-            80pt, right-aligned. Sizing to the timestamp instead keeps the same
-            look without the fixed 32pt that wraps "Yesterday" on a narrow row. */}
-        <View className="items-end gap-[3px]">
-          <Text className="text-body-2 text-text-muted" numberOfLines={1}>
-            {formatTimestamp(timestamp)}
-          </Text>
-          {unread ? (
-            <View className="min-w-[18px] h-[18px] px-1.5 rounded-[9px] bg-primary items-center justify-center">
-              <Text className="text-body-3 text-white">
-                {unreadCount > 99 ? '99+' : unreadCount}
+          {/* Preview and unread badge share the second line. */}
+          <View className="flex-row items-center justify-between gap-2 mt-0.5">
+            <View className="flex-1 min-w-0 flex-row items-center gap-[3px]">
+              {isOwnLatest ? <DeliveryTicks status={latestStatus} /> : null}
+              <Text
+                className={clsx(
+                  'flex-1 min-w-0 text-body-2',
+                  typing ? 'text-primary' : 'text-text-muted'
+                )}
+                numberOfLines={1}
+              >
+                {typing ? 'typing\u2026' : preview || 'No messages yet'}
               </Text>
             </View>
-          ) : null}
+
+            {unread ? (
+              // A 20pt circle at the design's size, allowed to widen for "99+" so
+              // a three-digit count is never clipped.
+              <View className="min-w-[20px] h-5 px-1 rounded-full bg-primary items-center justify-center">
+                <Text className="text-body-3 font-semibold text-white">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Text>
+              </View>
+            ) : null}
+          </View>
         </View>
-      </View>
-    </Pressable>
+      </Pressable>
+
+      <View className="h-px bg-separator mx-4" />
+    </View>
   );
 };
 
