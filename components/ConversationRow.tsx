@@ -1,4 +1,4 @@
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import clsx from 'clsx';
 import { Pressable, Text, View } from 'react-native';
 
@@ -35,17 +35,23 @@ const formatTimestamp = (timestamp?: number): string => {
   return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 };
 
+/** The design draws a single tick for sent and a blue double tick for read. */
 const DeliveryTicks = ({ status }: { status?: string }) => {
   const read = status === 'read' || status === 'delivered';
   return (
     <Ionicons
       name={read ? 'checkmark-done' : 'checkmark'}
       size={15}
-      color={status === 'read' ? '#2c6bed' : '#9ca3af'}
+      color={status === 'read' ? '#53bdeb' : '#767779'}
     />
   );
 };
 
+/**
+ * Conversation row from the Figma chat list: 56pt avatar at a 28pt radius, a
+ * 77.33pt row, 16pt semibold name over a 14/19pt preview, and the time stacked
+ * above the unread badge on the right.
+ */
 const ConversationRow = ({
   name,
   image,
@@ -67,51 +73,50 @@ const ConversationRow = ({
       onPress={onPress}
       onLongPress={onLongPress}
       delayLongPress={280}
-      className="flex-row items-center gap-3 px-4 py-3 bg-white active:bg-gray-100"
+      className="flex-row items-start pl-4 pr-4 h-row active:bg-surface-muted"
       accessibilityRole="button"
       accessibilityLabel={`Chat with ${title}`}
     >
-      <Avatar
-        name={title}
-        imageUrl={image}
-        size={50}
-        fontSize={22}
-        placeholderType={isGroup ? 'icon' : 'text'}
-      />
-
-      <View className="flex-1 min-w-0 gap-0.5">
-        <Text
-          className={clsx('text-[17px] truncate', unread ? 'font-semibold' : 'font-medium')}
-          numberOfLines={1}
-        >
-          {title}
-        </Text>
-
-        <View className="flex-row items-center gap-1.5">
-          {isOwnLatest ? <DeliveryTicks status={latestStatus} /> : null}
-          <Text
-            className={clsx(
-              'text-[14px] flex-1',
-              typing ? 'text-primary italic' : unread ? 'text-gray-800 font-medium' : 'text-gray-500'
-            )}
-            numberOfLines={1}
-          >
-            {typing ? 'typing…' : preview || 'No messages yet'}
-          </Text>
-        </View>
+      <View className="pt-[2px]">
+        <Avatar
+          name={title}
+          imageUrl={image}
+          size={56}
+          fontSize={22}
+          placeholderType={isGroup ? 'icon' : 'text'}
+        />
       </View>
 
-      <View className="items-end gap-1 self-stretch justify-center">
-        <Text className={clsx('text-xs', unread ? 'text-primary font-medium' : 'text-gray-400')}>
-          {formatTimestamp(timestamp)}
-        </Text>
-        {unread ? (
-          <View className="min-w-[20px] h-5 px-1.5 rounded-full bg-primary items-center justify-center">
-            <Text className="text-[11px] font-semibold text-white">
-              {unreadCount > 99 ? '99+' : unreadCount}
+      <View className="flex-1 min-w-0 h-[67.33px] pt-2.5 pr-[15px] justify-center border-b-hair border-separator flex-row items-start gap-2">
+        <View className="flex-1 min-w-0 gap-[1.5px]">
+          <Text className="text-body-1 font-semibold text-text-strong" numberOfLines={1}>
+            {title}
+          </Text>
+
+          <View className="flex-row items-start gap-1">
+            {isOwnLatest ? <DeliveryTicks status={latestStatus} /> : null}
+            <Text
+              className={clsx(
+                'text-body-2 flex-1',
+                typing ? 'italic text-text-muted' : 'text-text-muted'
+              )}
+              numberOfLines={1}
+            >
+              {typing ? 'typing…' : preview || 'No messages yet'}
             </Text>
           </View>
-        ) : null}
+        </View>
+
+        <View className="w-8 items-end gap-[3px]">
+          <Text className="text-body-2 text-text-muted">{formatTimestamp(timestamp)}</Text>
+          {unread ? (
+            <View className="min-w-[18px] h-[18px] px-1.5 rounded-[9px] bg-primary items-center justify-center">
+              <Text className="text-body-3 text-white">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          ) : null}
+        </View>
       </View>
     </Pressable>
   );

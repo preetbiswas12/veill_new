@@ -39,7 +39,7 @@ const Avatar = ({
       style={{
         width: size,
         height: size,
-        backgroundColor: '#d8e8f0',
+        backgroundColor: '#e6e6e6',
       }}
       className="shrink-0 rounded-full aspect-square flex flex-row items-center justify-center overflow-hidden"
     >
@@ -49,13 +49,13 @@ const Avatar = ({
             fontSize,
             fontWeight,
           }}
-          className="leading-[2] text-[#086da0] uppercase"
+          className="leading-[2] text-[#767779] uppercase"
         >
           {name ? name[0] : ''}
         </Text>
       )}
       {placeholderType === 'icon' && (
-        <Ionicons name="people-outline" size={fontSize} color="#086da0" />
+        <Ionicons name="people-outline" size={fontSize} color="#767779" />
       )}
     </View>
   );
