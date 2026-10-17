@@ -1,9 +1,9 @@
-import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect } from 'react';
 
 import { useCometChat } from '@/hooks/useCometChat';
 import {
+  getExpoNotifications,
   markPushClicked,
   markPushDelivered,
   parsePushPayload,
@@ -73,6 +73,11 @@ export const usePushNotifications = (sessionReady: boolean): void => {
   );
 
   useEffect(() => {
+    // expo-notifications is absent in Expo Go; without it there are no taps to
+    // listen for, so the whole effect no-ops rather than throwing.
+    const Notifications = getExpoNotifications();
+    if (!Notifications) return;
+
     const subscription = Notifications.addNotificationResponseReceivedListener(
       (response) => {
         const data = (response.notification.request.content.data ||

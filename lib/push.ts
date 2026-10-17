@@ -1,5 +1,4 @@
 import { CometChat, CometChatNotifications } from '@cometchat/chat-sdk-react-native';
-import * as Notifications from 'expo-notifications';
 import { Platform, TurboModule, TurboModuleRegistry } from 'react-native';
 
 /**
@@ -21,6 +20,36 @@ import { Platform, TurboModule, TurboModuleRegistry } from 'react-native';
  */
 
 type MessagingModule = any;
+
+/**
+ * expo-notifications is resolved lazily and defensively. Importing it eagerly
+ * throws at module-evaluation time wherever remote push is unavailable - most
+ * notably Expo Go, which has thrown on import since SDK 53. Because this module
+ * is pulled in by the root provider, an eager import took the whole app down at
+ * startup with a cascade of "route is missing the required default export"
+ * warnings. Requiring it inside a try/catch keeps push an optional feature.
+ */
+type NotificationsModule = typeof import('expo-notifications');
+
+let notificationsCache: NotificationsModule | null | undefined;
+
+const getNotifications = (): NotificationsModule | null => {
+  if (notificationsCache === undefined) {
+    try {
+      notificationsCache = require('expo-notifications') as NotificationsModule;
+    } catch {
+      notificationsCache = null;
+    }
+  }
+  return notificationsCache;
+};
+
+/**
+ * Shared accessor for consumers outside this module. Returns null wherever
+ * expo-notifications is unavailable (Expo Go), so callers can no-op instead of
+ * crashing the app at startup.
+ */
+export const getExpoNotifications = getNotifications;
 
 let messagingCache: MessagingModule | null | undefined;
 
@@ -173,14 +202,10 @@ export const registerDeviceForPush = async (): Promise<string | null> => {
   if (!messaging) return null;
 
   try {
-    if (Platform.OS === 'android') {
-      const androidStatus = await Notifications.getPermissionsAsync();
-      if (androidStatus.status !== 'granted') {
-        await Notifications.requestPermissionsAsync();
-      }
-    } else {
-      const iosStatus = await Notifications.getPermissionsAsync();
-      if (iosStatus.status !== 'granted') {
+    const Notifications = getNotifications();
+    if (Notifications) {
+      const status = await Notifications.getPermissionsAsync();
+      if (status.status !== 'granted') {
         await Notifications.requestPermissionsAsync();
       }
     }
@@ -242,6 +267,8 @@ export const markPushClicked = async (push: ParsedPush): Promise<void> => {
  */
 export const presentForegroundPush = async (push: ParsedPush): Promise<void> => {
   try {
+    const Notifications = getNotifications();
+    if (!Notifications) return;
     await Notifications.scheduleNotificationAsync({
       content: {
         title: push.title,
