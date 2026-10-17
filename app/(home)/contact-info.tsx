@@ -8,7 +8,7 @@ import Avatar from '@/components/Avatar';
 import Screen from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { useFavourites } from '@/hooks/useFavourites';
-import { useCometChat } from '@/hooks/useCometChat';
+import { useCometChat, getMessageBody, getMessageText, getMessageTimestamp } from '@/hooks/useCometChat';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -55,6 +55,7 @@ const Row = ({
   toggle,
   toggleValue,
   onToggle,
+  destructive = false,
   last = false,
 }: {
   icon: IconName;
@@ -65,6 +66,7 @@ const Row = ({
   toggle?: boolean;
   toggleValue?: boolean;
   onToggle?: (next: boolean) => void;
+  destructive?: boolean;
   last?: boolean;
 }) => (
   <Pressable
@@ -75,10 +77,14 @@ const Row = ({
       last ? '' : 'border-b-hair border-separator'
     }`}
   >
-    <Ionicons name={icon} size={24} color="#0a0a0a" />
+    <Ionicons name={icon} size={24} color={destructive ? '#ea0038' : '#0a0a0a'} />
     <View className="flex-1 min-w-0">
       <View className="flex-row items-center justify-between">
-        <Text className="flex-1 min-w-0 text-body-1 text-text-strong" numberOfLines={1}>
+        <Text
+          className="flex-1 min-w-0 text-body-1"
+          style={{ color: destructive ? '#ea0038' : '#0a0a0a' }}
+          numberOfLines={1}
+        >
           {label}
         </Text>
         {value ? (
@@ -121,8 +127,10 @@ const ContactInfoScreen = () => {
     image?: string;
     type?: string;
   }>();
-  const { user, createGroup } = useCometChat();
+  const { user, createGroup, isBlocked, toggleBlockUser, clearConversation, messagesByConversation } =
+    useCometChat();
   const { isFavourite, toggle } = useFavourites();
+  const blocked = isBlocked(String(id));
 
   const [muted, setMuted] = useState(false);
   const [locked, setLocked] = useState(false);
@@ -154,22 +162,44 @@ const ContactInfoScreen = () => {
   };
 
   const confirmClearChat = () => {
-    Alert.alert(
-      'Clear chat?',
-      'This removes the messages from your view of this conversation.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear',
-          style: 'destructive',
-          onPress: () =>
-            Alert.alert(
-              'Not available yet',
-              'Clearing a conversation needs the delete-messages API wired up; it is not connected to CometChat yet.'
-            ),
+    Alert.alert('Clear chat?', 'This deletes every message you can see in this conversation.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Clear',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const removed = await clearConversation(String(id), isGroup ? 'group' : 'user');
+            Alert.alert('Chat cleared', removed === 1 ? '1 message deleted.' : `${removed} messages deleted.`);
+          } catch {
+            Alert.alert('Could not clear', 'Some messages could not be deleted.');
+          }
         },
-      ]
-    );
+      },
+    ]);
+  };
+
+  // CometChat has no export endpoint, so the transcript is built from what is
+  // loaded and handed to the system share sheet.
+  const exportChat = async () => {
+    const loaded = messagesByConversation.get(String(id)) || [];
+    if (loaded.length === 0) {
+      Alert.alert('Nothing to export', 'Load the chat first so its messages are available.');
+      return;
+    }
+    const transcript = loaded
+      .map((message: any) => {
+        const at = new Date(getMessageTimestamp(message) || Date.now()).toLocaleString();
+        const who =
+          typeof message?.getSender === 'function' ? message.getSender()?.getName?.() : undefined;
+        return `[${at}] ${who || 'Unknown'}: ${getMessageBody(message) || getMessageText(message) || ''}`;
+      })
+      .join('\n');
+    try {
+      await Share.share({ message: `Chat with ${title}\n\n${transcript}` });
+    } catch {
+      // Share sheet dismissed.
+    }
   };
 
   return (
@@ -330,14 +360,29 @@ const ContactInfoScreen = () => {
             <Row
               icon="download-outline"
               label="Export chat"
-              onPress={() =>
-                Alert.alert('Export chat', 'Export is not connected to CometChat yet.')
-              }
+              onPress={() => void exportChat()}
             />
             <Row
               icon="trash-outline"
               label="Clear chat"
               onPress={confirmClearChat}
+            />
+            <Row
+              icon={blocked ? 'close-circle-outline' : 'ban-outline'}
+              label={blocked ? `Unblock ${title.split(' ')[0]}` : `Block ${title.split(' ')[0]}`}
+              destructive
+              onPress={() => {
+                void toggleBlockUser(String(id))
+                  .then((nowBlocked) =>
+                    Alert.alert(
+                      nowBlocked ? 'Blocked' : 'Unblocked',
+                      `${title} ${nowBlocked ? 'can no longer message you.' : 'can message you again.'}`
+                    )
+                  )
+                  .catch(() =>
+                    Alert.alert('Could not update', 'Blocking needs to be enabled on this CometChat app.')
+                  );
+              }}
               last
             />
           </View>

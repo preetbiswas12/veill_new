@@ -131,6 +131,20 @@ interface CometChatContextType {
   groups: CometChatGroup[];
   loadingGroups: boolean;
   refreshGroups: () => Promise<void>;
+  /** Uids this account has blocked, via the SDK's blocked-users API. */
+  blockedIds: string[];
+  refreshBlockedUsers: () => Promise<void>;
+  toggleBlockUser: (uid: string) => Promise<boolean>;
+  isBlocked: (uid: string) => boolean;
+  /** Per-conversation push mute, from the SDK's push preferences. */
+  mutedConversations: string[];
+  setConversationMuted: (conversationId: string, muted: boolean) => Promise<void>;
+  /** Globally disables push for this account. */
+  pushEnabled: boolean | null;
+  setPushEnabled: (enabled: boolean) => Promise<void>;
+  refreshPushPreferences: () => Promise<void>;
+  /** Deletes every loaded message in a conversation. */
+  clearConversation: (conversationId: string, chatType?: string) => Promise<number>;
   searchUsers: (query: string) => Promise<CometChatUser[]>;
   updateCurrentUserProfile: (fields: { nickName?: string; avatarUrl?: string }) => Promise<void>;
   refreshConversations: () => Promise<void>;
@@ -570,6 +584,9 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
   const [storiesLoading, setStoriesLoading] = useState(false);
   const [groups, setGroups] = useState<CometChatGroup[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(false);
+  const [blockedIds, setBlockedIds] = useState<string[]>([]);
+  const [mutedConversations, setMutedConversations] = useState<string[]>([]);
+  const [pushEnabled, setPushEnabledState] = useState<boolean | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
 
   const userRef = useRef<CometChatUser | null>(null);
@@ -796,6 +813,87 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
       setError(caught instanceof Error ? caught.message : 'Unable to load groups');
     } finally {
       setLoadingGroups(false);
+    }
+  }, []);
+
+  const refreshBlockedUsers = useCallback(async () => {
+    try {
+      const result = (await (CometChat as any).getBlockedUsers()) || [];
+      setBlockedIds(
+        result
+          .map((user: any) => (typeof user?.getUid === 'function' ? user.getUid() : user?.uid))
+          .filter((uid: unknown): uid is string => typeof uid === 'string' && uid.length > 0)
+      );
+    } catch {
+      // Blocking needs the API enabled on the app; the rest still works.
+      setBlockedIds([]);
+    }
+  }, []);
+
+  /** Returns the new blocked state so the caller can report it. */
+  const toggleBlockUser = useCallback(
+    async (uid: string) => {
+      const wasBlocked = blockedIds.includes(uid);
+      try {
+        await (CometChat as any)[wasBlocked ? 'unblockUsers' : 'blockUsers']([uid]);
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : 'Could not update blocked users');
+        throw caught;
+      }
+      setBlockedIds((current) =>
+        wasBlocked ? current.filter((value) => value !== uid) : [...current, uid]
+      );
+      return !wasBlocked;
+    },
+    [blockedIds]
+  );
+
+  /** Per-conversation mute, persisted server-side by the SDK. */
+  const setConversationMuted = useCallback(
+    async (conversationId: string, muted: boolean) => {
+      try {
+        const payload = [
+          muted
+            ? {
+                conversationId,
+                conversationType: conversationId.startsWith('group_') ? 2 : 1,
+                isMuted: 1,
+              }
+            : { conversationId },
+        ];
+        await (CometChat as any)[muted ? 'muteConversations' : 'unmuteConversations'](payload);
+        setMutedConversations((current) =>
+          muted ? [...new Set([...current, conversationId])] : current.filter((id) => id !== conversationId)
+        );
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : 'Could not update notifications');
+        throw caught;
+      }
+    },
+    []
+  );
+
+  const refreshPushPreferences = useCallback(async () => {
+    try {
+      const muted = (await (CometChat as any).getMutedConversations()) || [];
+      setMutedConversations(
+        muted.map((item: any) => item?.conversationId ?? item).filter(Boolean)
+      );
+      const prefs = await (CometChat as any).fetchPushPreferences();
+      setPushEnabledState(prefs?.enablePush !== false);
+    } catch {
+      // Push preferences need the notifications extension; defaults are fine.
+    }
+  }, []);
+
+  const setPushEnabled = useCallback(async (enabled: boolean) => {
+    try {
+      const prefs = await (CometChat as any).fetchPushPreferences();
+      await (CometChat as any).updatePushPreferences({ ...prefs, enablePush: enabled });
+      setPushEnabledState(enabled);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not update notifications');
+      throw caught;
     }
   }, []);
 
@@ -1186,6 +1284,28 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
   );
 
   /** Place an outgoing 1:1 call. The peer answers via `CallListener`. */
+  /**
+   * CometChat has no bulk-clear endpoint, so this walks the messages already
+   * loaded for the conversation and deletes them one by one.
+   */
+  const clearConversation = useCallback(
+    async (conversationId: string, chatType?: string) => {
+      const loaded = messagesByConversation.get(conversationId) || [];
+      let removed = 0;
+      for (const message of loaded) {
+        try {
+          await deleteMessage(conversationId, message);
+          removed += 1;
+        } catch {
+          // Skip anything that cannot be deleted (not ours, or already gone).
+        }
+      }
+      await refreshMessages(conversationId, chatType);
+      return removed;
+    },
+    [deleteMessage, messagesByConversation, refreshMessages]
+  );
+
   const startCall = useCallback(
     async (peerUserId: string, video: boolean) => {
       if (!peerUserId) return;
@@ -1821,6 +1941,16 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
       groups,
       loadingGroups,
       refreshGroups,
+      blockedIds,
+      refreshBlockedUsers,
+      refreshPushPreferences,
+      toggleBlockUser,
+      isBlocked: (uid: string) => blockedIds.includes(uid),
+      mutedConversations,
+      setConversationMuted,
+      pushEnabled,
+      setPushEnabled,
+      clearConversation,
       searchUsers,
       updateCurrentUserProfile,
       refreshConversations,

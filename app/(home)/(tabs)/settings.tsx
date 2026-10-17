@@ -68,18 +68,30 @@ const openExternal = (url: string) => () => {
 
 const SettingsScreen = () => {
   const router = useRouter();
-  const { user } = useCometChat();
+  const { user, conversations, groups, messagesByConversation } = useCometChat();
   const [query, setQuery] = useState('');
 
-  const groups = useMemo(
+  const sections = useMemo(
     () => [
       {
         id: 'library',
         rows: [
-          { icon: 'list' as IconName, label: 'List', onPress: notWired('List') },
+          {
+            icon: 'list' as IconName,
+            label: 'List',
+            // Real data: the groups this account is a member of.
+            onPress: () =>
+              Alert.alert(
+                'Your list',
+                groups.length
+                  ? groups.map((group) => `• ${group.name}`).join('\n')
+                  : 'You are not in any groups yet.'
+              ),
+          },
           {
             icon: 'megaphone-outline' as IconName,
             label: 'Broadcast messages',
+            // No client SDK surface - broadcast is a server-side group feature.
             onPress: notWired('Broadcast messages'),
           },
           {
@@ -120,12 +132,21 @@ const SettingsScreen = () => {
           {
             icon: 'notifications-outline' as IconName,
             label: 'Notifications',
-            onPress: notWired('Notifications'),
+            onPress: () => router.push('/notifications'),
           },
           {
             icon: 'arrow-down-outline' as IconName,
             label: 'Storage and data',
-            onPress: notWired('Storage and data'),
+            // Real counts pulled from the live session rather than a placeholder.
+            onPress: () =>
+              Alert.alert(
+                'Storage and data',
+                [
+                  `Conversations: ${conversations.length}`,
+                  `Groups: ${groups.length}`,
+                  `Messages loaded in memory: ${messagesByConversation.size} threads`,
+                ].join('\n')
+              ),
           },
         ],
       },
@@ -170,20 +191,20 @@ const SettingsScreen = () => {
         ],
       },
     ],
-    [router, user?.id, user?.name]
+    [router, user?.id, user?.name, conversations.length, groups.length, messagesByConversation.size]
   );
 
   // The design's search field filters the rows beneath it.
   const visibleGroups = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    if (!needle) return groups;
-    return groups
+    if (!needle) return sections;
+    return sections
       .map((group) => ({
         ...group,
         rows: group.rows.filter((row) => row.label.toLowerCase().includes(needle)),
       }))
       .filter((group) => group.rows.length > 0);
-  }, [groups, query]);
+  }, [sections, query]);
 
   return (
     <Screen viewClassName="bg-white" edges={['left', 'right', 'bottom']}>
