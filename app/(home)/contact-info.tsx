@@ -88,7 +88,7 @@ const Row = ({
     <Ionicons
       name={icon}
       size={24}
-      color={destructive ? colors['text-error'] : colors['text-strong']}
+      color={destructive ? colors['text-error'] : colors['teal']}
     />
     <View className="flex-1 min-w-0">
       <View className="flex-row items-center justify-between">
