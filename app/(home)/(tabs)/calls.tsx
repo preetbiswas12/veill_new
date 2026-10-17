@@ -79,7 +79,7 @@ const CallsScreen = () => {
 
       {loadingCallHistory && callHistory.length === 0 ? (
         <View className="flex-1 w-full items-center justify-center">
-          <ActivityIndicator color="#2c6bed" />
+          <ActivityIndicator color="#1dab61" />
         </View>
       ) : showEmpty ? (
         <View className="flex-1 w-full flex-col items-center justify-center mt-8">
@@ -118,7 +118,7 @@ const CallsScreen = () => {
                       color={isMissed ? '#ef4444' : '#9ca3af'}
                     />
                     <Text
-                      className={clsx('text-xs', isMissed ? 'text-red-500' : 'text-gray-500')}
+                      className={clsx('text-xs', isMissed ? 'text-red-500' : 'text-text-muted')}
                       numberOfLines={1}
                     >
                       {describe(entry)}
@@ -128,7 +128,7 @@ const CallsScreen = () => {
                 <Feather
                   name={entry.video ? 'video' : 'phone'}
                   size={18}
-                  color="#2c6bed"
+                  color="#1dab61"
                 />
               </Button>
             );

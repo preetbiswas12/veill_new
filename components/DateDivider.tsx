@@ -26,10 +26,11 @@ export const formatDateDivider = (timestamp: number): string => {
   });
 };
 
+/** The design's date pill: white, 8pt radius, a 0.66pt rgba(0,0,0,0.06) hairline. */
 const DateDivider = ({ timestamp }: { timestamp: number }) => (
-  <View className="items-center my-3">
-    <View className="px-3 py-1 rounded-full bg-gray-200/70">
-      <Text className="text-[11px] font-semibold text-gray-600">
+  <View className="items-center pt-[23px] pb-px">
+    <View className="min-w-[100px] px-[14px] py-[3px] rounded-[8px] bg-white border-hair border-bubble-shadow">
+      <Text className="text-body-3 font-semibold text-text-strong text-center">
         {formatDateDivider(timestamp)}
       </Text>
     </View>

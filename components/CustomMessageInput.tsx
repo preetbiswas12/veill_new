@@ -1,4 +1,4 @@
-import { View, TextInput, Alert } from 'react-native';
+import { View, TextInput, Alert, Pressable } from 'react-native';
 import { OutgoingMedia, useCometChat } from '@/hooks/useCometChat';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
@@ -6,7 +6,6 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import AttachButton from './AttachButton';
-import Button from './Button';
 
 /** Typing signals are throttled: one "started" per window, "stopped" on idle. */
 const TYPING_THROTTLE_MS = 3_000;
@@ -157,28 +156,41 @@ const CustomMessageInput = ({
     ]);
   };
 
+  // Composer from the Figma input bar: a 32pt attach control, a 15pt-radius white
+  // input with a 0.33pt #b2b2b2 border, then camera and mic at 32pt.
   return (
-    <View className="flex-row items-center gap-2 p-4 bg-white border-t border-gray-100">
-      <AttachButton disabled={sending || disabled} onPress={promptAttachment} />
-      <TextInput
-        value={text}
-        onChangeText={handleChangeText}
-        placeholder={placeholder}
-        className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-base"
-        maxLength={1000}
-        multiline
-        editable={!disabled}
-        onSubmitEditing={handleSend}
-        blurOnSubmit={false}
-      />
-      <Button
-        variant="plain"
-        onPress={handleSend}
-        disabled={!text.trim() || disabled || sending}
-        className="p-0.5 bg-primary rounded-full"
-      >
-        <Feather name="arrow-up" size={24} color="white" />
-      </Button>
+    <View className="bg-panel-blur-warm">
+      <View className="flex-row items-center gap-2 pl-[7px] pr-[9px] py-[5.5px]">
+        <AttachButton disabled={sending || disabled} onPress={promptAttachment} />
+        <View className="flex-1 flex-row items-end gap-4 pl-[10px] pr-[9px] pt-[3px] pb-[2px] rounded-[15px] bg-white border-hair border-input-border">
+          <TextInput
+            value={text}
+            onChangeText={handleChangeText}
+            placeholder={placeholder}
+            placeholderTextColor="#767779"
+            className="flex-1 text-[16px] leading-[21px] text-text-strong"
+            style={{ letterSpacing: -0.32 }}
+            maxLength={1000}
+            multiline
+            editable={!disabled}
+            onSubmitEditing={handleSend}
+            blurOnSubmit={false}
+          />
+          <Pressable
+            onPress={handleSend}
+            disabled={!text.trim() || disabled || sending}
+            accessibilityRole="button"
+            accessibilityLabel="Send"
+            hitSlop={8}
+          >
+            <Feather
+              name="arrow-up"
+              size={24}
+              color={!text.trim() || disabled || sending ? '#b2b2b2' : '#1dab61'}
+            />
+          </Pressable>
+        </View>
+      </View>
     </View>
   );
 };

@@ -49,7 +49,7 @@ const SignInScreen = () => {
     <Screen viewClassName="pt-16 px-4 gap-4" loadingOverlay={submitting}>
       <View className="gap-3">
         <Text className="text-center text-3xl font-semibold">veill</Text>
-        <Text className="text-center text-base text-gray-500">
+        <Text className="text-center text-base text-text-muted">
           Enter a name to start messaging and calling
         </Text>
       </View>
@@ -73,7 +73,7 @@ const SignInScreen = () => {
         Continue
       </Button>
 
-      <Text className="text-center text-xs text-gray-500">
+      <Text className="text-center text-xs text-text-muted">
         Your CometChat account is created automatically the first time you sign
         in.
       </Text>

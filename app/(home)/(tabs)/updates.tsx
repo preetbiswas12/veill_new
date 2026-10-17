@@ -141,7 +141,7 @@ const StoriesScreen = () => {
           </View>
           <View className="flex-1">
             <Text className="font-semibold">My Stories</Text>
-            <Text className="text-xs text-gray-500">
+            <Text className="text-xs text-text-muted">
               {myStories?.items.length
                 ? `${myStories.items.length} item${myStories.items.length > 1 ? 's' : ''} · Tap to add`
                 : 'Tap to add'}
@@ -161,12 +161,12 @@ const StoriesScreen = () => {
 
         {storiesLoading && stories.length === 0 ? (
           <View className="items-center py-10">
-            <ActivityIndicator color="#2c6bed" />
+            <ActivityIndicator color="#1dab61" />
           </View>
         ) : otherStories.length === 0 ? (
           <View className="items-center py-10 gap-1">
             <Text className="font-semibold">No recent stories</Text>
-            <Text className="text-sm text-gray-500 text-center">
+            <Text className="text-sm text-text-muted text-center">
               When people share photos and videos, they show up here for 24 hours.
             </Text>
           </View>
@@ -201,7 +201,7 @@ const StoriesScreen = () => {
                     <Text className="font-semibold" numberOfLines={1}>
                       {author.name || author.senderId}
                     </Text>
-                    <Text className="text-xs text-gray-500">
+                    <Text className="text-xs text-text-muted">
                       {author.items.length} item{author.items.length > 1 ? 's' : ''} ·{' '}
                       {formatWhen(newest?.at || 0)}
                     </Text>

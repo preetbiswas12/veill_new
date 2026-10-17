@@ -174,7 +174,7 @@ const CallScreen = () => {
           ) : ended ? (
             <View className="items-center gap-2">
               <Feather name="phone-off" size={30} color="#9ca3af" />
-              <Text className="text-sm text-gray-500">{callError || 'Call ended'}</Text>
+              <Text className="text-sm text-text-muted">{callError || 'Call ended'}</Text>
             </View>
           ) : (
             <Button

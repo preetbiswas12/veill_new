@@ -10,7 +10,9 @@ const wa = {
   'surface-active': '#d0fecf', // surface-cta-filters-active
   'surface-cta': 'rgba(10,10,10,0.03)', // surface-cta-circular
   'panel-blur': 'rgba(244,244,244,0.8)', // surface-panel-blur
-  'chat-bg': '#efe7de', // message thread wallpaper tint
+  'panel-blur-warm': 'rgba(245,242,235,0.8)', // surface-panel (chat header / composer)
+  'chat-bg': '#f5f2eb', // surface-chat, the thread wallpaper
+  'input-border': '#b2b2b2', // brd-input-chat
 
   // brand
   product: '#1dab61', // surface-product / txt-product
@@ -19,8 +21,10 @@ const wa = {
   // text
   'text-strong': '#0a0a0a', // txt-primary, txt-tabbar-selected
   'text-muted': '#767779', // txt-secondary, txt-tabbar
+  'text-faint': 'rgba(0,0,0,0.5)', // txt-secondary-alpha
   'text-invert': '#ffffff',
   'text-error': '#ea0038',
+  'sound-off': 'rgba(0,0,0,0.2)', // surface-sound-off (unplayed waveform)
 
   // lines
   separator: 'rgba(0,0,0,0.2)', // brd-separator
@@ -28,8 +32,9 @@ const wa = {
   'avatar-border': 'rgba(10,10,10,0.1)', // brd-avatar
 
   // message bubbles
-  'bubble-out': '#d9fdd3',
-  'bubble-in': '#ffffff',
+  'bubble-out': '#d0fecf', // surface-baloon-me
+  'bubble-in': '#ffffff', // surface-baloon-you
+  'bubble-shadow': 'rgba(0,0,0,0.06)', // surface-shadow-baloon
 };
 
 module.exports = {

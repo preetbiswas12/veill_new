@@ -4,7 +4,7 @@ interface SpinnerProps {
   color?: string;
 }
 
-const Spinner = ({ color = '#2c6bed' }: SpinnerProps) => {
+const Spinner = ({ color = '#1dab61' }: SpinnerProps) => {
   return <ActivityIndicator color={color} />;
 };
 

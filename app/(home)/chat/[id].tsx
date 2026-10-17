@@ -260,35 +260,34 @@ const ChatScreen = () => {
   };
 
   return (
-    <Screen className="bg-[#f5f5f5]" viewClassName="bg-[#f5f5f5]">
-      <View className="flex-row items-center gap-3 px-2 py-2 bg-white border-b border-gray-100">
-        <Button variant="plain" onPress={() => router.back()} className="p-1">
-          <Feather name="chevron-left" size={28} color="black" />
+    <Screen className="bg-chat-bg" viewClassName="bg-chat-bg">
+      {/* Top contact from the Figma thread: blurred warm panel, 36pt avatar,
+          16pt semibold name over a 12pt secondary subtitle, call actions right. */}
+      <View className="flex-row items-center gap-2.5 pr-[22px] py-1 bg-panel-blur-warm">
+        <Button variant="plain" onPress={() => router.back()} className="p-1" hitSlop={8}>
+          <Feather name="chevron-left" size={32} color="black" />
         </Button>
         <Avatar
           name={title}
           imageUrl={imageUrl}
           size={36}
-          fontSize={16}
+          fontSize={15}
           placeholderType={conversationType === 'group' ? 'icon' : 'text'}
         />
         <View className="flex-1 min-w-0">
-          <Text className="text-base font-semibold truncate" numberOfLines={1}>
+          <Text className="text-body-1 font-semibold text-text-strong" numberOfLines={1}>
             {title}
           </Text>
           <Text
-            className={`text-xs ${isTyping ? 'text-primary italic' : 'text-gray-500'}`}
+            className="text-body-3"
+            style={{ color: isTyping ? '#1dab61' : 'rgba(0,0,0,0.5)' }}
             numberOfLines={1}
           >
-            {isTyping
-              ? 'typing…'
-              : conversationType === 'group'
-                ? 'Group conversation'
-                : ''}
+            {isTyping ? 'typing…' : 'tap here for contact info'}
           </Text>
         </View>
         {conversationType === 'user' ? (
-          <View className="flex-row items-center gap-4 pr-2">
+          <View className="flex-row items-center gap-5">
             <Button
               variant="plain"
               onPress={() => openCallScreen(true)}
@@ -301,7 +300,7 @@ const ChatScreen = () => {
               onPress={() => openCallScreen(false)}
               accessibilityLabel="Start voice call"
             >
-              <Feather name="phone" size={20} color="black" />
+              <Feather name="phone" size={22} color="black" />
             </Button>
           </View>
         ) : null}
@@ -321,7 +320,7 @@ const ChatScreen = () => {
         <View className="flex-1">
           {isLoadingMessages && messages.length === 0 ? (
             <View className="flex-1 items-center justify-center">
-              <ActivityIndicator color="#2c6bed" />
+              <ActivityIndicator color="#1dab61" />
             </View>
           ) : (
             <FlatList
@@ -342,7 +341,7 @@ const ChatScreen = () => {
               ListFooterComponent={isTyping ? <TypingIndicator /> : null}
               ListEmptyComponent={
                 <View className="items-center py-8">
-                  <Text className="text-sm text-gray-500">
+                  <Text className="text-sm text-text-muted">
                     No messages yet — say hi 👋
                   </Text>
                 </View>

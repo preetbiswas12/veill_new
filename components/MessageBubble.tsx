@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import clsx from 'clsx';
 import { Image } from 'expo-image';
 import { Linking, Pressable, Text, View } from 'react-native';
@@ -39,6 +39,11 @@ const formatTime = (timestamp: number) => {
   });
 };
 
+/**
+ * Bubble from the Figma thread: 12pt radius, a 0.66pt rgba(0,0,0,0.06) hairline,
+ * outgoing #d0fecf against the warm #f5f2eb wallpaper and incoming white, with
+ * the time and read ticks sitting inside the bubble on the trailing edge.
+ */
 const MessageBubble = ({
   message,
   isOwn,
@@ -61,8 +66,8 @@ const MessageBubble = ({
     if (!label) return null;
     return (
       <View className="flex-row items-center justify-center gap-1.5 my-1 px-6">
-        <Feather name={kind === 'video' ? 'video' : 'phone'} size={13} color="#9ca3af" />
-        <Text className="text-xs text-gray-500">
+        <Ionicons name={kind === 'video' ? 'videocam-outline' : 'call-outline'} size={13} color="#767779" />
+        <Text className="text-body-3 text-text-muted">
           {label}
           {timestamp ? ` · ${formatTime(timestamp)}` : ''}
         </Text>
@@ -78,12 +83,13 @@ const MessageBubble = ({
   const status =
     typeof message?.getStatus === 'function' ? message.getStatus() : undefined;
   const hasInlineMedia = Boolean(attachment?.url) && kind !== 'file';
+  const isRead = status === 'read';
 
   const renderAttachment = () => {
     if (!attachment?.url) return null;
     if (kind === 'image') {
       return (
-        <View className="rounded-xl overflow-hidden">
+        <View className="rounded-[12px] overflow-hidden">
           <Image
             source={{ uri: attachment.url }}
             style={MEDIA_SIZE}
@@ -95,7 +101,7 @@ const MessageBubble = ({
     }
     if (kind === 'video') {
       return (
-        <View className="rounded-xl overflow-hidden">
+        <View className="rounded-[12px] overflow-hidden">
           <VideoAttachment uri={attachment.url} style={MEDIA_SIZE} />
         </View>
       );
@@ -106,17 +112,12 @@ const MessageBubble = ({
         className="flex-row items-center gap-2 py-1"
         accessibilityLabel="Open attachment"
       >
-        <Feather name="file-text" size={22} color="#2c6bed" />
+        <Ionicons name="document-text-outline" size={22} color="#0a0a0a" />
         <View className="flex-1 min-w-0">
-          <Text
-            className={clsx('text-sm font-medium', isOwn ? 'text-white' : 'text-black')}
-            numberOfLines={2}
-          >
+          <Text className="text-body-2 font-medium text-text-strong" numberOfLines={2}>
             {attachment.name || 'Attachment'}
           </Text>
-          <Text className={clsx('text-[11px]', isOwn ? 'text-white/70' : 'text-gray-400')}>
-            Open file
-          </Text>
+          <Text className="text-caption text-text-muted">Open file</Text>
         </View>
       </Pressable>
     );
@@ -126,7 +127,7 @@ const MessageBubble = ({
     <View
       className={clsx(
         'flex-row items-end gap-2 px-4',
-        isGroupEnd ? 'mb-2' : 'mb-0.5',
+        isGroupEnd ? 'mb-1' : 'mb-[-4px]',
         isOwn && 'justify-end'
       )}
     >
@@ -136,9 +137,9 @@ const MessageBubble = ({
         </View>
       ) : null}
 
-      <View className={clsx('items-start', isOwn && 'items-end')}>
+      <View className={clsx('items-start max-w-[287px]', isOwn && 'items-end')}>
         {!isOwn && showAvatar && senderName && isGroupStart ? (
-          <Text className="text-[11px] font-semibold text-primary mb-0.5 ml-3">
+          <Text className="text-body-3 font-semibold text-product-deep mb-0.5 ml-3">
             {senderName}
           </Text>
         ) : null}
@@ -147,41 +148,33 @@ const MessageBubble = ({
           onLongPress={onLongPress}
           delayLongPress={300}
           className={clsx(
-            'max-w-[80%] rounded-2xl',
-            isGroupStart && 'rounded-t-md',
-            isGroupEnd && 'rounded-b-md',
-            hasInlineMedia ? 'p-1' : 'px-3 py-2',
-            isOwn ? 'bg-primary' : 'bg-white border border-gray-100'
+            'rounded-[12px] border-hair',
+            isOwn ? 'bg-bubble-out border-bubble-shadow' : 'bg-bubble-in border-bubble-shadow',
+            hasInlineMedia ? 'p-1' : 'pt-[13px] pl-[7px] pr-[8px] pb-[3px]'
           )}
         >
           {attachment?.url ? renderAttachment() : null}
           {body ? (
-            <Text
-              className={clsx(
-                'text-[15px] leading-5',
-                hasInlineMedia && 'px-2 py-1',
-                isOwn ? 'text-white' : 'text-black'
-              )}
-            >
+            <Text className="text-body-2 text-text-strong">
               {body}
             </Text>
           ) : null}
 
-          {isGroupEnd ? (
-            <View
-              className={clsx(
-                'flex-row items-center gap-1 self-end mt-0.5',
-                hasInlineMedia && 'px-1'
-              )}
-            >
-              <Text className={clsx('text-[10px]', isOwn ? 'text-white/70' : 'text-gray-400')}>
-                {formatTime(timestamp)}
-              </Text>
-              {isOwn && status === 'sending' ? (
-                <Feather name="clock" size={10} color="rgba(255,255,255,0.7)" />
-              ) : null}
-            </View>
-          ) : null}
+          {/* Time and read ticks ride on the trailing edge inside the bubble. */}
+          <View className="flex-row items-center justify-end gap-1 mt-0.5 -mb-0.5">
+            <Text className="text-caption text-text-faint">{formatTime(timestamp)}</Text>
+            {isOwn ? (
+              status === 'sending' ? (
+                <Ionicons name="time-outline" size={12} color="rgba(0,0,0,0.5)" />
+              ) : (
+                <Ionicons
+                  name={isRead ? 'checkmark-done' : 'checkmark'}
+                  size={15}
+                  color={isRead ? '#53bdeb' : 'rgba(0,0,0,0.5)'}
+                />
+              )
+            ) : null}
+          </View>
         </Pressable>
 
         {reactions.length ? (
@@ -196,24 +189,20 @@ const MessageBubble = ({
                 key={item.reaction}
                 onPress={() => onReact?.(item.reaction)}
                 className={clsx(
-                  'flex-row items-center gap-1 px-2 py-0.5 rounded-full border bg-white',
-                  item.mine ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                  'flex-row items-center gap-1 px-2 py-0.5 rounded-full border-hair bg-bubble-in',
+                  item.mine ? 'border-product' : 'border-bubble-shadow'
                 )}
                 accessibilityLabel={`${item.reaction} ${item.count}`}
               >
-                <Text className="text-xs">{item.reaction}</Text>
-                <Text
-                  className={clsx('text-[11px]', item.mine ? 'text-blue-600' : 'text-gray-500')}
-                >
-                  {item.count}
-                </Text>
+                <Text className="text-body-3">{item.reaction}</Text>
+                <Text className="text-caption text-text-muted">{item.count}</Text>
               </Pressable>
             ))}
           </View>
         ) : null}
 
         {isOwn && isGroupEnd && receiptLabel ? (
-          <Text className="text-[10px] text-gray-400 mt-0.5 mr-1">{receiptLabel}</Text>
+          <Text className="text-caption text-text-faint mt-0.5 mr-1">{receiptLabel}</Text>
         ) : null}
       </View>
     </View>

@@ -38,7 +38,7 @@ const WelcomeScreen = () => {
             Be yourself in every message.
           </Text>
         </View>
-        <Text className="text-base text-gray-500">Terms & Privacy Policy</Text>
+        <Text className="text-base text-text-muted">Terms & Privacy Policy</Text>
       </View>
       <Button onPress={() => router.navigate('/sign-in')}>Continue</Button>
     </Screen>
