@@ -1,14 +1,23 @@
-import { View, TextInput, Alert, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { View, TextInput, Alert, Pressable, Text } from 'react-native';
 import { OutgoingMedia, useCometChat } from '@/hooks/useCometChat';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
+import AddMoreSheet from './AddMoreSheet';
 import AttachButton from './AttachButton';
 
 /** Typing signals are throttled: one "started" per window, "stopped" on idle. */
 const TYPING_THROTTLE_MS = 3_000;
+
+interface ReplyTarget {
+  /** CometChat id of the message being replied to. */
+  messageId: string;
+  sender: string;
+  text: string;
+}
 
 interface CustomMessageInputProps {
   conversationId?: string;
@@ -17,6 +26,9 @@ interface CustomMessageInputProps {
   onSend?: (text: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  /** Set to show the design's quote bar; cleared once the reply is sent. */
+  replyTo?: ReplyTarget | null;
+  onClearReply?: () => void;
 }
 
 const CustomMessageInput = ({
@@ -25,10 +37,13 @@ const CustomMessageInput = ({
   onSend,
   placeholder = 'Message',
   disabled = false,
+  replyTo = null,
+  onClearReply,
 }: CustomMessageInputProps) => {
   const { sendTextMessage, sendMediaMessage, sendTyping } = useCometChat();
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const typingActiveRef = useRef(false);
   const typingStartedAtRef = useRef(0);
   const stopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -91,24 +106,32 @@ const CustomMessageInput = ({
     }
   };
 
-  const pickAndSend = async (source: 'library' | 'document') => {
+  const pickAndSend = async (source: 'library' | 'camera' | 'document') => {
     if (!conversationId || sending || disabled) return;
 
     setSending(true);
     try {
-      if (source === 'library') {
-        const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (!granted) {
-          Alert.alert(
-            'Permission needed',
-            'Allow photo library access to share photos and videos.'
-          );
-          return;
+      if (source === 'library' || source === 'camera') {
+        if (source === 'library') {
+          const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (!granted) {
+            Alert.alert(
+              'Permission needed',
+              'Allow photo library access to share photos and videos.'
+            );
+            return;
+          }
+        } else {
+          const { granted } = await ImagePicker.requestCameraPermissionsAsync();
+          if (!granted) {
+            Alert.alert('Permission needed', 'Allow camera access to take a photo.');
+            return;
+          }
         }
-        const result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ['images', 'videos'],
-          quality: 1,
-        });
+        const result =
+          source === 'library'
+            ? await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images', 'videos'], quality: 1 })
+            : await ImagePicker.launchCameraAsync({ mediaTypes: ['images', 'videos'], quality: 1 });
         if (result.canceled || !result.assets?.[0]) return;
         const asset = result.assets[0];
         const media: OutgoingMedia = {
@@ -149,48 +172,87 @@ const CustomMessageInput = ({
 
   const promptAttachment = () => {
     if (!conversationId || sending || disabled) return;
-    Alert.alert('Attach', 'What would you like to send?', [
-      { text: 'Photo or video', onPress: () => void pickAndSend('library') },
-      { text: 'Document', onPress: () => void pickAndSend('document') },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+    setSheetOpen((open) => !open);
   };
 
   // Composer from the Figma input bar: a 32pt attach control, a 15pt-radius white
-  // input with a 0.33pt #b2b2b2 border, then camera and mic at 32pt.
+  // input with a 0.33pt #b2b2b2 border, then the send affordance.
+  // Opening the attach sheet collapses the input to the design's 43pt.
   return (
-    <View className="bg-panel-blur-warm">
-      <View className="flex-row items-center gap-2 pl-[7px] pr-[9px] py-[5.5px]">
-        <AttachButton disabled={sending || disabled} onPress={promptAttachment} />
-        <View className="flex-1 flex-row items-end gap-4 pl-[10px] pr-[9px] pt-[3px] pb-[2px] rounded-[15px] bg-white border-hair border-input-border">
-          <TextInput
-            value={text}
-            onChangeText={handleChangeText}
-            placeholder={placeholder}
-            placeholderTextColor="#767779"
-            className="flex-1 text-[16px] leading-[21px] text-text-strong"
-            style={{ letterSpacing: -0.32 }}
-            maxLength={1000}
-            multiline
-            editable={!disabled}
-            onSubmitEditing={handleSend}
-            blurOnSubmit={false}
-          />
-          <Pressable
-            onPress={handleSend}
-            disabled={!text.trim() || disabled || sending}
-            accessibilityRole="button"
-            accessibilityLabel="Send"
-            hitSlop={8}
-          >
-            <Feather
-              name="arrow-up"
-              size={24}
-              color={!text.trim() || disabled || sending ? '#b2b2b2' : '#1dab61'}
-            />
-          </Pressable>
+    <View>
+      {sheetOpen ? (
+        <AddMoreSheet
+          onPick={(kind) => {
+            setSheetOpen(false);
+            void pickAndSend(kind);
+          }}
+          onClose={() => setSheetOpen(false)}
+          unavailable={(what) =>
+            Alert.alert(what, `${what} is not wired to CometChat yet.`)
+          }
+        />
+      ) : (
+        <View className="bg-panel-blur-warm">
+          {/* Reply preview from the design: a 4pt quote bar in --quote, the
+              sender's name in the same colour, the quoted line beneath, and a
+              close control on the trailing edge. */}
+          {replyTo ? (
+            <View className="flex-row items-stretch">
+              <View className="w-1 bg-quote" />
+              <View className="flex-1 flex-row items-center gap-4 pl-2 pr-[7.5px] pt-2 pb-[7.5px]">
+                <View className="flex-1 min-w-0 gap-[1.5px]">
+                  <Text className="text-body-2 font-semibold text-quote" numberOfLines={1}>
+                    {replyTo.sender}
+                  </Text>
+                  <Text className="text-body-3 text-text-strong" numberOfLines={1}>
+                    {replyTo.text}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={onClearReply ?? (() => {})}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel reply"
+                  hitSlop={8}
+                >
+                  <Ionicons name="close-circle" size={24} color="#767779" />
+                </Pressable>
+              </View>
+            </View>
+          ) : null}
+
+          <View className="flex-row items-center gap-2 pl-[7px] pr-[9px] py-[5.5px]">
+            <AttachButton disabled={sending || disabled} onPress={promptAttachment} />
+            <View className="flex-1 flex-row items-end gap-4 pl-[10px] pr-[9px] pt-[3px] pb-[2px] rounded-[15px] bg-white border-hair border-input-border">
+              <TextInput
+                value={text}
+                onChangeText={handleChangeText}
+                placeholder={placeholder}
+                placeholderTextColor="#767779"
+                className="flex-1 text-[16px] leading-[21px] text-text-strong"
+                style={{ letterSpacing: -0.32 }}
+                maxLength={1000}
+                multiline
+                editable={!disabled}
+                onSubmitEditing={handleSend}
+                blurOnSubmit={false}
+              />
+              <Pressable
+                onPress={handleSend}
+                disabled={!text.trim() || disabled || sending}
+                accessibilityRole="button"
+                accessibilityLabel="Send"
+                hitSlop={8}
+              >
+                <Feather
+                  name="arrow-up"
+                  size={24}
+                  color={!text.trim() || disabled || sending ? '#b2b2b2' : '#1dab61'}
+                />
+              </Pressable>
+            </View>
+          </View>
         </View>
-      </View>
+      )}
     </View>
   );
 };

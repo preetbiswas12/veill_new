@@ -10,11 +10,14 @@ interface MessageActionsProps {
   /** Text messages can be copied; call/empty rows cannot. */
   canCopy?: boolean;
   canDelete?: boolean;
+  /** Reply is offered on real messages; call/system rows have nothing to quote. */
+  canReply?: boolean;
   /** Reactions already applied by the current user. */
   activeReactions?: string[];
   onClose: () => void;
   onCopy?: () => void;
   onReact: (reaction: string) => void;
+  onReply?: () => void;
   onDelete?: () => void;
 }
 
@@ -43,10 +46,12 @@ const MessageActions = ({
   visible,
   canCopy = false,
   canDelete = false,
+  canReply = false,
   activeReactions = [],
   onClose,
   onCopy,
   onReact,
+  onReply,
   onDelete,
 }: MessageActionsProps) => (
   <Modal
@@ -79,7 +84,7 @@ const MessageActions = ({
                 onClose();
               }}
               className={`w-12 h-12 rounded-full items-center justify-center text-2xl ${
-                active ? 'bg-blue-50 border-2 border-blue-500' : 'bg-gray-100'
+                active ? 'bg-surface-active border-2 border-primary' : 'bg-surface-muted'
               }`}
               accessibilityLabel={`React with ${emoji}`}
             >
@@ -90,6 +95,9 @@ const MessageActions = ({
       </ScrollView>
 
       {canCopy ? <Row icon="copy" label="Copy text" onPress={() => { onCopy?.(); onClose(); }} /> : null}
+      {canReply ? (
+        <Row icon="corner-up-left" label="Reply" onPress={() => { onReply?.(); onClose(); }} />
+      ) : null}
       {canDelete ? (
         <Row
           icon="trash-2"
@@ -99,7 +107,7 @@ const MessageActions = ({
         />
       ) : null}
       <Button variant="plain" className="self-center mt-2 px-6 py-2" onPress={onClose}>
-        <Text className="text-blue-600 font-semibold">Cancel</Text>
+        <Text className="text-body-1 font-semibold text-text-product">Cancel</Text>
       </Button>
     </View>
   </Modal>

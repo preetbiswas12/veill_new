@@ -28,6 +28,7 @@ import {
   getMessageBody,
   getMessageReceiptLabel,
   getMessageReactions,
+  getMessageText,
   getMessageTimestamp,
   useCometChat,
 } from '@/hooks/useCometChat';
@@ -102,6 +103,12 @@ const ChatScreen = () => {
   const listRef = useRef<FlatList<ThreadItem>>(null);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const [selected, setSelected] = useState<{ message: any; canCopy: boolean } | null>(null);
+  // Drives the design's quote bar above the composer.
+  const [replyTo, setReplyTo] = useState<{
+    messageId: string;
+    sender: string;
+    text: string;
+  } | null>(null);
   const fetchedReceiptsRef = useRef<Set<string>>(new Set());
   // Captured once so the "jump to latest" badge reflects what was unread on
   // entry — the thread marks the conversation read immediately after mount.
@@ -204,6 +211,23 @@ const ChatScreen = () => {
     const text = getMessageBody(selected.message);
     if (!text) return;
     await Clipboard.setStringAsync(text);
+  }, [selected]);
+
+  // The design's reply flow: quote the selected message in the bar above the
+  // composer, then send the next message as its reply.
+  const onReplySelected = useCallback(() => {
+    if (!selected) return;
+    const sender =
+      (typeof selected.message?.getSender === 'function'
+        ? selected.message.getSender()
+        : undefined)?.getName?.() ||
+      getMessageText(selected.message) ||
+      'Message';
+    setReplyTo({
+      messageId: String(selected.message?.getId?.() ?? selected.message?.id ?? ''),
+      sender,
+      text: getMessageBody(selected.message) || getMessageText(selected.message) || '',
+    });
   }, [selected]);
 
   const onReactSelected = useCallback(
@@ -396,19 +420,26 @@ const ChatScreen = () => {
           ) : null}
         </View>
 
-        <CustomMessageInput conversationId={conversationId} chatType={conversationType} />
+        <CustomMessageInput
+          conversationId={conversationId}
+          chatType={conversationType}
+          replyTo={replyTo}
+          onClearReply={() => setReplyTo(null)}
+        />
       </KeyboardAvoidingView>
 
       <MessageActions
         visible={Boolean(selected)}
         canCopy={selected?.canCopy}
         canDelete={Boolean(selected)}
+        canReply={Boolean(selected)}
         activeReactions={getMessageReactions(selected?.message)
           .filter((reaction) => reaction.mine)
           .map((reaction) => reaction.reaction)}
         onClose={() => setSelected(null)}
         onCopy={() => void onCopySelected()}
         onReact={onReactSelected}
+        onReply={onReplySelected}
         onDelete={onDeleteSelected}
       />
     </Screen>

@@ -35,6 +35,10 @@ const wa = {
   'bubble-out': '#d0fecf', // surface-baloon-me
   'bubble-in': '#ffffff', // surface-baloon-you
   'bubble-shadow': 'rgba(0,0,0,0.06)', // surface-shadow-baloon
+
+  // replying
+  quote: '#d42a66', // brd-quote / txt-quote-tit - the quote bar and its title
+  'cta-options': '#ffffff', // surface-cta-options - circles on the attach sheet
 };
 
 module.exports = {
