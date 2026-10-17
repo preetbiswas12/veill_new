@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { Tabs, useRouter } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { useEffect } from 'react';
@@ -77,23 +76,17 @@ const TabsLayout = () => {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarButton: HapticTab,
-        // The design's tab bar floats over the content on a 0.8-alpha blurred
-        // panel rather than sitting on an opaque bar.
-        tabBarBackground: () => (
-          <BlurView
-            intensity={60}
-            tint="light"
-            style={{ position: 'absolute', inset: 0 }}
-          />
-        ),
+        // The design floats the bar over the content on a 0.8-alpha panel. A
+        // fully transparent bar plus a BlurView is invisible wherever the blur
+        // fails to render, so the panel colour is the base and the bar keeps a
+        // normal (non-absolute) position.
         tabBarStyle: {
           height: 83,
           paddingTop: 3,
           paddingBottom: Platform.OS === 'ios' ? 21 : 8,
-          backgroundColor: 'transparent',
+          backgroundColor: 'rgba(244,244,244,0.95)',
           borderTopWidth: 0.33,
           borderTopColor: 'rgba(0,0,0,0.3)',
-          position: 'absolute',
           elevation: 0,
         },
         sceneStyle: { backgroundColor: '#ffffff' },

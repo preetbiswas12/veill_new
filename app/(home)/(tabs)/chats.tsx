@@ -255,7 +255,7 @@ const ChatsScreen = () => {
             </Text>
           </View>
         }
-        contentContainerStyle={{ paddingBottom: 83 }}
+        contentContainerStyle={{ paddingBottom: 8 }}
       />
     </Screen>
   );
