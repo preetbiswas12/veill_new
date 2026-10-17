@@ -17,7 +17,7 @@ import {
 import AppMenu from '@/components/AppMenu';
 import ConversationRow from '@/components/ConversationRow';
 import Screen from '@/components/Screen';
-import { HeaderButton, ScreenHeader } from '@/components/ScreenHeader';
+import { HeaderButton } from '@/components/ScreenHeader';
 import { useFavourites } from '@/hooks/useFavourites';
 import { getMessageText, useCometChat } from '@/hooks/useCometChat';
 import { useTheme } from '@/hooks/useTheme';
@@ -205,9 +205,11 @@ const ChatsScreen = () => {
   );
 
   const startSomethingNew = useCallback(() => {
+    // This is the design's action sheet: New chat, New group, New community.
     const actions: AlertButton[] = [
       { text: 'New chat', onPress: () => router.push('/new-message') },
       { text: 'New group', onPress: () => router.push('/new-group') },
+      { text: 'Find channels to follow', onPress: () => router.push('/communities') },
       { text: 'Cancel', style: 'cancel' },
     ];
     Alert.alert('New', undefined, actions, { cancelable: true });
@@ -215,12 +217,18 @@ const ChatsScreen = () => {
 
   const titleBlock = (
     <>
-      {/* Header from the Figma `Header` component: 28pt circular controls, the
-          trailing one solid brand green. */}
-      <ScreenHeader
-        left={<AppMenu />}
-        right={
-          <View className="flex-row items-center gap-4">
+      {/* The design's large title carries the action controls on its own row:
+          "Edit" on the leading edge, camera and compose on the trailing one. */}
+      <View
+        style={{
+          borderBottomWidth: 0,
+          backgroundColor: colors['panel-blur'],
+        }}
+        className="px-4 pt-1"
+      >
+        <View className="flex-row items-center justify-between">
+          <Text className="flex-1 min-w-0 text-display font-bold text-text-strong">Chats</Text>
+          <View className="flex-row items-center gap-3">
             <HeaderButton
               icon="camera-outline"
               label="New chat"
@@ -228,12 +236,10 @@ const ChatsScreen = () => {
             />
             <HeaderButton icon="add" solid label="New" onPress={startSomethingNew} />
           </View>
-        }
-      />
+        </View>
+      </View>
 
-      <View className="gap-2 px-4 pt-[5px] pb-2">
-        <Text className="text-display font-bold text-text-strong">Chats</Text>
-
+      <View className="gap-2 px-4 pt-1 pb-2">
         <View className="pt-px">
           <View className="flex-row items-center gap-2.5 pb-2">
             <View className="flex-1 flex-row items-center gap-2.5 p-[5px] rounded-search bg-surface-muted">

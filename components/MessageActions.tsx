@@ -16,11 +16,17 @@ interface MessageActionsProps {
   canReply?: boolean;
   /** Reactions already applied by the current user. */
   activeReactions?: string[];
+  /** True when this message is already in the local starred store. */
+  starred?: boolean;
   onClose: () => void;
   onCopy?: () => void;
   onReact: (reaction: string) => void;
   onReply?: () => void;
   onDelete?: () => void;
+  /** Absent when starring does not apply, which hides the row entirely. */
+  onStar?: () => void;
+  /** Absent when there is nothing to forward. */
+  onForward?: () => void;
 }
 
 const Row = ({
@@ -57,11 +63,14 @@ const MessageActions = ({
   canDelete = false,
   canReply = false,
   activeReactions = [],
+  starred = false,
   onClose,
   onCopy,
   onReact,
   onReply,
   onDelete,
+  onStar,
+  onForward,
 }: MessageActionsProps) => (
   <Modal
     visible={visible}
@@ -72,9 +81,10 @@ const MessageActions = ({
   >
     <Pressable className="flex-1" onPress={onClose} />
 
-    <View className="bg-white rounded-t-3xl pb-8 pt-3 shadow-2xl">
+    <View className="bg-surface rounded-t-3xl pb-8 pt-3 shadow-2xl">
+      {/* Grabber, per the iOS sheet convention. */}
       <View className="items-center pb-3">
-        <View className="w-10 h-1 rounded-full bg-surface-muted" />
+        <View className="w-10 h-1 rounded-full bg-separator" />
       </View>
 
       <ScrollView
@@ -103,9 +113,19 @@ const MessageActions = ({
         })}
       </ScrollView>
 
-      {canCopy ? <Row icon="copy" label="Copy text" onPress={() => { onCopy?.(); onClose(); }} /> : null}
       {canReply ? (
         <Row icon="return-down-forward" label="Reply" onPress={() => { onReply?.(); onClose(); }} />
+      ) : null}
+      {onForward ? (
+        <Row icon="arrow-redo-outline" label="Forward" onPress={() => { onForward(); onClose(); }} />
+      ) : null}
+      {canCopy ? <Row icon="copy" label="Copy text" onPress={() => { onCopy?.(); onClose(); }} /> : null}
+      {onStar ? (
+        <Row
+          icon={starred ? 'star' : 'star-outline'}
+          label={starred ? 'Remove star' : 'Star message'}
+          onPress={() => { onStar(); onClose(); }}
+        />
       ) : null}
       {canDelete ? (
         <Row
@@ -116,7 +136,7 @@ const MessageActions = ({
         />
       ) : null}
       <Button variant="plain" className="self-center mt-2 px-6 py-2" onPress={onClose}>
-        <Text className="text-body-1 font-semibold text-text-product">Cancel</Text>
+        <Text className="text-body-1 font-semibold text-link">Cancel</Text>
       </Button>
     </View>
   </Modal>

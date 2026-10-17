@@ -22,6 +22,7 @@ import DateDivider, { getDateKey } from '@/components/DateDivider';
 import MessageActions from '@/components/MessageActions';
 import ChatWallpaper from '@/components/ChatWallpaper';
 import MessageBubble from '@/components/MessageBubble';
+import ToastHost from '@/components/ToastHost';
 import MessageListHeader from '@/components/MessageListHeader';
 import Screen from '@/components/Screen';
 import TypingIndicator from '@/components/TypingIndicator';
@@ -33,6 +34,7 @@ import {
   getMessageTimestamp,
   useCometChat,
 } from '@/hooks/useCometChat';
+import { useStarredMessages } from '@/hooks/useStarredMessages';
 import { useTheme } from '@/hooks/useTheme';
 
 /** Messages closer together than this collapse into one visual group. */
@@ -78,6 +80,7 @@ const ChatScreen = () => {
     messageReceipts,
     getMessageReceipts,
     user,
+    localUid,
     error,
   } = useCometChat();
 
@@ -106,6 +109,8 @@ const ChatScreen = () => {
   const listRef = useRef<FlatList<ThreadItem>>(null);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const [selected, setSelected] = useState<{ message: any; canCopy: boolean } | null>(null);
+  const { isStarred, toggle: toggleStarred } = useStarredMessages();
+  const [starToast, setStarToast] = useState<string | null>(null);
   // Drives the design's quote bar above the composer.
   const [replyTo, setReplyTo] = useState<{
     messageId: string;
@@ -232,6 +237,39 @@ const ChatScreen = () => {
       text: getMessageBody(selected.message) || getMessageText(selected.message) || '',
     });
   }, [selected]);
+
+  // CometChat 4.1.0 has no star action on the client SDK, so starring is a
+  // local store (hooks/useStarredMessages.ts) the same way Favourites is.
+  const onStarSelected = useCallback(() => {
+    if (!selected) return;
+    const id = String(selected.message?.getId?.() ?? selected.message?.id ?? '');
+    if (!id) return;
+    void toggleStarred({
+      id,
+      conversationId,
+      body: getMessageBody(selected.message) || getMessageText(selected.message) || '',
+      senderName:
+        (typeof selected.message?.getSender === 'function'
+          ? selected.message.getSender()
+          : undefined)?.getName?.() ||
+        senderOf(selected.message) === localUid ? 'You' : title,
+      timestamp: getMessageTimestamp(selected.message),
+    }).then((nowStarred) => {
+      setStarToast(nowStarred ? 'Message starred' : 'Star removed');
+    });
+  }, [selected, conversationId, localUid, title, toggleStarred]);
+
+  const onForwardSelected = useCallback(() => {
+    if (!selected) return;
+    const body = getMessageBody(selected.message);
+    if (!body) return;
+    // Forwarding to a different conversation is the forward screen's job; pass
+    // the text so it can be pre-filled on arrival.
+    router.push({
+      pathname: '/new-message',
+      params: { forward: body },
+    });
+  }, [selected, router]);
 
   const onReactSelected = useCallback(
     (reaction: string) => {
@@ -449,7 +487,16 @@ const ChatScreen = () => {
         onReact={onReactSelected}
         onReply={onReplySelected}
         onDelete={onDeleteSelected}
+        starred={
+          Boolean(selected) &&
+          isStarred(String(selected?.message?.getId?.() ?? selected?.message?.id ?? ''))
+        }
+        onStar={onStarSelected}
+        onForward={onForwardSelected}
       />
+      {/* A quiet confirmation, so actions with no other visible outcome - starring
+          in particular - do not read as broken. */}
+      {starToast ? <ToastHost message={starToast} onDone={() => setStarToast(null)} /> : null}
     </Screen>
   );
 };

@@ -1,115 +1,85 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import type { ComponentProps } from 'react';
 import { useMemo, useState } from 'react';
-import {
-  Alert,
-  Linking,
-  Pressable,
-  ScrollView,
-  Share,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
-import Avatar from '@/components/Avatar';
+import { ProfileCard, SettingsRowItem } from '@/components/BadgeIcon';
 import Screen from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { useCometChat } from '@/hooks/useCometChat';
+import { useStarredMessages } from '@/hooks/useStarredMessages';
 import { useTheme } from '@/hooks/useTheme';
 
-type IconName = ComponentProps<typeof Ionicons>['name'];
-
 /**
- * Settings, rebuilt from the Figma frame "Settings - Full view" (121:2160):
- * a 33.33pt bold title over a search field, then five rounded white cards at a
- * 10pt radius holding 40pt rows with 24pt icons and 0.33pt separators.
+ * Settings, in the iOS Settings idiom the design specifies: a profile card, then
+ * grouped lists of rows carrying a coloured rounded-square badge, a value on the
+ * right where one applies, and a chevron that only appears on rows that go
+ * somewhere.
  *
- * Rows are grouped exactly as the design groups them. Where CometChat has no
- * equivalent the row responds with an Alert saying so rather than opening
- * nothing.
+ * Every row either navigates or acts. Where CometChat has no client surface for
+ * something the design shows, the row says so plainly instead of pretending.
  */
+type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
-/** 40pt row: 24pt icon, label, chevron. */
-const Row = ({
-  icon,
-  label,
-  onPress,
-  last = false,
-}: {
+interface Row {
   icon: IconName;
+  badge: string;
   label: string;
-  onPress: () => void;
-  last?: boolean;
-}) => {
-  // A helper component has to read the palette itself; the screen's own
-  // `colors` is not in scope here.
-  const { colors } = useTheme();
-  return (
-  <Pressable
-    onPress={onPress}
-    accessibilityRole="button"
-    accessibilityLabel={label}
-    className={`flex-row items-center gap-3 pl-4 pr-2 h-10 active:bg-surface-muted ${
-      last ? '' : 'border-b-hair border-separator'
-    }`}
-  >
-    <Ionicons name={icon} size={24} color={colors['text-strong']} />
-    <Text className="flex-1 min-w-0 text-body-1 text-text-strong" numberOfLines={1}>
-      {label}
-    </Text>
-    <Ionicons name="chevron-forward" size={16} color={colors['text-muted']} />
-  </Pressable>
-  );
-};
+  value?: string;
+  onPress?: () => void;
+}
 
-const notWired = (what: string) => () =>
-  Alert.alert(what, 'This section is not connected to CometChat yet.');
-
-const openExternal = (url: string) => () => {
-  void Linking.openURL(url).catch(() => {
-    Alert.alert('Could not open', url);
-  });
-};
+interface Group {
+  id: string;
+  rows: Row[];
+}
 
 const SettingsScreen = () => {
   const { colors } = useTheme();
   const router = useRouter();
-  const { user, conversations, groups, messagesByConversation } = useCometChat();
+  const { user, groups, blockedIds } = useCometChat();
+  const { entries: starredEntries } = useStarredMessages();
   const [query, setQuery] = useState('');
 
-  const sections = useMemo(
+  const open = (path: string) => () => router.push(path as any);
+  const unavailable = (what: string, why: string) => () => Alert.alert(what, why);
+
+  const groups_ = useMemo<Group[]>(
     () => [
       {
         id: 'library',
         rows: [
           {
-            icon: 'list' as IconName,
-            label: 'List',
-            // Real data: the groups this account is a member of.
-            onPress: () =>
-              Alert.alert(
-                'Your list',
-                groups.length
-                  ? groups.map((group) => `• ${group.name}`).join('\n')
-                  : 'You are not in any groups yet.'
-              ),
+            icon: 'person-circle-outline',
+            badge: '#1fa1e3',
+            label: 'Avatar',
+            onPress: open('/profile'),
           },
           {
-            icon: 'megaphone-outline' as IconName,
-            label: 'Broadcast messages',
-            // No client SDK surface - broadcast is a server-side group feature.
-            onPress: notWired('Broadcast messages'),
+            icon: 'list-outline',
+            badge: '#4a90d9',
+            label: 'Lists',
+            value: groups.length ? `${groups.length}` : undefined,
+            onPress: unavailable(
+              'Lists',
+              'CometChat has no curated-list concept. Favourited chats are available from the Chats tab filter.'
+            ),
           },
           {
-            icon: 'star-outline' as IconName,
+            icon: 'star-outline',
+            badge: '#4a90d9',
             label: 'Starred messages',
-            onPress: notWired('Starred messages'),
+            value: starredEntries.length ? `${starredEntries.length}` : undefined,
+            onPress: open('/starred'),
           },
           {
-            icon: 'laptop-outline' as IconName,
+            icon: 'laptop-outline',
+            badge: '#4a90d9',
             label: 'Linked devices',
-            onPress: notWired('Linked devices'),
+            onPress: unavailable(
+              'Linked devices',
+              'This app signs in with a CometChat UID on this device only. There is no second session to list.'
+            ),
           },
         ],
       },
@@ -117,172 +87,120 @@ const SettingsScreen = () => {
         id: 'account',
         rows: [
           {
-            icon: 'key-outline' as IconName,
+            icon: 'key-outline',
+            badge: '#6b7c8f',
             label: 'Account',
-            onPress: () =>
-              Alert.alert('Account', `Signed in as ${user?.name || 'you'}.\nUID: ${user?.id || '-'}`),
+            value: user?.name || undefined,
+            onPress: unavailable(
+              'Account',
+              `Signed in as ${user?.name || 'you'}.\nUID: ${user?.id || '-'}\n\nChanging your UID means creating a new CometChat user.`
+            ),
           },
+          { icon: 'lock-closed-outline', badge: '#6b7c8f', label: 'Privacy', onPress: open('/privacy') },
+          { icon: 'chatbubble-ellipses-outline', badge: '#6b7c8f', label: 'Chats', onPress: open('/chats-settings') },
           {
-            icon: 'lock-closed-outline' as IconName,
-            label: 'Privacy',
-            onPress: () =>
-              Alert.alert(
-                'Privacy',
-                'Messages you send are delivered through your CometChat app and are readable only by the participants of the conversation.'
-              ),
-          },
-          {
-            icon: 'chatbubble-outline' as IconName,
-            label: 'Chats',
-            onPress: () => router.push('/chats'),
-          },
-          {
-            icon: 'notifications-outline' as IconName,
+            icon: 'notifications-outline',
+            badge: '#6b7c8f',
             label: 'Notifications',
-            onPress: () => router.push('/notifications'),
+            onPress: open('/notifications'),
           },
           {
-            icon: 'arrow-down-outline' as IconName,
+            icon: 'pie-chart-outline',
+            badge: '#6b7c8f',
             label: 'Storage and data',
-            // Real counts pulled from the live session rather than a placeholder.
-            onPress: () =>
-              Alert.alert(
-                'Storage and data',
-                [
-                  `Conversations: ${conversations.length}`,
-                  `Groups: ${groups.length}`,
-                  `Messages loaded in memory: ${messagesByConversation.size} threads`,
-                ].join('\n')
-              ),
+            onPress: open('/storage'),
           },
         ],
       },
       {
         id: 'help',
         rows: [
-          { icon: 'help-circle-outline' as IconName, label: 'Help', onPress: notWired('Help') },
           {
-            icon: 'heart-outline' as IconName,
-            label: 'Invite a friend',
-            onPress: async () => {
-              try {
-                await Share.share({
-                  message: `Join me on veill. My CometChat UID is ${user?.id || ''}.`,
-                });
-              } catch {
-                // Share sheet dismissed.
-              }
-            },
-          },
-        ],
-      },
-      {
-        id: 'meta',
-        title: 'Also from Meta',
-        rows: [
-          {
-            icon: 'logo-instagram' as IconName,
-            label: 'Open Instagram',
-            onPress: openExternal('https://www.instagram.com/'),
+            icon: 'help-circle-outline',
+            badge: '#6b7c8f',
+            label: 'Help',
+            onPress: unavailable('Help', 'There is no help centre inside this app yet.'),
           },
           {
-            icon: 'logo-facebook' as IconName,
-            label: 'Open Facebook',
-            onPress: openExternal('https://www.facebook.com/'),
-          },
-          {
-            icon: 'planet-outline' as IconName,
-            label: 'Open Threads',
-            onPress: openExternal('https://www.threads.net/'),
+            icon: 'heart-outline',
+            badge: '#6b7c8f',
+            label: 'Tell a friend',
+            onPress: () =>
+              Alert.alert(
+                'Invite a friend',
+                `Share this so they can start a chat with you.\n\nYour CometChat UID is ${user?.id || 'unknown'}.`
+              ),
           },
         ],
       },
     ],
-    [router, user?.id, user?.name, conversations.length, groups.length, messagesByConversation.size]
+    [router, user, groups.length, starredEntries.length]
   );
 
   // The design's search field filters the rows beneath it.
   const visibleGroups = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    if (!needle) return sections;
-    return sections
+    if (!needle) return groups_;
+    return groups_
       .map((group) => ({
         ...group,
         rows: group.rows.filter((row) => row.label.toLowerCase().includes(needle)),
       }))
       .filter((group) => group.rows.length > 0);
-  }, [sections, query]);
+  }, [groups_, query]);
+
+  const nothingFound = query.trim().length > 0 && visibleGroups.length === 0;
 
   return (
-    <Screen viewClassName="bg-white" edges={['left', 'right', 'bottom']}>
+    <Screen edges={['left', 'right', 'bottom']}>
+      <ScreenHeader title="Settings" large />
+
       <ScrollView
         contentContainerStyle={{ paddingBottom: 24 }}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        {/* Title block: 33.33pt bold over the search field. */}
-        <View className="gap-2 px-4 pt-[5px] pb-2">
-          <Text className="text-display font-bold text-text-strong">Settings</Text>
-          <View className="pt-px">
-            <View className="flex-row items-center gap-2.5 pb-2">
-              <View className="flex-1 flex-row items-center gap-1 p-[5px] rounded-search bg-surface-cta">
-                <Ionicons name="search" size={24} color={colors['text-muted']} />
-                <TextInput
-                  value={query}
-                  onChangeText={setQuery}
-                  placeholder="Search"
-                  placeholderTextColor={colors['text-muted']}
-                  accessibilityLabel="Search settings"
-                  className="flex-1 text-[16.4px] text-text-strong"
-                  returnKeyType="search"
-                  clearButtonMode="while-editing"
-                />
-              </View>
-            </View>
+        {/* Search, above the grouped lists. */}
+        <View className="px-4 pb-3">
+          <View className="flex-row items-center gap-2 h-10 px-3 rounded-search bg-surface-input">
+            <Ionicons name="search" size={20} color={colors['text-muted']} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search settings"
+              placeholderTextColor={colors['text-muted']}
+              accessibilityLabel="Search settings"
+              className="flex-1 text-body-2 text-text-strong"
+              returnKeyType="search"
+              clearButtonMode="while-editing"
+            />
           </View>
         </View>
 
-        {/* Card 1 - profile. */}
-        {query.trim().toLowerCase() === '' || 'avatar'.includes(query.trim().toLowerCase()) ? (
-          <View className="mx-4 rounded-[10px] overflow-hidden">
-            <Pressable
-              onPress={() => router.push('/profile')}
-              accessibilityRole="button"
-              accessibilityLabel="Edit profile"
-              className="flex-row items-center gap-3 h-[71px] pl-4 pr-4 border-b-hair border-separator active:bg-surface-muted"
-            >
-              <Avatar name={user?.name || ''} imageUrl={user?.image} size={56} fontSize={22} />
-              <View className="flex-1 min-w-0 gap-px pr-4">
-                <Text className="text-[20px] text-text-strong" numberOfLines={1}>
-                  {user?.name || 'Set a name'}
-                </Text>
-                <Text className="text-[16px] text-text-muted" numberOfLines={1}>
-                  {user?.id || ''}
-                </Text>
-              </View>
-              <View className="h-7 w-7 rounded-full bg-surface-cta items-center justify-center">
-                <Ionicons name="create-outline" size={18} color={colors['text-strong']} />
-              </View>
-            </Pressable>
-            <Row
-              icon="person-circle-outline"
-              label="Avatar"
-              onPress={() => router.push('/profile')}
-              last
-            />
+        {nothingFound ? (
+          <View className="items-center gap-1 py-16 px-8">
+            <Text className="text-body-1 font-semibold text-text-strong">No settings found</Text>
+            <Text className="text-body-2 text-text-muted text-center">
+              Nothing matches "{query.trim()}".
+            </Text>
           </View>
         ) : null}
 
-        {visibleGroups.map((group, groupIndex) => (
-          <View key={group.id} className={groupIndex === 0 && query ? '' : 'mt-[18px]'}>
-            {group.title ? (
-              <Text className="text-body-2 text-text-muted px-4 pb-1">{group.title}</Text>
-            ) : null}
-            <View className="mx-4 rounded-[10px] overflow-hidden">
+        {visibleGroups.map((group, index) => (
+          <View key={group.id} className="mb-6">
+            {/* Each group is a rounded card with hairline-separated rows. */}
+            <View
+              className={`mx-4 overflow-hidden ${
+                index === 0 ? 'rounded-card' : 'rounded-card'
+              }`}
+            >
               {group.rows.map((row, rowIndex) => (
-                <Row
+                <SettingsRowItem
                   key={row.label}
                   icon={row.icon}
+                  badgeColor={row.badge}
                   label={row.label}
+                  value={row.value}
                   onPress={row.onPress}
                   last={rowIndex === group.rows.length - 1}
                 />
@@ -291,14 +209,7 @@ const SettingsScreen = () => {
           </View>
         ))}
 
-        {visibleGroups.length === 0 ? (
-          <View className="items-center gap-2 px-10 py-12">
-            <Ionicons name="search-outline" size={36} color={colors['text-muted']} />
-            <Text className="text-body-2 text-text-muted text-center">
-              No settings match &quot;{query.trim()}&quot;.
-            </Text>
-          </View>
-        ) : null}
+        <Text className="text-caption text-text-muted text-center px-4">from Meta</Text>
       </ScrollView>
     </Screen>
   );

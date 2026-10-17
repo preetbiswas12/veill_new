@@ -1,13 +1,66 @@
-import { Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useRef } from 'react';
-import { Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Pressable, Text, View } from 'react-native';
 
 import Avatar from '@/components/Avatar';
-import Button from '@/components/Button';
 import Screen from '@/components/Screen';
 import { getCallingSdk, useCometChat } from '@/hooks/useCometChat';
 import { useTheme } from '@/hooks/useTheme';
+
+/** Elapsed call time, ticking only while the call is actually up. */
+const useCallTimer = (running: boolean) => {
+  const [seconds, setSeconds] = useState(0);
+  useEffect(() => {
+    if (!running) return;
+    const timer = setInterval(() => setSeconds((value) => value + 1), 1000);
+    return () => clearInterval(timer);
+  }, [running]);
+  return seconds;
+};
+
+const formatDuration = (total: number): string => {
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+};
+
+/**
+ * One circular control on the call screens. 64pt, per the design's Accept /
+ * Decline and the in-call row.
+ */
+const CallControl = ({
+  icon,
+  label,
+  onPress,
+  tone,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  onPress: () => void;
+  tone: 'accept' | 'decline' | 'neutral';
+}) => {
+  const { colors } = useTheme();
+  const background =
+    tone === 'accept' ? '#25d366' : tone === 'decline' ? colors['text-error'] : 'rgba(255,255,255,0.16)';
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      className="items-center gap-2 active:opacity-70"
+    >
+      <View
+        className="w-16 h-16 rounded-full items-center justify-center"
+        style={{ backgroundColor: background }}
+      >
+        <Ionicons name={icon} size={28} color="#ffffff" />
+      </View>
+      <Text className="text-caption text-white">{label}</Text>
+    </Pressable>
+  );
+};
 
 const CallScreen = () => {
   const { colors } = useTheme();
@@ -35,6 +88,10 @@ const CallScreen = () => {
     resetCall,
     acceptIncomingCall,
     rejectIncomingCall,
+    audioEnabled,
+    videoEnabled,
+    toggleAudio,
+    toggleVideo,
   } = useCometChat();
 
   const activeIncoming =
@@ -54,7 +111,7 @@ const CallScreen = () => {
       ? activeIncoming.video
       : isVideo;
 
-  // This screen is the single initiator of outgoing calls — one per mount.
+  // This screen is the single initiator of outgoing calls - one per mount.
   const didStart = useRef(false);
   useEffect(() => {
     if (didStart.current || !isOutgoing) return;
@@ -65,7 +122,7 @@ const CallScreen = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Leave no call behind when this screen goes away (back gesture, logout…).
+  // Leave no call behind when this screen goes away (back gesture, logout...).
   const didMount = useRef(false);
   useEffect(() => {
     didMount.current = true;
@@ -82,7 +139,7 @@ const CallScreen = () => {
     return () => clearTimeout(timer);
   }, [isOutgoing, rtcState, incomingCall, activeCall, router]);
 
-  // Auto-dismiss shortly after the call finishes (hang up, decline, error…).
+  // Auto-dismiss shortly after the call finishes (hang up, decline, error...).
   useEffect(() => {
     if (rtcState !== 'ended') return;
     const timer = setTimeout(() => router.back(), 1500);
@@ -94,13 +151,14 @@ const CallScreen = () => {
   const joining = rtcState === 'connecting';
   const inCall = rtcState === 'joined' && Boolean(callToken) && Boolean(callSettings);
   const ended = rtcState === 'ended';
+  const elapsed = useCallTimer(inCall);
 
   const statusText = () => {
     if (callError) return callError;
-    if (isIncomingRing) return callVideo ? 'Incoming video call' : 'Incoming voice call';
-    if (joining) return isOutgoing ? 'Calling…' : 'Connecting…';
+    if (isIncomingRing) return callVideo ? 'WhatsApp Video' : 'WhatsApp Audio';
+    if (joining) return isOutgoing ? 'Calling\u2026' : 'Connecting\u2026';
     if (ended) return 'Call ended';
-    return 'Ringing…';
+    return 'Ringing\u2026';
   };
 
   const onDecline = () => {
@@ -113,20 +171,71 @@ const CallScreen = () => {
     void endCall();
   };
 
+  // "Message" from the incoming screen opens the thread rather than ending the
+  // ring, which is what WhatsApp does.
+  const onMessage = () => {
+    void rejectIncomingCall();
+    router.replace({
+      pathname: '/chat/[id]',
+      params: { id: peerId, name: peerName, image: peerImage ?? '' },
+    });
+  };
+
   if (inCall && CallsComponent && callToken && callSettings) {
     return (
-      <Screen className="bg-[#0e0e0e]" viewClassName="bg-[#0e0e0e]">
+      <Screen className="bg-black" viewClassName="bg-black">
         <View className="flex-1">
           <View className="items-center gap-1 pt-6 px-6 pb-1">
             <Text className="text-white text-2xl font-semibold" numberOfLines={1}>
               {peerName}
             </Text>
-            <Text className="text-gray-400 text-base">
-              {callVideo ? 'Video call' : 'Voice call'} · Connected
+            <View className="flex-row items-center gap-1.5">
+              <Ionicons name="lock-closed" size={11} color={colors['tick-read']} />
+              <Text className="text-caption" style={{ color: colors['tick-read'] }}>
+                End-to-end encrypted
+              </Text>
+            </View>
+            <Text className="text-body-2 text-gray-400" accessibilityLiveRegion="polite">
+              {formatDuration(elapsed)}
             </Text>
           </View>
+
           <View className="flex-1">
             <CallsComponent callToken={callToken} sessionSettings={callSettings} />
+          </View>
+
+          {/* The design's floating control row over the call surface. */}
+          <View className="flex-row items-center justify-around px-4 pb-10 pt-6">
+            <CallControl
+              icon={audioEnabled ? 'volume-medium-outline' : 'volume-mute-outline'}
+              label="Speaker"
+              tone="neutral"
+              onPress={() => void toggleAudio()}
+            />
+            <CallControl
+              icon="videocam-outline"
+              label="Video"
+              tone="neutral"
+              onPress={() => void toggleVideo()}
+            />
+            <CallControl
+              icon={videoEnabled ? 'mic-outline' : 'mic-off-outline'}
+              label="Mute"
+              tone="neutral"
+              onPress={() => void toggleAudio()}
+            />
+            <CallControl
+              icon="person-add-outline"
+              label="Add"
+              tone="neutral"
+              onPress={() =>
+                Alert.alert(
+                  'Add participant',
+                  'CometChat calls start one-to-one from a chat or the contact info screen.'
+                )
+              }
+            />
+            <CallControl icon="close" label="End" tone="decline" onPress={onHangUp} />
           </View>
         </View>
       </Screen>
@@ -134,7 +243,7 @@ const CallScreen = () => {
   }
 
   return (
-    <Screen className="bg-[#0e0e0e]" viewClassName="bg-[#0e0e0e]">
+    <Screen className="bg-black" viewClassName="bg-black">
       <View className="flex-1 px-6 py-8 justify-between">
         <View className="items-center gap-2 pt-6">
           <Text className="text-white text-2xl font-semibold" numberOfLines={1}>
@@ -147,46 +256,64 @@ const CallScreen = () => {
           <Avatar
             name={peerName}
             imageUrl={peerImage}
-            size={140}
-            fontSize={56}
+            size={160}
+            fontSize={64}
             placeholderType="text"
           />
         </View>
 
-        <View className="items-center gap-6 pb-4">
+        <View className="items-center gap-8 pb-4">
           {isIncomingRing ? (
-            <View className="flex-row items-center gap-10">
-              <Button
-                variant="plain"
-                onPress={() => void acceptIncomingCall()}
-                className="w-16 h-16 rounded-full items-center justify-center bg-green-500"
-                accessibilityLabel="Accept call"
-              >
-                <Feather name="phone" size={26} color="white" />
-              </Button>
-              <Button
-                variant="plain"
-                onPress={onDecline}
-                className="w-16 h-16 rounded-full items-center justify-center bg-red-500"
-                accessibilityLabel="Decline call"
-              >
-                <Feather name="phone-off" size={26} color="white" />
-              </Button>
-            </View>
+            <>
+              {/* "Message" and "Remind me" sit above the answer pair. */}
+              <View className="flex-row items-center gap-10">
+                <Pressable
+                  onPress={onMessage}
+                  accessibilityRole="button"
+                  accessibilityLabel="Message instead of answering"
+                  className="items-center gap-2 active:opacity-70"
+                >
+                  <View className="w-14 h-14 rounded-full items-center justify-center bg-white/15">
+                    <Ionicons name="chatbubble-ellipses-outline" size={24} color="#ffffff" />
+                  </View>
+                  <Text className="text-caption text-white">Message</Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={onDecline}
+                  accessibilityRole="button"
+                  accessibilityLabel="Remind me later"
+                  className="items-center gap-2 active:opacity-70"
+                >
+                  <View className="w-14 h-14 rounded-full items-center justify-center bg-white/15">
+                    <Ionicons name="alarm-outline" size={24} color="#ffffff" />
+                  </View>
+                  <Text className="text-caption text-white">Remind me</Text>
+                </Pressable>
+              </View>
+
+              <View className="flex-row items-center gap-10">
+                <CallControl icon="close" label="Decline" tone="decline" onPress={onDecline} />
+                <CallControl
+                  icon="arrow-down"
+                  label="Accept"
+                  tone="accept"
+                  onPress={() => void acceptIncomingCall()}
+                />
+              </View>
+            </>
           ) : ended ? (
             <View className="items-center gap-2">
-              <Feather name="phone-off" size={30} color={colors['text-muted']} />
-              <Text className="text-sm text-text-muted">{callError || 'Call ended'}</Text>
+              <Ionicons name="close-circle-outline" size={30} color={colors['text-muted']} />
+              <Text className="text-body-2 text-gray-400">{callError || 'Call ended'}</Text>
             </View>
           ) : (
-            <Button
-              variant="plain"
+            <CallControl
+              icon="close"
+              label={joining ? 'Cancel' : 'End'}
+              tone="decline"
               onPress={onHangUp}
-              className="w-16 h-16 rounded-full items-center justify-center bg-red-500"
-              accessibilityLabel={joining ? 'Cancel call' : 'End call'}
-            >
-              <Feather name="phone-off" size={26} color="white" />
-            </Button>
+            />
           )}
         </View>
       </View>

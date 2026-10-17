@@ -20,6 +20,12 @@ interface ScreenHeaderProps {
   right?: ReactNode;
   /** Transparent for headers drawn over the chat wallpaper. */
   translucent?: boolean;
+  /**
+   * Renders the title as the iOS large title (34pt bold, left aligned, on its own
+   * row beneath the inset) instead of a centred 17pt nav title. This is what the
+   * top-level tab screens use.
+   */
+  large?: boolean;
 }
 
 export function ScreenHeader({
@@ -27,29 +33,40 @@ export function ScreenHeader({
   title,
   right,
   translucent = false,
+  large = false,
 }: ScreenHeaderProps) {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
 
   return (
     <View
       style={{
         paddingTop: insets.top,
-        backgroundColor: translucent ? 'transparent' : 'rgba(244,244,244,0.95)',
-        borderBottomWidth: translucent ? 0 : 0.33,
-        borderBottomColor: 'rgba(0,0,0,0.3)',
+        backgroundColor: translucent ? 'transparent' : colors['panel-blur'],
+        borderBottomWidth: translucent ? 0 : 0.5,
+        borderBottomColor: colors['separator'],
       }}
     >
-      <View className="h-11 px-4 flex-row items-center justify-between">
-        <View className="flex-1 min-w-0 flex-row items-center">{left}</View>
-        {title ? (
-          <View className="flex-1 px-2">
-            <Text className="text-body-1 font-semibold text-text-strong" numberOfLines={1}>
-              {title}
-            </Text>
-          </View>
-        ) : null}
-        <View className="flex-row items-center">{right}</View>
-      </View>
+      {large ? (
+        <View className="px-4 pb-2">
+          {/* The 54pt status bar lives above this, inside paddingTop. */}
+          <Text className="text-display font-bold text-text-strong" numberOfLines={1}>
+            {title}
+          </Text>
+        </View>
+      ) : (
+        <View className="h-11 px-4 flex-row items-center justify-between">
+          <View className="flex-1 min-w-0 flex-row items-center">{left}</View>
+          {title ? (
+            <View className="flex-1 px-2">
+              <Text className="text-body-1 font-semibold text-text-strong" numberOfLines={1}>
+                {title}
+              </Text>
+            </View>
+          ) : null}
+          <View className="flex-row items-center">{right}</View>
+        </View>
+      )}
     </View>
   );
 }
