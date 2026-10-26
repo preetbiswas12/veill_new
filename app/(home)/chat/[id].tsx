@@ -4,16 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, FlatList, Keyboard, KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
 
 import Avatar from '@/components/Avatar';
 import Button from '@/components/Button';
@@ -26,6 +17,8 @@ import ToastHost from '@/components/ToastHost';
 import MessageListHeader from '@/components/MessageListHeader';
 import Screen from '@/components/Screen';
 import TypingIndicator from '@/components/TypingIndicator';
+import DemoMessageBubble from '@/components/DemoMessageBubble';
+import { demoThread, type DemoMsg } from '@/lib/demo-thread';
 import {
   getMessageBody,
   getMessageReceiptLabel,
@@ -36,6 +29,7 @@ import {
 } from '@/hooks/useCometChat';
 import { useStarredMessages } from '@/hooks/useStarredMessages';
 import { useTheme } from '@/hooks/useTheme';
+import { showAlertDialog } from '@/components/AlertDialog';
 
 /** Messages closer together than this collapse into one visual group. */
 const GROUP_WINDOW_MS = 5 * 60 * 1000;
@@ -52,7 +46,8 @@ type ThreadItem =
       showAvatar: boolean;
       senderName: string;
       receiptLabel?: string;
-    };
+    }
+  | { kind: 'demo'; key: string; demo: DemoMsg; isOwn: boolean };
 
 const senderOf = (message: any) => message?.getSender?.()?.getUid?.() || '';
 
@@ -109,6 +104,14 @@ const ChatScreen = () => {
   const listRef = useRef<FlatList<ThreadItem>>(null);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const [selected, setSelected] = useState<{ message: any; canCopy: boolean } | null>(null);
+  // Android 15 enforces edge-to-edge for targetSdk 35, so the window never
+  // resizes around the IME. RN core still reports the keyboard through the
+  // WindowInsets API — and its height already comes net of the navigation
+  // bar, so the composer pads itself by exactly that number.
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  // Demo rows are local-only; long-pressing one parks it here so the shared
+  // action bar can handle it without touching CometChat.
+  const [demoSelected, setDemoSelected] = useState<DemoMsg | null>(null);
   const { isStarred, toggle: toggleStarred } = useStarredMessages();
   const [starToast, setStarToast] = useState<string | null>(null);
   // Drives the design's quote bar above the composer.
@@ -130,6 +133,20 @@ const ChatScreen = () => {
     void markConversationRead(conversationId, conversationType);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId, conversationType]);
+
+  useEffect(() => {
+    const showListener = Keyboard.addListener('keyboardDidShow', (event) => {
+      setKeyboardHeight(Math.round(event.endCoordinates.height) || 0);
+    });
+    const hideListener = Keyboard.addListener('keyboardDidHide', () => setKeyboardHeight(0));
+    return () => {
+      showListener.remove();
+      hideListener.remove();
+    };
+  }, []);
+
+  const isDemoThread =
+    conversationId.toLowerCase() === 'alice' || title.toLowerCase() === 'alice';
 
   const items = useMemo<ThreadItem[]>(() => {
     const result: ThreadItem[] = [];
@@ -165,8 +182,27 @@ const ChatScreen = () => {
       });
     });
 
+    // Demo content: Alice's thread appends the local placeholder rows below
+    // the real history, so the media bubbles can be reviewed without a
+    // second signed-in device.
+    if (isDemoThread) {
+      for (const [index, demo] of demoThread().entries()) {
+        const dateKey = getDateKey(demo.at);
+        if (dateKey !== currentDateKey) {
+          result.push({ kind: 'divider', key: `divider-${dateKey}`, timestamp: demo.at });
+          currentDateKey = dateKey;
+        }
+        result.push({
+          kind: 'demo',
+          key: `demo-${demo.kind}-${index}-${demo.id}`,
+          demo,
+          isOwn: demo.side === 'own',
+        });
+      }
+    }
+
     return result;
-  }, [messages, user?.id]);
+  }, [messages, user?.id, isDemoThread]);
 
   // Receipts only matter for the most recent outgoing message.
   useEffect(() => {
@@ -215,11 +251,16 @@ const ChatScreen = () => {
   );
 
   const onCopySelected = useCallback(async () => {
+    if (demoSelected?.kind === 'text' && demoSelected.text) {
+      await Clipboard.setStringAsync(demoSelected.text);
+      setDemoSelected(null);
+      return;
+    }
     if (!selected) return;
     const text = getMessageBody(selected.message);
     if (!text) return;
     await Clipboard.setStringAsync(text);
-  }, [selected]);
+  }, [selected, demoSelected]);
 
   // The design's reply flow: quote the selected message in the bar above the
   // composer, then send the next message as its reply.
@@ -241,6 +282,11 @@ const ChatScreen = () => {
   // CometChat 4.1.0 has no star action on the client SDK, so starring is a
   // local store (hooks/useStarredMessages.ts) the same way Favourites is.
   const onStarSelected = useCallback(() => {
+    if (demoSelected) {
+      setStarToast('Demo content is local — starring needs a real message');
+      setDemoSelected(null);
+      return;
+    }
     if (!selected) return;
     const id = String(selected.message?.getId?.() ?? selected.message?.id ?? '');
     if (!id) return;
@@ -257,7 +303,7 @@ const ChatScreen = () => {
     }).then((nowStarred) => {
       setStarToast(nowStarred ? 'Message starred' : 'Star removed');
     });
-  }, [selected, conversationId, localUid, title, toggleStarred]);
+  }, [demoSelected, selected, conversationId, localUid, title, toggleStarred]);
 
   const onForwardSelected = useCallback(() => {
     if (!selected) return;
@@ -273,29 +319,40 @@ const ChatScreen = () => {
 
   const onReactSelected = useCallback(
     (reaction: string) => {
+      // Demo rows are local; reacting would imply a CometChat mutation.
+      if (demoSelected) {
+        setStarToast('Demo content is local — reactions need a real message');
+        setDemoSelected(null);
+        return;
+      }
       if (!selected) return;
       void toggleReaction(conversationId, selected.message, reaction).catch(() => {
-        Alert.alert('Could not react', 'The reaction could not be saved.');
+        showAlertDialog('Could not react', 'The reaction could not be saved.');
       });
     },
-    [selected, conversationId, toggleReaction]
+    [demoSelected, selected, conversationId, toggleReaction]
   );
 
   const onDeleteSelected = useCallback(() => {
+    if (demoSelected) {
+      setStarToast('Demo content is local — there is nothing to delete');
+      setDemoSelected(null);
+      return;
+    }
     if (!selected) return;
-    Alert.alert('Delete message', 'This removes the message for everyone.', [
+    showAlertDialog('Delete message', 'This removes the message for everyone.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         style: 'destructive',
         onPress: () => {
           void deleteMessage(conversationId, selected.message).catch(() => {
-            Alert.alert('Could not delete', 'The message could not be deleted.');
+            showAlertDialog('Could not delete', 'The message could not be deleted.');
           });
         },
       },
     ]);
-  }, [selected, conversationId, deleteMessage]);
+  }, [demoSelected, selected, conversationId, deleteMessage]);
 
   // First-render rows mount without any entrance; only messages that arrive
   // after the thread is already on screen play the fade-and-rise. The priming
@@ -317,6 +374,21 @@ const ChatScreen = () => {
       return (
         <BubbleEntrance appear={rowIsNew}>
           <DateDivider timestamp={item.timestamp} />
+        </BubbleEntrance>
+      );
+    }
+
+    if (item.kind === 'demo') {
+      return (
+        <BubbleEntrance appear={rowIsNew}>
+          <DemoMessageBubble
+            demo={item.demo}
+            isOwn={item.isOwn}
+            onLongPress={() => {
+              void Haptics.selectionAsync();
+              setDemoSelected(item.demo);
+            }}
+          />
         </BubbleEntrance>
       );
     }
@@ -422,6 +494,13 @@ const ChatScreen = () => {
 
       <KeyboardAvoidingView
         className="flex-1"
+        style={
+          // Edge-to-edge Android never resizes the window; pad the content by
+          // exactly what the IME insets API reports (already net of nav bar).
+          Platform.OS === 'android' && keyboardHeight > 0
+            ? { paddingBottom: keyboardHeight }
+            : undefined
+        }
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         // The offset is the distance from this view's top to the window's top:
         // this view starts BELOW the contact header, which is itself the
@@ -503,14 +582,17 @@ const ChatScreen = () => {
       </KeyboardAvoidingView>
 
       <MessageActions
-        visible={Boolean(selected)}
-        canCopy={selected?.canCopy}
-        canDelete={Boolean(selected)}
+        visible={Boolean(selected) || Boolean(demoSelected)}
+        canCopy={selected?.canCopy || demoSelected?.kind === 'text'}
+        canDelete={Boolean(selected) || Boolean(demoSelected)}
         canReply={Boolean(selected)}
         activeReactions={getMessageReactions(selected?.message)
           .filter((reaction) => reaction.mine)
           .map((reaction) => reaction.reaction)}
-        onClose={() => setSelected(null)}
+        onClose={() => {
+          setSelected(null);
+          setDemoSelected(null);
+        }}
         onCopy={() => void onCopySelected()}
         onReact={onReactSelected}
         onReply={onReplySelected}

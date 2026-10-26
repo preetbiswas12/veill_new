@@ -1,6 +1,6 @@
 import { ImagePickerAsset } from 'expo-image-picker';
 import { useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useCometChat } from '@/hooks/useCometChat';
 
 import Button from '@/components/Button';
@@ -8,6 +8,7 @@ import ImageInput from '@/components/ImageInput';
 import Screen from '@/components/Screen';
 import TextField from '@/components/TextField';
 import { getError } from '@/lib/utils';
+import { showAlertDialog } from '@/components/AlertDialog';
 
 /**
  * Profile edits the CometChat user directly — there is no separate identity
@@ -27,7 +28,7 @@ const ProfileScreen = () => {
   const updateProfile = async () => {
     const trimmed = nickName.trim();
     if (!trimmed) {
-      Alert.alert('Name required', 'Enter a display name first.');
+      showAlertDialog('Name required', 'Enter a display name first.');
       return;
     }
     try {
@@ -36,7 +37,7 @@ const ProfileScreen = () => {
         nickName: trimmed,
         avatarUrl: profileImage.uri || undefined,
       });
-      Alert.alert('Profile updated', 'Your profile has been updated.');
+      showAlertDialog('Profile updated', 'Your profile has been updated.');
     } catch (error) {
       getError(error);
     } finally {

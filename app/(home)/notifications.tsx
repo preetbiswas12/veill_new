@@ -2,13 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { useEffect } from 'react';
-import { Alert, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import Screen from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { useCometChat } from '@/hooks/useCometChat';
 import { isPushAvailable } from '@/lib/push';
 import { useTheme } from '@/hooks/useTheme';
+import { showAlertDialog } from '@/components/AlertDialog';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -124,13 +125,13 @@ const NotificationsScreen = () => {
             onChange={(next) => {
               void setPushEnabled(next)
                 .then(() =>
-                  Alert.alert(
+                  showAlertDialog(
                     next ? 'Push enabled' : 'Push disabled',
                     'Saved to your CometChat account.'
                   )
                 )
                 .catch(() =>
-                  Alert.alert(
+                  showAlertDialog(
                     'Could not save',
                     'Your CometChat app does not have the notifications extension enabled.'
                   )
@@ -160,7 +161,7 @@ const NotificationsScreen = () => {
                 value={!mutedConversations.includes(conversation.id)}
                 onChange={(next) => {
                   void setConversationMuted(conversation.id, !next).catch(() =>
-                    Alert.alert('Could not save', 'This chat could not be updated.')
+                    showAlertDialog('Could not save', 'This chat could not be updated.')
                   );
                 }}
                 last={index === conversations.length - 1}

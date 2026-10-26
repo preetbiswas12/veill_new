@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, Share, Switch, Text, View } from 'react-native';
+import { Pressable, ScrollView, Share, Switch, Text, View } from 'react-native';
 
 import Avatar from '@/components/Avatar';
 import Screen from '@/components/Screen';
@@ -10,6 +10,7 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { useFavourites } from '@/hooks/useFavourites';
 import { useCometChat, getMessageBody, getMessageText, getMessageTimestamp } from '@/hooks/useCometChat';
 import { useTheme } from '@/hooks/useTheme';
+import { showAlertDialog } from '@/components/AlertDialog';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -177,7 +178,7 @@ const ContactInfoScreen = () => {
   };
 
   const confirmClearChat = () => {
-    Alert.alert('Clear chat?', 'This deletes every message you can see in this conversation.', [
+    showAlertDialog('Clear chat?', 'This deletes every message you can see in this conversation.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Clear',
@@ -185,9 +186,9 @@ const ContactInfoScreen = () => {
         onPress: async () => {
           try {
             const removed = await clearConversation(String(id), isGroup ? 'group' : 'user');
-            Alert.alert('Chat cleared', removed === 1 ? '1 message deleted.' : `${removed} messages deleted.`);
+            showAlertDialog('Chat cleared', removed === 1 ? '1 message deleted.' : `${removed} messages deleted.`);
           } catch {
-            Alert.alert('Could not clear', 'Some messages could not be deleted.');
+            showAlertDialog('Could not clear', 'Some messages could not be deleted.');
           }
         },
       },
@@ -199,7 +200,7 @@ const ContactInfoScreen = () => {
   const exportChat = async () => {
     const loaded = messagesByConversation.get(String(id)) || [];
     if (loaded.length === 0) {
-      Alert.alert('Nothing to export', 'Load the chat first so its messages are available.');
+      showAlertDialog('Nothing to export', 'Load the chat first so its messages are available.');
       return;
     }
     const transcript = loaded
@@ -295,7 +296,7 @@ const ContactInfoScreen = () => {
               label="Encryption"
               subtitle="Messages and calls are end-to-end encrypted."
               onPress={() =>
-                Alert.alert(
+                showAlertDialog(
                   'End-to-end encrypted',
                   'Messages you send are delivered through your CometChat app and are readable only by the participants of this conversation.'
                 )
@@ -305,7 +306,7 @@ const ContactInfoScreen = () => {
               icon="person-circle-outline"
               label="Contact details"
               value={id}
-              onPress={() => Alert.alert('Contact details', `CometChat UID: ${id}`)}
+              onPress={() => showAlertDialog('Contact details', `CometChat UID: ${id}`)}
               last
             />
           </View>
@@ -333,7 +334,7 @@ const ContactInfoScreen = () => {
                 onPress={async () => {
                   try {
                     await createGroup(`${title.split(' ')[0]} & me`, [user.id, String(id)]);
-                    Alert.alert('Group created', 'The new group is in Communities.');
+                    showAlertDialog('Group created', 'The new group is in Communities.');
                   } catch {
                     // createGroup surfaces the failure on the provider.
                   }
@@ -366,7 +367,7 @@ const ContactInfoScreen = () => {
               label={isFavourite(String(id)) ? 'Remove from favourites' : 'Add to favourites'}
               onPress={async () => {
                 const added = await toggle(String(id));
-                Alert.alert(
+                showAlertDialog(
                   added ? 'Added to favourites' : 'Removed from favourites',
                   `${title} ${added ? 'now shows' : 'no longer shows'} under the Favourites filter.`
                 );
@@ -389,13 +390,13 @@ const ContactInfoScreen = () => {
               onPress={() => {
                 void toggleBlockUser(String(id))
                   .then((nowBlocked) =>
-                    Alert.alert(
+                    showAlertDialog(
                       nowBlocked ? 'Blocked' : 'Unblocked',
                       `${title} ${nowBlocked ? 'can no longer message you.' : 'can message you again.'}`
                     )
                   )
                   .catch(() =>
-                    Alert.alert('Could not update', 'Blocking needs to be enabled on this CometChat app.')
+                    showAlertDialog('Could not update', 'Blocking needs to be enabled on this CometChat app.')
                   );
               }}
               last

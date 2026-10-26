@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { View, TextInput, Alert, Pressable, Text } from 'react-native';
+import { View, TextInput, Pressable, Text } from 'react-native';
 import { OutgoingMedia, useCometChat } from '@/hooks/useCometChat';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -10,6 +10,7 @@ import AddMoreSheet from './AddMoreSheet';
 import AttachButton from './AttachButton';
 import { takePendingCapture } from '@/lib/capture';
 import { useTheme } from '@/hooks/useTheme';
+import { showAlertDialog } from '@/components/AlertDialog';
 
 /** Typing signals are throttled: one "started" per window, "stopped" on idle. */
 const TYPING_THROTTLE_MS = 3_000;
@@ -119,7 +120,7 @@ const CustomMessageInput = ({
         if (source === 'library') {
           const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
           if (!granted) {
-            Alert.alert(
+            showAlertDialog(
               'Permission needed',
               'Allow photo library access to share photos and videos.'
             );
@@ -128,7 +129,7 @@ const CustomMessageInput = ({
         } else {
           const { granted } = await ImagePicker.requestCameraPermissionsAsync();
           if (!granted) {
-            Alert.alert('Permission needed', 'Allow camera access to take a photo.');
+            showAlertDialog('Permission needed', 'Allow camera access to take a photo.');
             return;
           }
         }
@@ -168,7 +169,7 @@ const CustomMessageInput = ({
       };
       await sendSecureMedia(conversationId, media, chatType);
     } catch (caught) {
-      Alert.alert(
+      showAlertDialog(
         'Could not send',
         caught instanceof Error ? caught.message : 'The attachment could not be sent.'
       );
@@ -218,7 +219,7 @@ const CustomMessageInput = ({
           }}
           onClose={() => setSheetOpen(false)}
           unavailable={(what) =>
-            Alert.alert(what, `${what} is not wired to CometChat yet.`)
+            showAlertDialog(what, `${what} is not wired to CometChat yet.`)
           }
         />
       ) : (
@@ -283,7 +284,7 @@ const CustomMessageInput = ({
               ) : (
                 <Pressable
                   onPress={() =>
-                    Alert.alert('Stickers', 'Stickers are not connected to CometChat yet.')
+                    showAlertDialog('Stickers', 'Stickers are not connected to CometChat yet.')
                   }
                   accessibilityRole="button"
                   accessibilityLabel="Emoji and stickers"
@@ -311,7 +312,7 @@ const CustomMessageInput = ({
               </Pressable>
               {!text.trim() ? (
                 <Pressable
-                  onPress={() => Alert.alert('Voice messages', 'Hold to record is not wired up yet.')}
+                  onPress={() => showAlertDialog('Voice messages', 'Hold to record is not wired up yet.')}
                   disabled={sending || disabled}
                   accessibilityRole="button"
                   accessibilityLabel="Voice message"

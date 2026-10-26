@@ -23,8 +23,16 @@ const BadgeIcon = ({
   color: string;
   size?: number;
 }) => (
+  // The tile is a squircle, not a square: WhatsApp's iOS lists round the badge
+  // at roughly 0.24 of its side, which is what keeps the row from reading as a
+  // stack of hard chips.
   <View
-    style={{ width: size, height: size, backgroundColor: color }}
+    style={{
+      width: size,
+      height: size,
+      backgroundColor: color,
+      borderRadius: Math.round(size * 0.24),
+    }}
     className="items-center justify-center"
   >
     <Ionicons name={icon} size={Math.round(size * 0.6)} color="#ffffff" />

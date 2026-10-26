@@ -2,17 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import {
-  Alert,
-  AlertButton,
-  FlatList,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { AlertButton, FlatList, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 
 import AppMenu from '@/components/AppMenu';
 import ConversationRow from '@/components/ConversationRow';
@@ -22,6 +12,7 @@ import { useFavourites } from '@/hooks/useFavourites';
 import { getMessageText, useCometChat } from '@/hooks/useCometChat';
 import { useTheme } from '@/hooks/useTheme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { showAlertDialog } from '@/components/AlertDialog';
 
 interface ConversationItem {
   id: string;
@@ -201,7 +192,7 @@ const ChatsScreen = () => {
       }
 
       actions.push({ text: 'Cancel', style: 'cancel' });
-      Alert.alert(item.name || item.id, undefined, actions, { cancelable: true });
+      showAlertDialog(item.name || item.id, undefined, actions, { cancelable: true });
     },
     [markConversationRead, markConversationUnread, router]
   );
@@ -214,7 +205,7 @@ const ChatsScreen = () => {
       { text: 'Find channels to follow', onPress: () => router.push('/communities') },
       { text: 'Cancel', style: 'cancel' },
     ];
-    Alert.alert('New', undefined, actions, { cancelable: true });
+    showAlertDialog('New', undefined, actions, { cancelable: true });
   }, [router]);
 
   const titleBlock = (
@@ -304,7 +295,7 @@ const ChatsScreen = () => {
           design's pl-8 / pb-3 / pt-2.5 insets and its bottom hairline. */}
       <Pressable
         onPress={() =>
-          Alert.alert(
+          showAlertDialog(
             'Archived',
             'CometChat has no archive API, so archived chats cannot be listed here yet.'
           )

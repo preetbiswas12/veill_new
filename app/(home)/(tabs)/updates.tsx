@@ -4,15 +4,7 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Modal,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import AppMenu from '@/components/AppMenu';
 import Avatar from '@/components/Avatar';
@@ -23,6 +15,7 @@ import VideoAttachment from '@/components/VideoAttachment';
 import { OutgoingMedia, useCometChat } from '@/hooks/useCometChat';
 import { useTheme } from '@/hooks/useTheme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { showAlertDialog } from '@/components/AlertDialog';
 
 /** The design shows relative time under a status ("4h ago"), not a clock. */
 const formatWhen = (timestamp: number): string => {
@@ -90,7 +83,7 @@ const StoriesScreen = () => {
 
       const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!granted) {
-        Alert.alert(
+        showAlertDialog(
           'Permission needed',
           'Allow photo library access to share a story.'
         );
@@ -111,7 +104,7 @@ const StoriesScreen = () => {
       };
       await sendStory(media);
     } catch (caught) {
-      Alert.alert(
+      showAlertDialog(
         'Could not share',
         caught instanceof Error ? caught.message : 'The story could not be shared.'
       );

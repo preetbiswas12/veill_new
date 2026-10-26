@@ -2,10 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { setPendingCapture } from '@/lib/capture';
+import { showAlertDialog } from '@/components/AlertDialog';
 
 /**
  * Capture screen.
@@ -36,14 +37,14 @@ const CameraScreen = () => {
     if (!hasCamera) {
       const result = await requestCameraPermission();
       if (!result.granted) {
-        Alert.alert('Camera needed', 'Allow camera access to take a photo.');
+        showAlertDialog('Camera needed', 'Allow camera access to take a photo.');
         return false;
       }
     }
     if (needsMic && !hasMic) {
       const result = await requestMicPermission();
       if (!result.granted) {
-        Alert.alert('Microphone needed', 'Allow microphone access to record video.');
+        showAlertDialog('Microphone needed', 'Allow microphone access to record video.');
         return false;
       }
     }
@@ -64,7 +65,7 @@ const CameraScreen = () => {
         const shot = await cameraRef.current.takePictureAsync({ quality: 0.9 });
         if (shot?.uri) finish(shot.uri, 'photo');
       } catch {
-        Alert.alert('Could not take the photo', 'The camera reported an error.');
+        showAlertDialog('Could not take the photo', 'The camera reported an error.');
       } finally {
         setBusy(false);
       }
@@ -77,7 +78,7 @@ const CameraScreen = () => {
       try {
         await cameraRef.current.stopRecording();
       } catch {
-        Alert.alert('Could not stop the recording', 'The camera reported an error.');
+        showAlertDialog('Could not stop the recording', 'The camera reported an error.');
       } finally {
         setBusy(false);
       }
@@ -92,7 +93,7 @@ const CameraScreen = () => {
       const result = await cameraRef.current.recordAsync({ maxDuration: 60 });
       if (result?.uri) finish(result.uri, 'video');
     } catch {
-      Alert.alert('Could not record', 'The camera reported an error.');
+      showAlertDialog('Could not record', 'The camera reported an error.');
     } finally {
       setRecording(false);
     }

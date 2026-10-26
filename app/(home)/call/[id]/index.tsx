@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import Avatar from '@/components/Avatar';
 import Screen from '@/components/Screen';
 import { getCallingSdk, useCometChat } from '@/hooks/useCometChat';
 import { useTheme } from '@/hooks/useTheme';
+import { showAlertDialog } from '@/components/AlertDialog';
 
 /** Elapsed call time, ticking only while the call is actually up. */
 const useCallTimer = (running: boolean) => {
@@ -195,7 +196,7 @@ const CallScreen = () => {
                 End-to-end encrypted
               </Text>
             </View>
-            <Text className="text-body-2 text-gray-400" accessibilityLiveRegion="polite">
+            <Text className="text-body-2 text-white/70" accessibilityLiveRegion="polite">
               {formatDuration(elapsed)}
             </Text>
           </View>
@@ -229,7 +230,7 @@ const CallScreen = () => {
               label="Add"
               tone="neutral"
               onPress={() =>
-                Alert.alert(
+                showAlertDialog(
                   'Add participant',
                   'CometChat calls start one-to-one from a chat or the contact info screen.'
                 )
@@ -249,7 +250,7 @@ const CallScreen = () => {
           <Text className="text-white text-2xl font-semibold" numberOfLines={1}>
             {peerName}
           </Text>
-          <Text className="text-gray-400 text-base">{statusText()}</Text>
+          <Text className="text-white/70 text-base">{statusText()}</Text>
         </View>
 
         <View className="items-center justify-center">
@@ -305,7 +306,7 @@ const CallScreen = () => {
           ) : ended ? (
             <View className="items-center gap-2">
               <Ionicons name="close-circle-outline" size={30} color={colors['text-muted']} />
-              <Text className="text-body-2 text-gray-400">{callError || 'Call ended'}</Text>
+              <Text className="text-body-2 text-white/70">{callError || 'Call ended'}</Text>
             </View>
           ) : (
             <CallControl

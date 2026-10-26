@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import AlertDialogHost from '@/components/AlertDialog';
 import { CometChatProvider } from '@/hooks/useCometChat';
 import { ThemeProvider, useTheme } from '@/hooks/useTheme';
 
@@ -22,6 +23,8 @@ const RootNavigator = () => {
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="(home)" options={{ headerShown: false }} />
       <StatusBar style={isDark ? 'light' : 'dark'} />
+      {/* One themed alert host for the whole app; screens call showAlertDialog(). */}
+      <AlertDialogHost />
     </Stack>
   );
 };

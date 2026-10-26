@@ -2,6 +2,7 @@ import { Entypo, Feather, MaterialIcons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
 import { useCometChat } from '@/hooks/useCometChat';
+import { useTheme } from '@/hooks/useTheme';
 
 import Button from '@/components/Button';
 import Screen from '@/components/Screen';
@@ -11,6 +12,7 @@ import useContacts from '@/hooks/useContacts';
 
 const NewMessageScreen = () => {
   const router = useRouter();
+  const { colors } = useTheme();
   const { getOrCreateConversation } = useCometChat();
   const { contacts, loadingContacts } = useContacts();
 
@@ -33,37 +35,29 @@ const NewMessageScreen = () => {
 
   return (
     <Screen viewClassName="pt-1 px-4">
-      <View className="w-full">
+      <View className="w-full overflow-hidden rounded-card bg-surface">
         <Link href="/new-group" asChild>
           <Button
             variant="plain"
-            className="bg-surface flex-row items-center justify-between rounded-t-lg pt-0.5"
+            className="flex-row items-center justify-between px-4 py-3 border-b-hair border-separator"
           >
-            <View className="px-4">
-              <MaterialIcons name="people-outline" size={24} color="black" />
+            <View className="flex-row items-center gap-3">
+              <MaterialIcons name="people-outline" size={24} color={colors['teal']} />
+              <Text className="text-body-1 text-text-strong">New Group</Text>
             </View>
-            <View className="flex-row flex-grow items-center justify-between gap-2 border-b border-gray-200">
-              <Text>New Group</Text>
-              <View className="p-2">
-                <Entypo name="chevron-small-right" size={24} color="gray" />
-              </View>
-            </View>
+            <Entypo name="chevron-small-right" size={24} color={colors['text-muted']} />
           </Button>
         </Link>
         <Link href="/find-by-username" asChild>
           <Button
             variant="plain"
-            className="bg-surface flex-row items-center justify-between rounded-b-lg pb-0.5"
+            className="flex-row items-center justify-between px-4 py-3"
           >
-            <View className="px-4">
-              <Feather name="at-sign" size={24} color="black" />
+            <View className="flex-row items-center gap-3">
+              <Feather name="at-sign" size={24} color={colors['teal']} />
+              <Text className="text-body-1 text-text-strong">Find by Username</Text>
             </View>
-            <View className="flex-row flex-grow items-center justify-between gap-2">
-              <Text>Find by Username</Text>
-              <View className="p-2">
-                <Entypo name="chevron-small-right" size={24} color="gray" />
-              </View>
-            </View>
+            <Entypo name="chevron-small-right" size={24} color={colors['text-muted']} />
           </Button>
         </Link>
       </View>

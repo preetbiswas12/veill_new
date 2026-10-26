@@ -1,9 +1,10 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect } from 'react';
-import { Alert, Pressable } from 'react-native';
+import { Pressable } from 'react-native';
 
 import { Feather } from '@expo/vector-icons';
 import Avatar from './Avatar';
+import { showAlertDialog } from '@/components/AlertDialog';
 
 interface ImageInputProps {
   name?: string;
@@ -30,7 +31,7 @@ function ImageInput({ name, imageUri, onChangeImage }: ImageInputProps) {
   const handlePress = () => {
     if (!imageUri) selectImage();
     else
-      Alert.alert('Delete', 'Are you sure you want to delete this image?', [
+      showAlertDialog('Delete', 'Are you sure you want to delete this image?', [
         {
           text: 'Yes',
           onPress: () => onChangeImage(null),

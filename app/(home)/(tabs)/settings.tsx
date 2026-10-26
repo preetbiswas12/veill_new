@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { ProfileCard, SettingsRowItem } from '@/components/BadgeIcon';
 import Screen from '@/components/Screen';
@@ -9,6 +9,7 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { useCometChat } from '@/hooks/useCometChat';
 import { useStarredMessages } from '@/hooks/useStarredMessages';
 import { useTheme } from '@/hooks/useTheme';
+import { showAlertDialog } from '@/components/AlertDialog';
 
 /**
  * Settings, in the iOS Settings idiom the design specifies: a profile card, then
@@ -42,7 +43,7 @@ const SettingsScreen = () => {
   const [query, setQuery] = useState('');
 
   const open = (path: string) => () => router.push(path as any);
-  const unavailable = (what: string, why: string) => () => Alert.alert(what, why);
+  const unavailable = (what: string, why: string) => () => showAlertDialog(what, why);
 
   const groups_ = useMemo<Group[]>(
     () => [
@@ -51,13 +52,13 @@ const SettingsScreen = () => {
         rows: [
           {
             icon: 'person-circle-outline',
-            badge: '#1fa1e3',
+            badge: '#1FA1E3',
             label: 'Avatar',
             onPress: open('/profile'),
           },
           {
             icon: 'list-outline',
-            badge: '#4a90d9',
+            badge: '#F19941',
             label: 'Lists',
             value: groups.length ? `${groups.length}` : undefined,
             onPress: unavailable(
@@ -67,14 +68,14 @@ const SettingsScreen = () => {
           },
           {
             icon: 'star-outline',
-            badge: '#4a90d9',
+            badge: '#EFB041',
             label: 'Starred messages',
             value: starredEntries.length ? `${starredEntries.length}` : undefined,
             onPress: open('/starred'),
           },
           {
             icon: 'laptop-outline',
-            badge: '#4a90d9',
+            badge: '#0ABAB5',
             label: 'Linked devices',
             onPress: unavailable(
               'Linked devices',
@@ -88,7 +89,7 @@ const SettingsScreen = () => {
         rows: [
           {
             icon: 'key-outline',
-            badge: '#6b7c8f',
+            badge: '#5176D9',
             label: 'Account',
             value: user?.name || undefined,
             onPress: unavailable(
@@ -96,17 +97,17 @@ const SettingsScreen = () => {
               `Signed in as ${user?.name || 'you'}.\nUID: ${user?.id || '-'}\n\nChanging your UID means creating a new CometChat user.`
             ),
           },
-          { icon: 'lock-closed-outline', badge: '#6b7c8f', label: 'Privacy', onPress: open('/privacy') },
-          { icon: 'chatbubble-ellipses-outline', badge: '#6b7c8f', label: 'Chats', onPress: open('/chats-settings') },
+          { icon: 'lock-closed-outline', badge: '#34AADC', label: 'Privacy', onPress: open('/privacy') },
+          { icon: 'chatbubble-ellipses-outline', badge: '#34C759', label: 'Chats', onPress: open('/chats-settings') },
           {
             icon: 'notifications-outline',
-            badge: '#6b7c8f',
+            badge: '#FC3D39',
             label: 'Notifications',
             onPress: open('/notifications'),
           },
           {
             icon: 'pie-chart-outline',
-            badge: '#6b7c8f',
+            badge: '#00A884',
             label: 'Storage and data',
             onPress: open('/storage'),
           },
@@ -117,16 +118,16 @@ const SettingsScreen = () => {
         rows: [
           {
             icon: 'help-circle-outline',
-            badge: '#6b7c8f',
+            badge: '#986DEE',
             label: 'Help',
             onPress: unavailable('Help', 'There is no help centre inside this app yet.'),
           },
           {
             icon: 'heart-outline',
-            badge: '#6b7c8f',
+            badge: '#3EC151',
             label: 'Tell a friend',
             onPress: () =>
-              Alert.alert(
+              showAlertDialog(
                 'Invite a friend',
                 `Share this so they can start a chat with you.\n\nYour CometChat UID is ${user?.id || 'unknown'}.`
               ),
