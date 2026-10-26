@@ -30,7 +30,7 @@ const Button = ({
     <TouchableOpacity
       className={clsx(
         variant === 'default' &&
-          'bg-blue-600 rounded-[13px] justify-center items-center px-4 py-4 w-full',
+          'bg-product rounded-[13px] justify-center items-center px-4 py-4 w-full',
         variant === 'text' && 'bg-transparent justify-center items-center',
         otherProps.disabled && 'opacity-50',
         variant !== 'text' && className
@@ -40,8 +40,8 @@ const Button = ({
     >
       <Text
         className={clsx(
-          variant === 'default' && 'text-[17px] font-medium text-white',
-          variant === 'text' && 'text-sm text-black',
+          variant === 'default' && 'text-body-1 font-medium text-text-invert',
+          variant === 'text' && 'text-body-2 text-text-strong',
           variant === 'text' && className
         )}
       >

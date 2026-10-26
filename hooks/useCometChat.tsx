@@ -9,9 +9,21 @@ import {
   useState,
 } from 'react';
 import { CometChat } from '@cometchat/chat-sdk-react-native';
+import { File as FsFile } from 'expo-file-system';
 
 import { STORIES_GUID, normalizeCometChatUserId } from '@/lib/cometchat';
 import { registerDeviceForPush, unregisterDeviceFromPush } from '@/lib/push';
+import {
+  SECURE_CHUNK,
+  SECURE_START,
+  conversationKey,
+  ingestSecuredMessage,
+  isSecuredCarrier,
+  participantTagFor,
+  prepareTransfer,
+  registerSecureKeyResolver,
+} from '@/lib/secure-media';
+import type { SecuredKind } from '@/lib/secure-media';
 
 export interface CometChatUser {
   id: string;
@@ -125,6 +137,17 @@ interface CometChatContextType {
   loadingMessages: Map<string, boolean>;
   sendTextMessage: (targetId: string, content: string, chatType?: string) => Promise<void>;
   sendMediaMessage: (targetId: string, media: OutgoingMedia, chatType?: string) => Promise<void>;
+  /**
+   * Sends media through the private pipeline (lib/secure-media.ts): encrypted,
+   * chunked, verified. `onProgress` ticks as each chunk is acknowledged by
+   * CometChat, from the moment the announce lands.
+   */
+  sendSecureMedia: (
+    targetId: string,
+    media: OutgoingMedia,
+    chatType?: string,
+    onProgress?: (done: number, total: number) => void
+  ) => Promise<void>;
   getOrCreateConversation: (targetId: string, chatType?: string) => Promise<CometChatConversation>;
   createGroup: (name: string, memberIds: string[]) => Promise<string>;
   /** Groups the signed-in user is a member of, for the Communities tab. */
@@ -439,6 +462,15 @@ export const getMessageText = (message: any): string => {
     const status = getCallStatusText(callMessageAction(message));
     return status ? `${label} · ${status}` : label;
   }
+  // Secured-media carriers never describe their payload in plaintext: the
+  // conversation preview says what arrived, never what it looks like.
+  if (isSecuredCarrier(message)) {
+    const data = typeof message?.getData === 'function' ? message.getData() : message?.data;
+    if (typeof data?.n === 'number') return '🔒 Media'; // a chunk, mid-flight
+    if (data?.kind === 'video') return '🔒 Video';
+    if (data?.kind === 'file') return `🔒 ${data?.name || 'File'}`;
+    return '🔒 Photo';
+  }
   const body = getMessageBody(message);
   if (body) return body;
   const attachment = getMessageAttachment(message);
@@ -677,6 +709,12 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
           builder.setUID(conversationId);
         }
         const result = (await builder.build().fetchNext()) || [];
+        // History replays through the ingest so transfers that streamed in
+        // while this conversation was closed rehydrate: the chunks are already
+        // stored as custom messages, and the receiver needs only to reassemble.
+        for (const message of result) {
+          ingestSecuredMessage(message, conversationId);
+        }
         const ordered = [...result].sort((a, b) => messageSentAt(a) - messageSentAt(b));
         setMessagesByConversation((prev) => {
           const next = new Map(prev);
@@ -715,6 +753,112 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
       const message = new (CometChat as any).TextMessage(targetId, content, type);
       const sent = await (CometChat.sendMessage as any)(message);
       appendMessage(targetId, sent);
+      void refreshConversations();
+    },
+    [appendMessage, refreshConversations, resolveConversationType]
+  );
+
+  /**
+   * The private pipeline's transport (see lib/secure-media.ts for the crypto
+   * and the envelope description).
+   *
+   * Ownership split: this function only carries what the library seals. It
+   * announces the transfer, streams the chunks with a little concurrency and
+   * per-chunk retry, and feeds every acknowledged message back through the
+   * ingest — on the sending device the SDK resolves sends without echoing them
+   * back through the listener, so the ingest call here is what lets the
+   * sender's own bubble resolve.
+   */
+  const sendSecureMedia = useCallback(
+    async (
+      targetId: string,
+      media: OutgoingMedia,
+      chatType?: string,
+      onProgress?: (done: number, total: number) => void
+    ) => {
+      if (!targetId || !media?.uri) return;
+      const type = chatType || resolveConversationType(targetId);
+      const receiverType = type === 'group' ? 'group' : 'user';
+
+      const key = conversationKey(
+        targetId,
+        participantTagFor(targetId, type, userRef.current?.id ?? null)
+      );
+
+      // Read the bytes. `expo-image-picker` and `expo-camera` both hand back
+      // file:// URIs the filesystem module can read directly.
+      const source = new FsFile(media.uri);
+      const bytes = await source.bytes();
+      if (!bytes || bytes.length === 0) {
+        throw new Error('The file to send could not be read');
+      }
+
+      const mime = guessMimeType(media.name || '', media.kind);
+      const { start, chunks } = prepareTransfer(
+        bytes,
+        { kind: media.kind as SecuredKind, name: media.name || 'media', mime },
+        key
+      );
+
+      // Not a UI detail: every chunk that reaches the conversation triggers
+      // decode paths on both ends, so an in-flight set must survive the
+      // composer closing mid-send.
+      let done = 0;
+      const onChunkAck = async (resolvedAll: any) => {
+        done += 1;
+        // The announce is part of the honest count, so the denominator matches.
+        onProgress?.(done, chunks.length + 1);
+        ingestSecuredMessage(resolvedAll, targetId);
+        appendMessage(targetId, resolvedAll);
+      };
+
+      const customMessage = (envelopeType: string, data: object) => {
+        const message = new (CometChat as any).CustomMessage(
+          targetId,
+          receiverType,
+          envelopeType,
+          data
+        );
+        return (CometChat.sendCustomMessage as any)(message);
+      };
+
+      await customMessage(SECURE_START, start).then(onChunkAck);
+
+      const queue = chunks.map((chunk, index) => ({ chunk, index }));
+      let cursor = 0;
+      let consecutiveFailures = 0;
+      const PER_CHUNK_RETRIES = 2;
+      const FAILURE_LIMIT = 12; // stops the stream rather than storming the socket
+
+      const worker = async () => {
+        while (cursor < queue.length) {
+          const item = queue[cursor++];
+          for (let attempt = 0; ; attempt++) {
+            try {
+              const resolvedAll = await customMessage(SECURE_CHUNK, item.chunk);
+              consecutiveFailures = 0;
+              await onChunkAck(resolvedAll);
+              break;
+            } catch {
+              attempt += 1;
+              consecutiveFailures += 1;
+              if (consecutiveFailures >= FAILURE_LIMIT) {
+                throw new Error('CometChat stopped accepting messages for this transfer');
+              }
+              if (attempt > PER_CHUNK_RETRIES) {
+                throw new Error(`Chunk ${item.index + 1} of ${start.total} could not be delivered`);
+              }
+              // A short, growing pause. Retry stays inside one worker so failed
+              // chunks do not multiply connections.
+              await new Promise((resolve) => setTimeout(resolve, 350 * attempt));
+            }
+          }
+        }
+      };
+
+      await Promise.all(Array.from({ length: Math.min(4, queue.length) }, worker));
+
+      // The carry messages are not what a conversation-preview should show.
       void refreshConversations();
     },
     [appendMessage, refreshConversations, resolveConversationType]
@@ -1816,6 +1960,22 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
         appendMessage(conversationId, message);
         void refreshConversations();
       },
+      onCustomMessageReceived: (message: any) => {
+        const conversationId = resolveConversationId(message);
+        if (!conversationId) return;
+        // Acarrier split: if this message carries secured media, its payload
+        // surfaces through the reassembly store, and the message itself lands
+        // so the secure bubble has something to hang progress on.
+        const carried = ingestSecuredMessage(message, conversationId);
+        if (carried) {
+          appendMessage(conversationId, message);
+          return;
+        }
+        // Other custom messages (CometChat's own interactive types) join the
+        // thread like any other category.
+        appendMessage(conversationId, message);
+        void refreshConversations();
+      },
       onTypingStarted: (notification: any) => {
         const conversationId = resolveConversationId(notification);
         const senderId = notification?.getSender?.()?.getUid?.();
@@ -1835,6 +1995,29 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
       (CometChat as any).removeMessageListener?.(MESSAGE_LISTENER_ID);
     };
   }, [sessionReady, appendMessage, refreshConversations, markTyping, dropTyping]);
+
+  // The privacy layer cannot derive a conversation's key by itself: only the
+  // provider knows the local uid and the per-conversation types, and those are
+  // exactly the derivation's inputs.
+  useEffect(() => {
+    if (!sessionReady) {
+      registerSecureKeyResolver(null);
+      return;
+    }
+    registerSecureKeyResolver((conversationId: string) =>
+      conversationKey(
+        conversationId,
+        participantTagFor(
+          conversationId,
+          resolveConversationType(conversationId),
+          userRef.current?.id ?? null
+        )
+      )
+    );
+    return () => {
+      registerSecureKeyResolver(null);
+    };
+  }, [sessionReady, resolveConversationType]);
 
   useEffect(() => {
     if (!sessionReady) return;
@@ -1936,6 +2119,7 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
       loadingMessages,
       sendTextMessage,
       sendMediaMessage,
+      sendSecureMedia,
       getOrCreateConversation,
       createGroup,
       groups,
@@ -2004,6 +2188,7 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
       loadingMessages,
       sendTextMessage,
       sendMediaMessage,
+      sendSecureMedia,
       getOrCreateConversation,
       createGroup,
       groups,

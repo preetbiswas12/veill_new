@@ -22,6 +22,7 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import VideoAttachment from '@/components/VideoAttachment';
 import { OutgoingMedia, useCometChat } from '@/hooks/useCometChat';
 import { useTheme } from '@/hooks/useTheme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /** The design shows relative time under a status ("4h ago"), not a clock. */
 const formatWhen = (timestamp: number): string => {
@@ -40,6 +41,7 @@ const formatWhen = (timestamp: number): string => {
 
 const StoriesScreen = () => {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user, stories, storiesLoading, refreshStories, sendStory } = useCometChat();
   const [viewer, setViewer] = useState<{ senderId: string; index: number } | null>(null);
@@ -135,16 +137,19 @@ const StoriesScreen = () => {
 
   return (
     <Screen edges={['left', 'right', 'bottom']}>
-      {/* The title row below carries the camera and pencil controls, so the
-          header here is only the inset. */}
-
+      {/* The Screen excludes the top edge, so this screen provides the status
+          bar inset itself: the content's first row carries it, and a fixed
+          surface-coloured band covers content scrolled beneath the notch. */}
       <ScrollView
         className="flex-1 w-full"
         contentContainerStyle={{ paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Large title with the camera and pencil circle buttons beside it. */}
-        <View className="px-4 pt-1 pb-2 flex-row items-center justify-between">
+        <View
+          className="px-4 pb-2 flex-row items-center justify-between"
+          style={{ paddingTop: insets.top + 4 }}
+        >
           <Text className="flex-1 min-w-0 text-display font-bold text-text-strong">Updates</Text>
           <View className="flex-row items-center gap-4">
             <Pressable
@@ -280,6 +285,14 @@ const StoriesScreen = () => {
           </View>
         </View>
       </ScrollView>
+
+      {/* Status-bar backdrop: the title row above scrolls with its content, so
+          this fixed opaque band covers whatever slides beneath the notch. */}
+      <View
+        pointerEvents="none"
+        className="absolute top-0 left-0 right-0 bg-surface"
+        style={{ height: insets.top }}
+      />
 
       {/* Full-screen story viewer */}
       <Modal

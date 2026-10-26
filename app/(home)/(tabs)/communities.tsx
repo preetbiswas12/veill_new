@@ -7,6 +7,7 @@ import Avatar from '@/components/Avatar';
 import Screen from '@/components/Screen';
 import { useCometChat } from '@/hooks/useCometChat';
 import { useTheme } from '@/hooks/useTheme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
  * Communities, rebuilt from the Figma frame "Communities" (188:3102): a 33.33pt
@@ -17,6 +18,7 @@ import { useTheme } from '@/hooks/useTheme';
  */
 const CommunitiesScreen = () => {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { groups, loadingGroups, refreshGroups } = useCometChat();
 
@@ -26,7 +28,12 @@ const CommunitiesScreen = () => {
 
   return (
     <Screen viewClassName="bg-surface" edges={['left', 'right', 'bottom']}>
-      <View className="px-4 pt-2 pb-3 flex-row items-center justify-between">
+      {/* The Screen excludes the top edge, so the title row owns the status-bar
+          inset; without it the 34pt title collides with the notch. */}
+      <View
+        className="px-4 pb-3 flex-row items-center justify-between"
+        style={{ paddingTop: insets.top + 4 }}
+      >
         <Text className="text-display font-bold text-text-strong">Communities</Text>
         <Pressable
           onPress={() => router.push('/new-group')}

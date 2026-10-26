@@ -31,14 +31,14 @@ const WelcomeScreen = () => {
       />
       <View className="flex items-center gap-4">
         <View className="flex w-full items-center">
-          <Text className="text-center text-[28.5px] font-semibold">
+          <Text className="text-center text-[28.5px] font-semibold text-text-strong">
             Take privacy with you.
           </Text>
-          <Text className="w-[210px] text-center text-[28.5px] font-semibold">
+          <Text className="w-[210px] text-center text-[28.5px] font-semibold text-text-strong">
             Be yourself in every message.
           </Text>
         </View>
-        <Text className="text-base text-text-muted">Terms & Privacy Policy</Text>
+        <Text className="text-body-1 text-text-muted">Terms & Privacy Policy</Text>
       </View>
       <Button onPress={() => router.navigate('/sign-in')}>Continue</Button>
     </Screen>

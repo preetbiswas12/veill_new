@@ -26,7 +26,7 @@ const MessageListHeader = ({ channel, isDMChannel = true }: MessageListHeaderPro
         fontSize={32}
         placeholderType={isDMChannel ? 'text' : 'icon'}
       />
-      <Text className="text-lg font-semibold text-gray-800" numberOfLines={1}>
+      <Text className="text-body-1 font-semibold text-text-strong" numberOfLines={1}>
         {channelName}
       </Text>
       <View className="items-center gap-1.5 mt-1">

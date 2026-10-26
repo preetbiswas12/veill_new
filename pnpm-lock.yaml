@@ -41,6 +41,9 @@ importers:
       '@react-navigation/native':
         specifier: ^7.1.6
         version: 7.3.18(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.87.1(@babel/core@7.29.7)(bufferutil@4.1.0))(@types/react@19.2.18)(bufferutil@4.1.0)(react@19.2.3))(react@19.2.3)
+      aes-js:
+        specifier: ^3.1.2
+        version: 3.1.2
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -128,6 +131,9 @@ importers:
       jotai:
         specifier: ^2.10.0
         version: 2.20.3(@babel/core@7.29.7)(@babel/template@7.29.7)(@types/react@19.2.18)(react@19.2.3)
+      js-sha256:
+        specifier: ^0.11.0
+        version: 0.11.1
       nativewind:
         specifier: ^4.1.23
         version: 4.2.6(eb8bdd58139390c9f2f15f7abb0d4161)
@@ -2039,6 +2045,9 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
+  aes-js@3.1.2:
+    resolution: {integrity: sha512-e5pEa2kBnBOgR4Y/p20pskXI74UEz7de8ZGVo58asOtvSVG5YAbJeELPZxOmt+Bnz3rX753YKhfIn4X4l1PPRQ==}
+
   agent-base@7.1.4:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
     engines: {node: '>= 14'}
@@ -3623,6 +3632,9 @@ packages:
 
   js-md5@0.7.3:
     resolution: {integrity: sha512-ZC41vPSTLKGwIRjqDh8DfXoCrdQIyBgspJVPXHBGu4nZlAEvG3nf+jO9avM9RmLiGakg7vz974ms99nEV0tmTQ==}
+
+  js-sha256@0.11.1:
+    resolution: {integrity: sha512-o6WSo/LUvY2uC4j7mO50a2ms7E/EAdbP0swigLV+nzHKTTaYnaLIWJ02VdXrsJX0vGedDESQnLsOekr94ryfjg==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -7687,6 +7699,8 @@ snapshots:
 
   acorn@8.18.0: {}
 
+  aes-js@3.1.2: {}
+
   agent-base@7.1.4: {}
 
   agent-cli-detector@0.1.7: {}
@@ -9580,6 +9594,8 @@ snapshots:
   jquery@3.6.1: {}
 
   js-md5@0.7.3: {}
+
+  js-sha256@0.11.1: {}
 
   js-tokens@4.0.0: {}
 

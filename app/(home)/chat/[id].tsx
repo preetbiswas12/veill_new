@@ -392,8 +392,8 @@ const ChatScreen = () => {
       </View>
 
       {error ? (
-        <View className="bg-red-50 px-4 py-2">
-          <Text className="text-xs text-red-600">{error}</Text>
+        <View className="bg-surface-muted px-4 py-2 border-b-hair border-separator">
+          <Text className="text-caption text-text-error">{error}</Text>
         </View>
       ) : null}
 
@@ -492,7 +492,11 @@ const ChatScreen = () => {
           isStarred(String(selected?.message?.getId?.() ?? selected?.message?.id ?? ''))
         }
         onStar={onStarSelected}
-        onForward={onForwardSelected}
+        // Forwarding rides on the message having text to carry; secured-media
+        // carriers have none, so the row stays hidden rather than dead.
+        onForward={
+          selected && getMessageBody(selected.message) ? onForwardSelected : undefined
+        }
       />
       {/* A quiet confirmation, so actions with no other visible outcome - starring
           in particular - do not read as broken. */}

@@ -12,8 +12,10 @@ import {
 } from '@/hooks/useCometChat';
 
 import MessageAvatar from './MessageAvatar';
+import SecureMediaBubble from './SecureMediaBubble';
 import VideoAttachment from './VideoAttachment';
 import { useTheme } from '@/hooks/useTheme';
+import { isSecuredCarrier, SECURE_CHUNK } from '@/lib/secure-media';
 
 interface MessageBubbleProps {
   message: any;
@@ -74,6 +76,77 @@ const MessageBubble = ({
           {label}
           {timestamp ? ` · ${formatTime(timestamp)}` : ''}
         </Text>
+      </View>
+    );
+  }
+
+  // Secured-media carriers. The chunks render nothing of their own — each one
+  // is ciphertext on the wire — and the announce is the single bubble that
+  // carries the transfer's frame: padding, timestamp, reactions, and the
+  // payload or its streaming progress.
+  if (isSecuredCarrier(message)) {
+    if (kind === SECURE_CHUNK) return null;
+
+    // Receipt handling mirrors the text bubble below: a clock while the send
+    // is still in flight, then single or double ticks. The reads happen here
+    // rather than further down because the transfer branch returns first.
+    const carrierStatus =
+      typeof message?.getStatus === 'function' ? message.getStatus() : undefined;
+    const carrierRead = carrierStatus === 'read';
+
+    return (
+      <View
+        className={clsx(
+          'flex-row items-end gap-2 px-4',
+          isGroupEnd ? 'mb-3' : 'mb-1',
+          isOwn && 'justify-end'
+        )}
+      >
+        {!isOwn ? (
+          <View style={{ width: 28, height: isGroupEnd ? 28 : 0 }}>
+            {showAvatar && isGroupEnd ? <MessageAvatar message={{ from: senderName }} /> : null}
+          </View>
+        ) : null}
+
+        <View className="items-start max-w-[73%]" style={isOwn ? { alignItems: 'flex-end' } : undefined}>
+          {!isOwn && showAvatar && senderName && isGroupStart ? (
+            <Text className="text-body-3 font-semibold text-product-deep mb-0.5 ml-3">
+              {senderName}
+            </Text>
+          ) : null}
+
+          <Pressable
+            onLongPress={onLongPress}
+            delayLongPress={300}
+            className={clsx(
+              'rounded-[12px] border-bubble p-1',
+              isOwn ? 'bg-bubble-out border-bubble-shadow' : 'bg-bubble-in border-bubble-shadow'
+            )}
+          >
+            <SecureMediaBubble message={message} isOwn={isOwn} />
+
+            {/* Time and ticks ride the trailing edge inside the bubble, as
+                everywhere else in the thread. */}
+            <View className="flex-row items-center justify-end gap-1 mt-0.5 -mb-0.5">
+              <Text className="text-caption text-text-faint">{formatTime(timestamp)}</Text>
+              {isOwn ? (
+                carrierStatus === 'sending' ? (
+                  <Ionicons name="time-outline" size={12} color={colors['text-muted']} />
+                ) : (
+                  <Ionicons
+                    name={carrierRead ? 'checkmark-done' : 'checkmark'}
+                    size={15}
+                    color={carrierRead ? colors['tick-read'] : colors['text-muted']}
+                  />
+                )
+              ) : null}
+            </View>
+          </Pressable>
+
+          {receiptLabel && isOwn && isGroupEnd ? (
+            <Text className="text-caption text-text-faint mt-0.5 mr-1">{receiptLabel}</Text>
+          ) : null}
+        </View>
       </View>
     );
   }

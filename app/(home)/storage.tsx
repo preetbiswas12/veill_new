@@ -6,6 +6,7 @@ import Screen from '@/components/Screen';
 import { HeaderButton } from '@/components/ScreenHeader';
 import { useCometChat } from '@/hooks/useCometChat';
 import { useTheme } from '@/hooks/useTheme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
  * Storage and data.
@@ -18,6 +19,7 @@ import { useTheme } from '@/hooks/useTheme';
  */
 const StorageScreen = () => {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { conversations, groups, messagesByConversation } = useCometChat();
 
@@ -40,6 +42,7 @@ const StorageScreen = () => {
     <Screen edges={['left', 'right', 'bottom']}>
       <View
         style={{
+          paddingTop: insets.top,
           borderBottomWidth: 0.5,
           borderBottomColor: colors['separator'],
           backgroundColor: colors['panel-blur'],

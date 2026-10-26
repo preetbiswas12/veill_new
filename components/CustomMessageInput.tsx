@@ -44,7 +44,7 @@ const CustomMessageInput = ({
 }: CustomMessageInputProps) => {
   const { colors } = useTheme();
   const router = useRouter();
-  const { sendTextMessage, sendMediaMessage, sendTyping } = useCometChat();
+  const { sendTextMessage, sendSecureMedia, sendTyping } = useCometChat();
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -145,7 +145,10 @@ const CustomMessageInput = ({
           mimeType: asset.mimeType ?? undefined,
           size: asset.fileSize ?? undefined,
         };
-        await sendMediaMessage(conversationId, media, chatType);
+        // Everything the composer sends travels the private pipeline. While a
+        // long video streams the composer stays locked, which is the honest
+        // reading of it: the send is literally still in progress.
+        await sendSecureMedia(conversationId, media, chatType);
         return;
       }
 
@@ -163,7 +166,7 @@ const CustomMessageInput = ({
         mimeType: asset.mimeType ?? undefined,
         size: asset.size ?? undefined,
       };
-      await sendMediaMessage(conversationId, media, chatType);
+      await sendSecureMedia(conversationId, media, chatType);
     } catch (caught) {
       Alert.alert(
         'Could not send',
@@ -176,10 +179,11 @@ const CustomMessageInput = ({
 
   // A capture from the in-app camera arrives in this one-slot store, since the
   // camera is a modal route and cannot hand params back through router.back().
+  // Captures take the private pipeline like everything else.
   useEffect(() => {
     const capture = takePendingCapture();
     if (!capture || !conversationId || sending || disabled) return;
-    void sendMediaMessage(
+    void sendSecureMedia(
       conversationId,
       {
         uri: capture.uri,
@@ -190,7 +194,7 @@ const CustomMessageInput = ({
       },
       chatType
     );
-  }, [conversationId, chatType, sendMediaMessage, sending, disabled]);
+  }, [conversationId, chatType, sendSecureMedia, sending, disabled]);
 
   const promptAttachment = () => {
     if (!conversationId || sending || disabled) return;

@@ -15,16 +15,16 @@ const TextField = ({
   return (
     <View
       style={{ width }}
-      className="relative px-4 flex-row bg-surface items-center justify-between rounded-xl py-3 android:py-0 border border-white"
+      className="relative px-4 flex-row bg-surface-input items-center justify-between rounded-xl min-h-[44px] py-3 android:py-0 border border-input-border"
     >
       {label && (
         <View>
-          <Text className="w-[108px] font-medium">{label}</Text>
+          <Text className="w-[108px] font-medium text-text-strong">{label}</Text>
         </View>
       )}
       <TextInput
         className={clsx(
-          'flex-1 placeholder:text-gray-400 text-black',
+          'flex-1 placeholder:text-text-muted text-text-strong',
           className
         )}
         {...otherProps}

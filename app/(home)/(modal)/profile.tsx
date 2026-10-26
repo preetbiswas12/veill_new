@@ -57,7 +57,7 @@ const ProfileScreen = () => {
             setProfileImage(asset ?? { ...profileImage, uri: '' })
           }
         />
-        <Text className="text-sm text-gray-400">
+        <Text className="text-body-2 text-text-muted">
           {user?.id ? `CometChat UID: ${user.id}` : ''}
         </Text>
       </View>

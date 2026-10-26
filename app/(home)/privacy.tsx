@@ -8,6 +8,7 @@ import { HeaderButton } from '@/components/ScreenHeader';
 import { useCometChat } from '@/hooks/useCometChat';
 import { useFavourites } from '@/hooks/useFavourites';
 import { useTheme } from '@/hooks/useTheme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
  * Privacy.
@@ -20,6 +21,7 @@ import { useTheme } from '@/hooks/useTheme';
  */
 const PrivacyScreen = () => {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { blockedIds, toggleBlockUser, isBlocked } = useCometChat();
   const { ids: favouriteIds } = useFavourites();
@@ -28,6 +30,7 @@ const PrivacyScreen = () => {
     <Screen edges={['left', 'right', 'bottom']}>
       <View
         style={{
+          paddingTop: insets.top,
           borderBottomWidth: 0.5,
           borderBottomColor: colors['separator'],
           backgroundColor: colors['panel-blur'],

@@ -5,6 +5,7 @@ import Screen from '@/components/Screen';
 import { HeaderButton } from '@/components/ScreenHeader';
 import { useStarredMessages } from '@/hooks/useStarredMessages';
 import { useTheme } from '@/hooks/useTheme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
  * Starred messages.
@@ -16,6 +17,7 @@ import { useTheme } from '@/hooks/useTheme';
  */
 const StarredScreen = () => {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { entries, ready, remove } = useStarredMessages();
 
@@ -35,6 +37,7 @@ const StarredScreen = () => {
     <Screen edges={['left', 'right', 'bottom']}>
       <View
         style={{
+          paddingTop: insets.top,
           borderBottomWidth: 0.5,
           borderBottomColor: colors['separator'],
           backgroundColor: colors['panel-blur'],

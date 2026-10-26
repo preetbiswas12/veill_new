@@ -21,6 +21,7 @@ import { HeaderButton } from '@/components/ScreenHeader';
 import { useFavourites } from '@/hooks/useFavourites';
 import { getMessageText, useCometChat } from '@/hooks/useCometChat';
 import { useTheme } from '@/hooks/useTheme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ConversationItem {
   id: string;
@@ -76,6 +77,7 @@ const FilterChip = ({
 
 const ChatsScreen = () => {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const {
     conversations,
     loadingConversations,
@@ -218,13 +220,16 @@ const ChatsScreen = () => {
   const titleBlock = (
     <>
       {/* The design's large title carries the action controls on its own row:
-          "Edit" on the leading edge, camera and compose on the trailing one. */}
+          "Edit" on the leading edge, camera and compose on the trailing one.
+          The Screen excludes the top edge, so this block owns the status-bar
+          inset; without it the 34pt title collides with the notch. */}
       <View
         style={{
           borderBottomWidth: 0,
           backgroundColor: colors['panel-blur'],
+          paddingTop: insets.top + 4,
         }}
-        className="px-4 pt-1"
+        className="px-4 pb-1"
       >
         <View className="flex-row items-center justify-between">
           <Text className="flex-1 min-w-0 text-display font-bold text-text-strong">Chats</Text>
