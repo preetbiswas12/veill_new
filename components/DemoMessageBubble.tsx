@@ -160,7 +160,9 @@ const DemoMessageBubble = ({
             onPress={() =>
               setNote(`"${demo.text}" is demo content — no file is behind it.`)
             }
-            className="flex-row items-center gap-2 py-1"
+            // Same 224pt frame as the media bubbles: 204pt content inside the
+            // 20pt of px-2.5 bubble padding.
+            className="w-[204px] flex-row items-center gap-2 py-1"
           >
             <Ionicons name="document-text-outline" size={22} color={colors['text-strong']} />
             <View className="flex-1 min-w-0">

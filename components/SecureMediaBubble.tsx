@@ -32,7 +32,12 @@ const SecureMediaBubble = ({ message, isOwn }: { message: any; isOwn: boolean })
           onPress={() => void Linking.openURL(uri)}
           accessibilityRole="button"
           accessibilityLabel={`Open decrypted file ${meta?.name || 'file'}`}
-          className="flex-1 min-w-0 flex-row items-center gap-2 py-1"
+          // A document frame needs a definite width: `flex-1` inside the
+          // auto-width bubble measures as a zero flex basis and collapses the
+          // row (files looked narrow next to photos). Media bubbles total
+          // 224pt (216 frame + 4pt padding each side); documents match that
+          // with 216pt of content inside the same p-1 bubble.
+          className="w-[216px] flex-row items-center gap-2 py-1"
         >
           <Ionicons name="document-text-outline" size={22} color={colors['text-strong']} />
           <View className="flex-1 min-w-0">

@@ -226,7 +226,10 @@ const MessageBubble = ({
     return (
       <Pressable
         onPress={() => void Linking.openURL(attachment.url)}
-        className="flex-row items-center gap-2 py-1"
+        // Definite width, same reasoning as the secured file bubble: flex-1
+        // inside an auto-width bubble collapses. 209pt content inside this
+        // bubble's 15pt of padding lands on the same 224pt frame as media.
+        className="w-[209px] flex-row items-center gap-2 py-1"
         accessibilityLabel="Open attachment"
       >
         <Ionicons name="document-text-outline" size={22} color={colors['text-strong']} />
