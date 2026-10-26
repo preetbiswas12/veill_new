@@ -21,6 +21,22 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const colorsSource = readFileSync(join(root, 'lib', 'colors.ts'), 'utf8');
 const css = readFileSync(join(root, 'global.css'), 'utf8');
 
+// PowerShell text redirects and Set-Content silently add a UTF-8 BOM on
+// Windows. A leading BOM derails the lexer inside react-native-css-interop
+// (lightningcss): every Metro/bundle start fails with a cryptic
+// `Unexpected token Delim('*')` that blames the universal selector. That
+// selector is valid — only the invisible leading BOM is the problem. Check
+// the raw bytes, because nothing in the decoded string shows the BOM.
+if (readFileSync(join(root, 'global.css')).subarray(0, 3).toString('hex') === 'efbbbf') {
+  console.error(
+    'global.css starts with a UTF-8 BOM. Strip it before continuing:\n' +
+      '  node -e "const fs=require(\'fs\');const b=fs.readFileSync(\'global.css\');fs.writeFileSync(\'global.css\',b.subarray(3));"\n' +
+      'BOMs come from PowerShell `>` / Set-Content writes; edit css with node or an editor saving UTF-8 without BOM.'
+  );
+  process.exit(1);
+}
+
+
 const toRgb = (hex) => {
   const h = hex.replace('#', '');
   const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
