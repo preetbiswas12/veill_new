@@ -41,7 +41,7 @@ const ActionTile = ({
     onPress={onPress}
     accessibilityRole="button"
     accessibilityLabel={label}
-    className="flex-1 min-w-0 h-[73px] items-center gap-[5px] px-2 py-[14.5px] rounded-[10px] bg-surface-muted active:opacity-70"
+    className="flex-1 min-w-0 h-[73px] items-center gap-[5px] px-2 py-[14.5px] rounded-search bg-surface-muted active:opacity-70"
   >
     <Ionicons name={icon} size={24} color={colors['product']} />
     <Text className="text-body-2 text-text-strong" numberOfLines={1}>
@@ -226,7 +226,7 @@ const ContactInfoScreen = () => {
             accessibilityRole="button"
             accessibilityLabel="Back"
             hitSlop={10}
-            className="pr-1 active:opacity-60"
+            className="pr-1 active:opacity-70"
           >
             <Ionicons name="chevron-back" size={32} color={colors['text-strong']} />
           </Pressable>
@@ -266,7 +266,7 @@ const ContactInfoScreen = () => {
         </View>
 
         <View className="gap-[18px] px-4 mt-[18px]">
-          <View className="rounded-[10px] overflow-hidden">
+          <View className="rounded-search overflow-hidden">
             <Row
               icon="notifications-outline"
               label="Mute notifications"
@@ -289,7 +289,7 @@ const ContactInfoScreen = () => {
             )}
           </View>
 
-          <View className="rounded-[10px] overflow-hidden">
+          <View className="rounded-search overflow-hidden">
             <Row
               icon="shield-checkmark-outline"
               label="Encryption"
@@ -313,7 +313,7 @@ const ContactInfoScreen = () => {
 
         <SectionTitle>No groups in common</SectionTitle>
         <View className="px-4">
-          <View className="rounded-[10px] overflow-hidden">
+          <View className="rounded-search overflow-hidden">
             <Pressable
               onPress={() => router.push('/new-group')}
               accessibilityRole="button"
@@ -355,7 +355,7 @@ const ContactInfoScreen = () => {
         </View>
 
         <View className="gap-[18px] px-4 mt-[18px]">
-          <View className="rounded-[10px] overflow-hidden">
+          <View className="rounded-search overflow-hidden">
             <Row
               icon="share-outline"
               label="Share contact"

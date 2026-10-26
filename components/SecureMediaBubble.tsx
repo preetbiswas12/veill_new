@@ -47,7 +47,7 @@ const SecureMediaBubble = ({ message, isOwn }: { message: any; isOwn: boolean })
 
     if (kind === 'video') {
       return (
-        <View className="rounded-[12px] overflow-hidden">
+        <View className="rounded-bubble overflow-hidden">
           <VideoAttachment uri={uri} style={{ width: 216, height: 236 }} />
           <View className="absolute right-1 top-1 flex-row items-center gap-1 rounded-full bg-black/40 px-2 py-0.5">
             <Ionicons name="lock-closed" size={10} color="#ffffff" />
@@ -58,7 +58,7 @@ const SecureMediaBubble = ({ message, isOwn }: { message: any; isOwn: boolean })
     }
 
     return (
-      <View className="rounded-[12px] overflow-hidden">
+      <View className="rounded-bubble overflow-hidden">
         <Image
           source={{ uri }}
           style={{ width: 216, height: 236 }}
@@ -78,7 +78,7 @@ const SecureMediaBubble = ({ message, isOwn }: { message: any; isOwn: boolean })
 
   return (
     <View
-      className="w-52 rounded-[12px] border-bubble bg-cta-options p-3"
+      className="w-52 rounded-bubble border-bubble bg-cta-options p-3"
       accessibilityLabel={`Encrypted ${label} transfer`}
     >
       <View className="flex-row items-center gap-2">

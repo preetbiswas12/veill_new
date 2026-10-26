@@ -39,7 +39,7 @@ const CommunitiesScreen = () => {
           onPress={() => router.push('/new-group')}
           accessibilityRole="button"
           accessibilityLabel="New community"
-          className="h-7 w-7 rounded-full bg-surface-cta items-center justify-center active:opacity-60"
+          className="h-7 w-7 rounded-full bg-surface-cta items-center justify-center active:opacity-70"
         >
           <Ionicons name="add" size={20} color={colors['text-strong']} />
         </Pressable>
@@ -85,7 +85,7 @@ const CommunitiesScreen = () => {
                 onPress={() => router.push('/new-group')}
                 accessibilityRole="button"
                 accessibilityLabel="New Community"
-                className="flex-row items-center justify-center gap-1.5 px-6 py-2.5 rounded-[14px] bg-primary active:opacity-80"
+                className="flex-row items-center justify-center gap-1.5 px-6 py-2.5 rounded-card bg-primary active:opacity-80"
               >
                 <Ionicons name="add" size={24} color={colors['text-invert']} />
                 <Text className="text-body-1 text-white">New Community</Text>

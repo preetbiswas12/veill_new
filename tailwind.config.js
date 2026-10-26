@@ -89,10 +89,11 @@ module.exports = {
       },
       borderRadius: {
         search: '10px',
-        chip: '16px', // chips are full pills; covers partial-radius cases
-        card: '14px', // cards and sheets
+        chip: '16px', // pills and large soft corners
+        card: '14px', // cards, sheets, primary buttons
         avatar: '28px', // 56pt avatar
         bubble: '12px',
+        thumb: '8px', // swatches, thumbnails, tiny partial corners
       },
       spacing: {
         row: '76px', // conversation row: 56pt avatar over two text lines

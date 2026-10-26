@@ -17,7 +17,7 @@ const AttachButton = ({ disabled = false, onPress }: AttachButtonProps) => {
       accessibilityRole="button"
       accessibilityLabel="Attach"
       hitSlop={6}
-      className="active:opacity-60"
+      className="active:opacity-70"
     >
       <Ionicons
         name="add"

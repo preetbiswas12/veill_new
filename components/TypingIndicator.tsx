@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Animated, Easing, View } from 'react-native';
 
+import { useTheme } from '@/hooks/useTheme';
+
 /** Bouncing "…" bubble shown while a peer is composing a message. */
 const TypingIndicator = () => {
+  const { colors } = useTheme();
   const [dots] = useState(() => [
     new Animated.Value(0),
     new Animated.Value(0),
@@ -37,7 +40,7 @@ const TypingIndicator = () => {
 
   return (
     <View className="flex-row px-4 mb-1">
-      <View className="flex-row items-center gap-1.5 px-4 py-3.5 rounded-2xl rounded-bl-md bg-surface border border-gray-100">
+      <View className="flex-row items-center gap-1.5 px-4 py-3.5 rounded-chip rounded-bl-thumb bg-bubble-in">
         {dots.map((dot, index) => (
           <Animated.View
             key={index}
@@ -46,8 +49,9 @@ const TypingIndicator = () => {
               transform: [
                 { translateY: dot.interpolate({ inputRange: [0, 1], outputRange: [0, -4] }) },
               ],
+              backgroundColor: colors['text-muted'],
             }}
-            className="w-1.5 h-1.5 rounded-full bg-gray-400"
+            className="w-1.5 h-1.5 rounded-full"
           />
         ))}
       </View>

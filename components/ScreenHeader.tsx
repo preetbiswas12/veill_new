@@ -98,7 +98,7 @@ export function HeaderButton({
       accessibilityLabel={label}
       hitSlop={8}
       style={{ height: size, width: size }}
-      className={`rounded-full items-center justify-center active:opacity-60 ${
+      className={`rounded-full items-center justify-center active:opacity-70 ${
         solid ? 'bg-primary' : 'bg-surface-cta'
       }`}
     >

@@ -94,7 +94,7 @@ const NotificationsScreen = () => {
             accessibilityRole="button"
             accessibilityLabel="Back"
             hitSlop={10}
-            className="pr-1 active:opacity-60"
+            className="pr-1 active:opacity-70"
           >
             <Ionicons name="chevron-back" size={32} color={colors['text-strong']} />
           </Pressable>
@@ -104,7 +104,7 @@ const NotificationsScreen = () => {
 
       <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
         {!pushReady ? (
-          <View className="mx-4 mt-4 rounded-[10px] bg-surface-muted p-4 gap-1">
+          <View className="mx-4 mt-4 rounded-search bg-surface-muted p-4 gap-1">
             <Text className="text-body-1 font-semibold text-text-strong">
               Push is not active on this build
             </Text>
@@ -115,7 +115,7 @@ const NotificationsScreen = () => {
           </View>
         ) : null}
 
-        <View className="mt-[18px] mx-4 rounded-[10px] overflow-hidden">
+        <View className="mt-[18px] mx-4 rounded-search overflow-hidden">
           <ToggleRow
             icon="notifications-outline"
             label="Push notifications"
@@ -144,14 +144,14 @@ const NotificationsScreen = () => {
         </Text>
 
         {conversations.length === 0 ? (
-          <View className="mx-4 rounded-[10px] px-4 py-6 items-center gap-2">
+          <View className="mx-4 rounded-search px-4 py-6 items-center gap-2">
             <Ionicons name="chatbubbles-outline" size={32} color={colors['text-muted']} />
             <Text className="text-body-2 text-text-muted text-center">
               No conversations to mute yet.
             </Text>
           </View>
         ) : (
-          <View className="mx-4 rounded-[10px] overflow-hidden">
+          <View className="mx-4 rounded-search overflow-hidden">
             {conversations.map((conversation, index) => (
               <ToggleRow
                 key={conversation.id}

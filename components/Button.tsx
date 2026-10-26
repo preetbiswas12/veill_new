@@ -30,7 +30,7 @@ const Button = ({
     <TouchableOpacity
       className={clsx(
         variant === 'default' &&
-          'bg-product rounded-[13px] justify-center items-center px-4 py-4 w-full',
+          'bg-product rounded-card justify-center items-center px-4 py-4 w-full',
         variant === 'text' && 'bg-transparent justify-center items-center',
         otherProps.disabled && 'opacity-50',
         variant !== 'text' && className

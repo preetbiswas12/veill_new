@@ -88,7 +88,7 @@ const StorageScreen = () => {
             <View key={item.label} className="flex-row items-center gap-2">
               <View
                 style={{ backgroundColor: item.color }}
-                className="w-3 h-3 rounded-sm"
+                className="w-3 h-3 rounded-full"
               />
               <Text className="flex-1 text-body-2 text-text-strong">{item.label}</Text>
               <Text className="text-body-2 text-text-muted">{item.value}</Text>

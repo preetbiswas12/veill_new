@@ -85,7 +85,7 @@ const StarredScreen = () => {
                   <Text
                     onPress={() => void remove(entry.id)}
                     accessibilityRole="button"
-                    className="text-body-2 text-link active:opacity-60"
+                    className="text-body-2 text-link active:opacity-70"
                   >
                     Remove
                   </Text>

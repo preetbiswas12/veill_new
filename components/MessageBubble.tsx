@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import clsx from 'clsx';
 import { Image } from 'expo-image';
-import { Linking, Pressable, Text, View } from 'react-native';
+import { Animated, Linking, Pressable, Text, View } from 'react-native';
+import { useEffect, useRef } from 'react';
 
 import {
   getMessageAttachment,
@@ -41,6 +42,46 @@ const formatTime = (timestamp: number) => {
     hour: '2-digit',
     minute: '2-digit',
   });
+};
+
+/**
+ * Gentle entrance for messages that arrive after the thread has loaded.
+ *
+ * The wrapper exists outside MessageBubble so the caller decides which rows are
+ * genuinely new (see the thread screen's seen-set) — bubbles re-mounted by
+ * FlatList recycling during scroll-back do NOT re-animate; only a delivery the
+ * user just watched arrive gets the 190ms fade-and-rise.
+ */
+export const BubbleEntrance = ({
+  appear,
+  children,
+}: {
+  appear: boolean;
+  children: React.ReactNode;
+}) => {
+  const value = useRef(new Animated.Value(appear ? 0 : 1)).current;
+  const playedRef = useRef(false);
+
+  useEffect(() => {
+    if (!appear || playedRef.current) return;
+    playedRef.current = true;
+    Animated.timing(value, { toValue: 1, duration: 190, useNativeDriver: true }).start();
+  }, [appear, value]);
+
+  if (!appear) return <>{children}</>;
+
+  return (
+    <Animated.View
+      style={{
+        opacity: value,
+        transform: [
+          { translateY: value.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) },
+        ],
+      }}
+    >
+      {children}
+    </Animated.View>
+  );
 };
 
 /**
@@ -119,7 +160,7 @@ const MessageBubble = ({
             onLongPress={onLongPress}
             delayLongPress={300}
             className={clsx(
-              'rounded-[12px] border-bubble p-1',
+              'rounded-bubble border-bubble p-1',
               isOwn ? 'bg-bubble-out border-bubble-shadow' : 'bg-bubble-in border-bubble-shadow'
             )}
           >
@@ -165,7 +206,7 @@ const MessageBubble = ({
     if (!attachment?.url) return null;
     if (kind === 'image') {
       return (
-        <View className="rounded-[12px] overflow-hidden">
+        <View className="rounded-bubble overflow-hidden">
           <Image
             source={{ uri: attachment.url }}
             style={MEDIA_SIZE}
@@ -177,7 +218,7 @@ const MessageBubble = ({
     }
     if (kind === 'video') {
       return (
-        <View className="rounded-[12px] overflow-hidden">
+        <View className="rounded-bubble overflow-hidden">
           <VideoAttachment uri={attachment.url} style={MEDIA_SIZE} />
         </View>
       );
@@ -226,7 +267,7 @@ const MessageBubble = ({
           onLongPress={onLongPress}
           delayLongPress={300}
           className={clsx(
-            'rounded-[12px] border-bubble',
+            'rounded-bubble border-bubble',
             isOwn ? 'bg-bubble-out border-bubble-shadow' : 'bg-bubble-in border-bubble-shadow',
             hasInlineMedia ? 'p-1' : 'pt-[13px] pl-[7px] pr-[8px] pb-[3px]'
           )}

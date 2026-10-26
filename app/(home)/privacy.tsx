@@ -70,7 +70,7 @@ const PrivacyScreen = () => {
                   <Text
                     onPress={() => void toggleBlockUser(uid)}
                     accessibilityRole="button"
-                    className="text-body-2 text-link active:opacity-60"
+                    className="text-body-2 text-link active:opacity-70"
                   >
                     Unblock
                   </Text>

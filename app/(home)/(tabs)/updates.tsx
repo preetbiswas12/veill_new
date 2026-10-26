@@ -157,7 +157,7 @@ const StoriesScreen = () => {
               accessibilityRole="button"
               accessibilityLabel="Camera status"
               hitSlop={8}
-              className="active:opacity-60"
+              className="active:opacity-70"
             >
               <Ionicons name="camera-outline" size={24} color={colors['teal']} />
             </Pressable>
@@ -166,7 +166,7 @@ const StoriesScreen = () => {
               accessibilityRole="button"
               accessibilityLabel="Text status"
               hitSlop={8}
-              className="active:opacity-60"
+              className="active:opacity-70"
             >
               <Ionicons name="create-outline" size={24} color={colors['teal']} />
             </Pressable>

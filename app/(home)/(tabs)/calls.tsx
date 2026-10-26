@@ -80,7 +80,7 @@ const CallsScreen = () => {
             accessibilityRole="button"
             accessibilityLabel="Start a call"
             hitSlop={8}
-            className="active:opacity-60"
+            className="active:opacity-70"
           >
             <Ionicons name="add" size={26} color={colors['teal']} />
           </Pressable>
@@ -119,7 +119,7 @@ const CallsScreen = () => {
             onPress={() => router.push('/find-by-username')}
             accessibilityRole="button"
             accessibilityLabel="Add favourite"
-            className="flex-row items-center gap-4 px-4 rounded-[10px] active:opacity-70"
+            className="flex-row items-center gap-4 px-4 rounded-search active:opacity-70"
           >
             <View className="h-10 w-10 rounded-full bg-surface-cta items-center justify-center">
               <Ionicons name="add" size={24} color={colors['text-strong']} />

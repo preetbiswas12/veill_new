@@ -21,7 +21,7 @@ import CustomMessageInput from '@/components/CustomMessageInput';
 import DateDivider, { getDateKey } from '@/components/DateDivider';
 import MessageActions from '@/components/MessageActions';
 import ChatWallpaper from '@/components/ChatWallpaper';
-import MessageBubble from '@/components/MessageBubble';
+import MessageBubble, { BubbleEntrance } from '@/components/MessageBubble';
 import ToastHost from '@/components/ToastHost';
 import MessageListHeader from '@/components/MessageListHeader';
 import Screen from '@/components/Screen';
@@ -297,8 +297,29 @@ const ChatScreen = () => {
     ]);
   }, [selected, conversationId, deleteMessage]);
 
+  // First-render rows mount without any entrance; only messages that arrive
+  // after the thread is already on screen play the fade-and-rise. The priming
+  // scan runs during render rather than an effect so that the initial history
+  // batch — which lands in the very first non-empty payload — is marked seen
+  // before its rows can render.
+  const seenRowsRef = useRef<Set<string>>(new Set());
+  const rowsPrimedRef = useRef(false);
+  if (items.length > 0 && !rowsPrimedRef.current) {
+    rowsPrimedRef.current = true;
+    for (const row of items) seenRowsRef.current.add(row.key);
+  }
+
   const renderItem = ({ item }: { item: ThreadItem }) => {
-    if (item.kind === 'divider') return <DateDivider timestamp={item.timestamp} />;
+    const rowIsNew = !seenRowsRef.current.has(item.key);
+    if (rowIsNew) seenRowsRef.current.add(item.key);
+
+    if (item.kind === 'divider') {
+      return (
+        <BubbleEntrance appear={rowIsNew}>
+          <DateDivider timestamp={item.timestamp} />
+        </BubbleEntrance>
+      );
+    }
 
     const messageId = item.message?.getId?.();
     const receiptLabel =
@@ -307,23 +328,25 @@ const ChatScreen = () => {
         : undefined;
 
     return (
-      <MessageBubble
-        message={item.message}
-        isOwn={item.isOwn}
-        isGroupStart={item.isGroupStart}
-        isGroupEnd={item.isGroupEnd}
-        showAvatar={item.showAvatar}
-        senderName={item.senderName}
-        receiptLabel={receiptLabel}
-        onLongPress={() => {
-          void Haptics.selectionAsync();
-          setSelected({
-            message: item.message,
-            canCopy: Boolean(getMessageBody(item.message)),
-          });
-        }}
-        onReact={(reaction) => void toggleReaction(conversationId, item.message, reaction)}
-      />
+      <BubbleEntrance appear={rowIsNew}>
+        <MessageBubble
+          message={item.message}
+          isOwn={item.isOwn}
+          isGroupStart={item.isGroupStart}
+          isGroupEnd={item.isGroupEnd}
+          showAvatar={item.showAvatar}
+          senderName={item.senderName}
+          receiptLabel={receiptLabel}
+          onLongPress={() => {
+            void Haptics.selectionAsync();
+            setSelected({
+              message: item.message,
+              canCopy: Boolean(getMessageBody(item.message)),
+            });
+          }}
+          onReact={(reaction) => void toggleReaction(conversationId, item.message, reaction)}
+        />
+      </BubbleEntrance>
     );
   };
 
@@ -400,7 +423,12 @@ const ChatScreen = () => {
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
+        // The offset is the distance from this view's top to the window's top:
+        // this view starts BELOW the contact header, which is itself the
+        // status-bar inset plus the 48pt header row. A fixed 88 was wrong on
+        // every notched device, where the composer visibly hopped when the
+        // keyboard opened.
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 48 : 0}
       >
         <View className="flex-1 bg-chat-bg">
           {/* The design's wallpaper is #EFEAE2 with a doodle pattern at ~6%. */}
@@ -450,7 +478,7 @@ const ChatScreen = () => {
               <Button
                 variant="plain"
                 onPress={jumpToLatest}
-                className="w-11 h-11 rounded-full items-center justify-center bg-surface shadow-lg border border-gray-100"
+                className="w-11 h-11 rounded-full items-center justify-center bg-surface shadow-lg border-hair border-separator"
                 accessibilityLabel="Jump to latest message"
               >
                 <Feather name="chevron-down" size={22} color={colors['text-muted']} />

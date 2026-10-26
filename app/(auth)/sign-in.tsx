@@ -65,7 +65,7 @@ const SignInScreen = () => {
               breathing room, on the app surface colour. */}
           <View style={{ paddingTop: insets.top + 24 }} className="items-center">
             <View
-              className="w-16 h-16 rounded-[16px] items-center justify-center"
+              className="w-16 h-16 rounded-chip items-center justify-center"
               style={{ backgroundColor: colors['product'] }}
             >
               <Ionicons name="chatbubbles" size={34} color={colors['text-invert']} />

@@ -56,7 +56,7 @@ const AppMenu = () => {
         accessibilityRole="button"
         accessibilityLabel="Account menu"
         hitSlop={8}
-        className="active:opacity-60"
+        className="active:opacity-70"
       >
         <Avatar imageUrl={user?.image} size={28} fontSize={12} name={user?.name || ''} />
       </Pressable>
@@ -70,7 +70,7 @@ const AppMenu = () => {
         <Pressable style={StyleSheet.absoluteFill} onPress={() => setMenuVisible(false)}>
           <View
             style={{ top: menuPosition.top, left: menuPosition.left }}
-            className="absolute min-w-[200px] rounded-[10px] bg-surface border-hair border-separator"
+            className="absolute min-w-[200px] rounded-search bg-surface border-hair border-separator"
           >
             <Pressable
               onPress={goToProfile}

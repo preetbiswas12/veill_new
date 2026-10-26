@@ -134,7 +134,7 @@ const ChatsSettingsScreen = () => {
           <View className="flex-row items-center gap-3 pl-4 pr-4 min-h-[44px] py-3 border-b-hair border-separator">
             <Text className="flex-1 text-body-1 text-text-strong">Chat wallpaper</Text>
             {/* A live swatch of the token the thread renders. */}
-            <View className="h-8 w-12 rounded-md bg-chat-bg border-hair border-separator" />
+            <View className="h-8 w-12 rounded-thumb bg-chat-bg border-hair border-separator" />
             <Text className="text-body-2 text-text-muted">Default</Text>
           </View>
           <ToggleRow
