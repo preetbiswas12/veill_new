@@ -14,8 +14,12 @@ import { useEffect, useState } from 'react';
  * key both ends of the conversation can derive, and pushes the chunks as
  * ordinary custom messages. The receiver buffers them as they land, decrypts
  * each one, verifies the sender's digest, writes the result to this device's
- * cache, and renders it. Nothing about the picture - not even its dimensions -
- * is visible to anything between the two devices.
+ * cache, and renders it.
+ *
+ * One honest detail: the announce (`ve:start`) carries the file's name, mime,
+ * byte count and digest in the clear, stored alongside the message by
+ * CometChat. Only the bytes themselves stay sealed; sealing that metadata too
+ * is the same upgrade that replaces the derived key below.
  *
  * THE KEY
  *
