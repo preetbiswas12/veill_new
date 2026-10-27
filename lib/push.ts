@@ -13,7 +13,8 @@ import { Platform, TurboModule, TurboModuleRegistry } from 'react-native';
  * does not care which one fires. The SDK's job here is to hand over a token,
  * parse what comes back, and route the taps:
  *
- *   CometChatNotifications.registerPushToken(token, platform)  →  token storage
+ *   CometChatNotifications.registerPushToken(token, platform, providerId)
+ *                                                               →  token storage
  *   new CometChat.PushNotification(pushJson)                    →  payload parse
  *   markPushNotificationDelivered / …Clicked                     →  read receipts
  *
@@ -21,6 +22,15 @@ import { Platform, TurboModule, TurboModuleRegistry } from 'react-native';
  * (it needs google-services.json + a rebuild) push is simply unavailable and
  * the rest of the app is unaffected.
  */
+
+/**
+ * Provider ID — must match the Provider ID entered in CometChat Dashboard →
+ * Notifications → Push Providers, on the FCM entry that holds the uploaded
+ * Firebase service-account key. Token registration is namespaced by it: a
+ * token can only be routed through the provider it registered under, so the
+ * dashboard value and this constant have to be the same string.
+ */
+export const FCM_PROVIDER_ID = 'veill-fcm';
 
 type MessagingModule = any;
 
@@ -110,6 +120,22 @@ export const isPushAvailable = (): boolean => getMessaging() !== null;
  */
 export const getFirebaseMessaging = getMessaging;
 
+/**
+ * Peer id of the thread currently on screen, kept by the host hook. Module
+ * state survives into a backgrounded-but-alive process, so both delivery
+ * paths (foreground onMessage and the headless background handler) consult
+ * it: pushes for the thread the user is already reading stay silent. The
+ * Kotlin sample keeps the same value as MyApplication.currentOpenChatId.
+ */
+let openThreadId: string | null = null;
+
+export const setOpenThreadForPush = (peerId: string | null): void => {
+  openThreadId = peerId;
+};
+
+export const isThreadOpenForPush = (peerId: string): boolean =>
+  openThreadId !== null && openThreadId === peerId;
+
 const pushPlatform = () =>
   Platform.OS === 'ios'
     ? CometChatNotifications.PushPlatforms.FCM_REACT_NATIVE_IOS
@@ -126,6 +152,10 @@ export interface ParsedPush {
   senderName: string;
   sessionId: string;
   isVideo: boolean;
+  /** Call push state, when carried: 'initiated' | 'cancelled' | 'unanswered'. */
+  callAction?: string;
+  /** Total unread across conversations, when the extension ships it. */
+  unreadCount?: number;
   /** The extension payload, verbatim, for `new PushNotification(raw)`. */
   raw: Record<string, any>;
 }
@@ -150,68 +180,134 @@ const readPushNotification = (data: Record<string, any>) => {
 };
 
 /**
- * Normalises the several shapes a CometChat extension payload can take into
- * one object. Unknown payloads degrade to a plain message notification rather
- * than being dropped.
+ * Pulls the uid/guid a field carries, whether it shipped as a plain string
+ * (the hosted extension's `sender`/`receiver` data keys) or as a User/Group
+ * object (the embedded `message` JSON).
+ */
+const idOf = (value: any): string => {
+  if (typeof value === 'string') return value.trim();
+  const obj = asObject(value);
+  return String(obj.uid ?? obj.userId ?? obj.guid ?? '');
+};
+
+/** Case-insensitive key lookup - the extension mixes key casings. */
+const pick = (
+  source: Record<string, any> | undefined,
+  ...names: string[]
+): any => {
+  if (!source || typeof source !== 'object') return undefined;
+  const lowered = new Map<string, any>();
+  for (const [key, value] of Object.entries(source)) {
+    lowered.set(key.toLowerCase(), value);
+  }
+  for (const name of names) {
+    const hit = lowered.get(name.toLowerCase());
+    if (hit !== undefined && hit !== null && hit !== '') return hit;
+  }
+  return undefined;
+};
+
+/**
+ * Normalises the several shapes a CometChat push payload can take into one
+ * object: the hosted extension's flat data keys (type chat|call, sender as a
+ * string, title, alert, conversationId, unreadMessageCount, callAction), the
+ * self-hosted /server wrapper keys, and anything else - unknown payloads
+ * degrade to a plain message notification rather than being dropped.
  */
 export const parsePushPayload = (remoteMessage: any): ParsedPush => {
   const data = asObject(remoteMessage?.data);
   const notification = readPushNotification(data);
   const message = asObject(data.message);
-  const sender = asObject(data.sender ?? message.sender ?? notification.sender);
-  const receiver = asObject(data.receiver ?? message.receiver ?? notification.receiver);
   const call = asObject(data.call);
 
   const rawType = String(
-    data.type ?? notification.type ?? call.type ?? data.category ?? ''
+    data.type ?? notification.type ?? data.category ?? call.type ?? ''
   ).toLowerCase();
-  const isCall =
-    rawType.includes('call') ||
-    Boolean(call.sessionId ?? notification.sessionId ?? data.sessionId);
-
-  const conversationId =
-    receiver.uid ??
-    receiver.userId ??
-    receiver.guid ??
-    data.conversationId ??
-    message.conversationId ??
-    '';
-  const conversationType =
-    String(receiver.type ?? data.conversationType ?? 'user').toLowerCase() === 'group'
-      ? 'group'
-      : 'user';
-
   const sessionId = String(
-    call.sessionId ?? notification.sessionId ?? data.sessionId ?? ''
+    pick(data, 'sessionId', 'sessionid') ??
+      pick(call, 'sessionId') ??
+      pick(message, 'sessionId', 'sessionid') ??
+      pick(notification, 'sessionId', 'sessionid') ??
+      ''
   );
-  const callType = String(call.type ?? notification.callType ?? data.callType ?? 'audio');
+  const isCall = rawType.includes('call') || Boolean(sessionId);
 
-  const senderName = String(sender.name ?? sender.displayName ?? sender.uid ?? '');
+  const callType = String(
+    pick(data, 'callType') ??
+      pick(call, 'callType') ??
+      pick(message, 'callType') ??
+      'audio'
+  ).toLowerCase();
+  const callAction = String(
+    pick(data, 'callAction') ?? pick(call, 'callAction') ?? pick(message, 'action') ?? ''
+  ).toLowerCase();
+
+  const senderId =
+    idOf(data.sender) || idOf(message.sender) || idOf(data.callInitiator) || '';
+  const senderName = String(
+    asObject(message.sender).name ?? data.senderName ?? data.title ?? senderId
+  ).trim();
+
+  const receiverObj = asObject(data.receiver ?? message.receiver ?? notification.receiver);
+  const receiverTypeRaw = String(
+    pick(data, 'receiverType') ??
+      receiverObj.receiverType ??
+      pick(message, 'receiverType') ??
+      'user'
+  ).toLowerCase();
+  const isGroup = receiverTypeRaw === 'group' || Boolean(receiverObj.guid);
+  const conversationType = isGroup ? 'group' : 'user';
+
+  // Route by who to talk to: a group's peer is its guid; a direct chat's or a
+  // call's peer is the other side (hosted user pushes carry the recipient in
+  // `receiver`, so the sender is the only right peer).
+  const conversationId = isGroup
+    ? String(
+        receiverObj.guid ??
+          idOf(data.receiver) ??
+          idOf(message.receiver) ??
+          data.conversationId ??
+          ''
+      )
+    : senderId || String(data.conversationId ?? '');
+
+  const unreadRaw = pick(data, 'unreadMessageCount');
+  const unreadCount =
+    unreadRaw === undefined || unreadRaw === null || unreadRaw === ''
+      ? undefined
+      : Number.parseInt(String(unreadRaw), 10);
+
+  const callEnded = Boolean(callAction) && callAction !== 'initiated';
+  const callKindLabel = callType === 'video' ? 'Video' : 'Voice';
 
   return {
     kind: isCall ? 'call' : 'message',
     notificationId: String(notification.id ?? data.id ?? remoteMessage?.messageId ?? ''),
     title: isCall
-      ? senderName
-        ? `${callType === 'video' ? 'Video' : 'Voice'} call`
-        : 'Incoming call'
+      ? senderName || (callEnded ? 'Missed call' : 'Incoming call')
       : senderName || 'New message',
     body: isCall
-      ? senderName
-        ? `${senderName} is calling`
-        : 'Incoming call'
+      ? callEnded
+        ? `Missed ${callKindLabel.toLowerCase()} call`
+        : senderName
+          ? `${callKindLabel} call`
+          : 'Incoming call'
       : String(
-          message.text ||
+          pick(data, 'alert') ||
+            message.text ||
             (message.attachments?.length ? 'Sent an attachment' : '') ||
             data.body ||
             ''
         ),
     conversationId,
     conversationType,
-    senderId: String(sender.uid ?? sender.userId ?? ''),
+    senderId,
     senderName,
     sessionId,
     isVideo: callType === 'video',
+    callAction: callAction || undefined,
+    unreadCount:
+      unreadCount !== undefined && Number.isFinite(unreadCount) ? unreadCount : undefined,
     raw: Object.keys(notification).length ? notification : data,
   };
 };
@@ -234,7 +330,9 @@ export const registerDeviceForPush = async (): Promise<string | null> => {
     const token = await messaging().getToken();
     if (!token) return null;
 
-    await CometChatNotifications.registerPushToken(token, pushPlatform());
+    // The provider id binds this token to the dashboard's FCM provider entry -
+    // without it CometChat does not know which credentials to push with.
+    await CometChatNotifications.registerPushToken(token, pushPlatform(), FCM_PROVIDER_ID);
     return token;
   } catch {
     // No Firebase config in this build — chat still works over the socket.
@@ -286,9 +384,23 @@ export const markPushClicked = async (push: ParsedPush): Promise<void> => {
  * schedule is the supported way to display one now.
  */
 export const presentForegroundPush = async (push: ParsedPush): Promise<void> => {
+  // A push for the thread already on screen stays silent - the user is reading
+  // its newest messages (the sample's currentOpenChatId suppression).
+  if (push.conversationId && isThreadOpenForPush(push.conversationId)) return;
   try {
     const Notifications = getNotifications();
     if (!Notifications) return;
+    if (
+      push.unreadCount !== undefined &&
+      Number.isFinite(push.unreadCount) &&
+      push.unreadCount >= 0
+    ) {
+      try {
+        await Notifications.setBadgeCountAsync(push.unreadCount);
+      } catch {
+        // Numeric badges are launcher-dependent; ignore failures.
+      }
+    }
     await Notifications.scheduleNotificationAsync({
       content: {
         title: push.title,

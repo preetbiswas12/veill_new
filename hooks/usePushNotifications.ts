@@ -1,5 +1,6 @@
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { useCallback, useEffect } from 'react';
+import { AppState } from 'react-native';
 
 import { useCometChat } from '@/hooks/useCometChat';
 import {
@@ -10,6 +11,8 @@ import {
   parsePushPayload,
   presentForegroundPush,
   registerBackgroundPushHandler,
+  registerDeviceForPush,
+  setOpenThreadForPush,
 } from '@/lib/push';
 
 /**
@@ -23,6 +26,14 @@ import {
  */
 export const usePushNotifications = (sessionReady: boolean): void => {
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Pushes for the thread already on screen are suppressed through lib/push's
+  // module state, in both the foreground path and the headless background one.
+  useEffect(() => {
+    const chatMatch = /\/chat\/([^/?]+)/.exec(pathname ?? '');
+    setOpenThreadForPush(chatMatch ? decodeURIComponent(chatMatch[1]) : null);
+  }, [pathname]);
 
   // Firebase requires the background handler outside the React tree, so it is
   // registered on every mount (it is a no-op after the first call).
@@ -38,11 +49,24 @@ export const usePushNotifications = (sessionReady: boolean): void => {
     if (!messaging) return;
 
     // Foreground pushes never trigger a system notification on their own.
-    return messaging().onMessage(async (remoteMessage: any) => {
+    const foreground = messaging().onMessage(async (remoteMessage: any) => {
       const push = parsePushPayload(remoteMessage);
       await markPushDelivered(push);
       await presentForegroundPush(push);
     });
+
+    // FCM rotates tokens occasionally; a rotated token that is not re-registered
+    // silently stops receiving pushes. registerDeviceForPush re-reads the token
+    // and re-registers it; the session gate keeps this from firing while logged
+    // out.
+    const refresh = messaging().onTokenRefresh(() => {
+      void registerDeviceForPush();
+    });
+
+    return () => {
+      foreground();
+      refresh();
+    };
   }, [sessionReady]);
 
   const routeToPush = useCallback(
@@ -60,7 +84,12 @@ export const usePushNotifications = (sessionReady: boolean): void => {
         type: push.conversationType || 'user',
       };
 
-      if (push.kind === 'call') {
+      // Calls still ringing go to the ringing screen; pushes about calls that
+      // already ended (cancelled/unanswered) open the conversation instead.
+      if (
+        push.kind === 'call' &&
+        (!push.callAction || push.callAction === 'initiated')
+      ) {
         router.navigate({ pathname: '/call/[id]', params });
         return;
       }
@@ -116,7 +145,18 @@ export const usePushNotifications = (sessionReady: boolean): void => {
       })
       .catch(() => {});
 
-    return () => subscription.remove();
+    // Opening the app clears the launcher badge; CometChat re-sets it from the
+    // next push's unreadMessageCount.
+    const stateSub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        void Notifications.setBadgeCountAsync(0).catch(() => {});
+      }
+    });
+
+    return () => {
+      subscription.remove();
+      stateSub.remove();
+    };
   }, [routeToPush]);
 };
 
