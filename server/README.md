@@ -44,15 +44,13 @@ not Expo's push service. The app already depends on
 
 1. Create a Firebase project, add the Android app with package
    `com.stargazer.veill`, download `google-services.json`.
-2. Put it at the repo root and reference it in `app.json`:
-
-```json
-"android": { "googleServicesFile": "./google-services.json" }
-```
-
+2. Put it at `android/app/google-services.json` (next to the app's
+   `build.gradle`). The `com.google.gms.google-services` gradle plugin applies
+   itself whenever that file exists — `scripts/check-gservices.cjs` re-validates
+   the config in the checks ritual.
 3. iOS: enable the Push Notifications capability for the bundle id
    `com.stargazer.veill` and upload the same `.p8`.
-4. Rebuild: `npx expo prebuild --clean && npx expo run:android` (or `run:ios`).
+4. Rebuild the native app: `npm run android`.
 
 Until that rebuild happens the app catches the missing native module and runs
 with push silently disabled — chat, calls, and everything else keep working over
