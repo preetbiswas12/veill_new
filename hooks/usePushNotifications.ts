@@ -38,31 +38,12 @@ export const usePushNotifications = (sessionReady: boolean): void => {
     if (!messaging) return;
 
     // Foreground pushes never trigger a system notification on their own.
-    const foreground = messaging().onMessage(async (remoteMessage: any) => {
+    return messaging().onMessage(async (remoteMessage: any) => {
       const push = parsePushPayload(remoteMessage);
       await markPushDelivered(push);
       await presentForegroundPush(push);
     });
-
-    // Backgrounded pushes carrying the dashboard's "Notifications" key render
-    // in the system tray on their own; tapping one opens the app through here.
-    // getInitialNotification covers the killed-app case: the notification that
-    // launched the process is the one to route.
-    const opened = messaging().onNotificationOpenedApp((remoteMessage: any) => {
-      void routeToPush(remoteMessage?.data || {});
-    });
-    void messaging()
-      .getInitialNotification()
-      .then((remoteMessage: any) => {
-        if (remoteMessage?.data) void routeToPush(remoteMessage.data);
-      })
-      .catch(() => {});
-
-    return () => {
-      foreground();
-      opened();
-    };
-  }, [sessionReady, routeToPush]);
+  }, [sessionReady]);
 
   const routeToPush = useCallback(
     async (data: Record<string, any>) => {
@@ -87,6 +68,29 @@ export const usePushNotifications = (sessionReady: boolean): void => {
     },
     [router]
   );
+
+  // Backgrounded pushes carrying the dashboard's "Notifications" key render in
+  // the system tray on their own; their taps arrive through React Native
+  // Firebase's open handlers — not the expo listener below, which only sees
+  // locally-presented notifications. getInitialNotification covers the
+  // killed-app case: the notification that launched the process is what to
+  // route.
+  useEffect(() => {
+    const messaging = getFirebaseMessaging();
+    if (!messaging) return;
+
+    const opened = messaging().onNotificationOpenedApp((remoteMessage: any) => {
+      void routeToPush(remoteMessage?.data || {});
+    });
+    void messaging()
+      .getInitialNotification()
+      .then((remoteMessage: any) => {
+        if (remoteMessage?.data) void routeToPush(remoteMessage.data);
+      })
+      .catch(() => {});
+
+    return () => opened();
+  }, [routeToPush]);
 
   useEffect(() => {
     // expo-notifications is absent in Expo Go; without it there are no taps to
