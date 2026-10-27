@@ -38,12 +38,31 @@ export const usePushNotifications = (sessionReady: boolean): void => {
     if (!messaging) return;
 
     // Foreground pushes never trigger a system notification on their own.
-    return messaging().onMessage(async (remoteMessage: any) => {
+    const foreground = messaging().onMessage(async (remoteMessage: any) => {
       const push = parsePushPayload(remoteMessage);
       await markPushDelivered(push);
       await presentForegroundPush(push);
     });
-  }, [sessionReady]);
+
+    // Backgrounded pushes carrying the dashboard's "Notifications" key render
+    // in the system tray on their own; tapping one opens the app through here.
+    // getInitialNotification covers the killed-app case: the notification that
+    // launched the process is the one to route.
+    const opened = messaging().onNotificationOpenedApp((remoteMessage: any) => {
+      void routeToPush(remoteMessage?.data || {});
+    });
+    void messaging()
+      .getInitialNotification()
+      .then((remoteMessage: any) => {
+        if (remoteMessage?.data) void routeToPush(remoteMessage.data);
+      })
+      .catch(() => {});
+
+    return () => {
+      foreground();
+      opened();
+    };
+  }, [sessionReady, routeToPush]);
 
   const routeToPush = useCallback(
     async (data: Record<string, any>) => {

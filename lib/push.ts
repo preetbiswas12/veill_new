@@ -7,9 +7,11 @@ import { Platform, TurboModule, TurboModuleRegistry } from 'react-native';
  *
  * While the app is open, messages and calls arrive over the chat SDK's
  * WebSocket. When the app is backgrounded or killed that socket is suspended,
- * so the OS must wake it with an FCM/APNs push. Those pushes are produced by
- * CometChat's push notification extension (a small server — see /server), and
- * the SDK's job is to hand us a token and parse what comes back:
+ * so the OS must wake it with an FCM/APNs push. Two producers can send those:
+ * CometChat's hosted push extension (dashboard: upload the Firebase
+ * service-account key) or the self-hosted equivalent under /server — the app
+ * does not care which one fires. The SDK's job here is to hand over a token,
+ * parse what comes back, and route the taps:
  *
  *   CometChatNotifications.registerPushToken(token, platform)  →  token storage
  *   new CometChat.PushNotification(pushJson)                    →  payload parse
