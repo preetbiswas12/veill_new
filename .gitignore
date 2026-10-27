@@ -45,7 +45,6 @@ ios/
 # was committed in v1 and is already public in the repo history — rotate the
 # CometChat key. Keep .env.example (placeholders only) tracked.
 .env
-server/.env
 
 # Gradle / build logs captured while iterating on the Android build
 build-*.txt
