@@ -1261,6 +1261,40 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
     }
   }, []);
 
+  // Live receipts: CometChat pushes read/delivery receipts through the message
+  // listener the moment the peer acts. Landing them in the same store the REST
+  // fetch fills means the tick under the last outgoing message flips with no
+  // refetch. A receipt carries the id of the message it concerns —
+  // `getMessageId` is the v4 accessor; `getId` covers SDK variations. Echoes
+  // from our own uid are dropped: they would read-bless our own messages.
+  const recordReceiptEvent = useCallback((receipt: any, kind: 'read' | 'delivered') => {
+    if (!receipt) return;
+    const readerId = receipt?.getSender?.()?.getUid?.();
+    if (readerId && readerId === userRef.current?.id) return;
+    const messageId = receipt?.getMessageId?.() ?? receipt?.getId?.() ?? '';
+    if (!messageId) return;
+    // Shape matches what `getMessageReceipts` stores, so the label helpers
+    // (and any future consumer) treat both sources the same.
+    const wrapped =
+      kind === 'read'
+        ? {
+            getReadAt: () => receipt?.getReadAt?.() ?? Date.now(),
+            getDeliveredAt: () => receipt?.getDeliveredAt?.(),
+            getSender: () => receipt?.getSender?.(),
+          }
+        : {
+            getReadAt: () => receipt?.getReadAt?.(),
+            getDeliveredAt: () => receipt?.getDeliveredAt?.() ?? Date.now(),
+            getSender: () => receipt?.getSender?.(),
+          };
+    setMessageReceipts((prev) => {
+      const key = String(messageId);
+      const next = new Map(prev);
+      next.set(key, [...(prev.get(key) || []), wrapped]);
+      return next;
+    });
+  }, []);
+
   const markMessageAsRead = useCallback(async (messageId: string) => {
     try {
       await (CometChat as any).markAsRead?.(messageId);
@@ -1988,13 +2022,19 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
         if (!conversationId || !senderId) return;
         dropTyping(conversationId, senderId);
       },
+      // Read/delivery receipts stream in on the same realtime channel, and
+      // concern *our* outgoing messages only — the sender gets the event when
+      // the peer delivers or reads. Record onto the shared receipt store so
+      // the tick in the thread updates live.
+      onMessageRead: (receipt: any) => recordReceiptEvent(receipt, 'read'),
+      onMessageDelivered: (receipt: any) => recordReceiptEvent(receipt, 'delivered'),
     });
 
     (CometChat as any).addMessageListener?.(MESSAGE_LISTENER_ID, listener);
     return () => {
       (CometChat as any).removeMessageListener?.(MESSAGE_LISTENER_ID);
     };
-  }, [sessionReady, appendMessage, refreshConversations, markTyping, dropTyping]);
+  }, [sessionReady, appendMessage, refreshConversations, markTyping, dropTyping, recordReceiptEvent]);
 
   // The privacy layer cannot derive a conversation's key by itself: only the
   // provider knows the local uid and the per-conversation types, and those are
