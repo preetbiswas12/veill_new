@@ -10,6 +10,7 @@ import { useCometChat } from '@/hooks/useCometChat';
 import { useStarredMessages } from '@/hooks/useStarredMessages';
 import { useTheme } from '@/hooks/useTheme';
 import { showAlertDialog } from '@/components/AlertDialog';
+import type { ThemePreference } from '@/hooks/useTheme';
 
 /**
  * Settings, in the iOS Settings idiom the design specifies: a profile card, then
@@ -21,6 +22,12 @@ import { showAlertDialog } from '@/components/AlertDialog';
  * something the design shows, the row says so plainly instead of pretending.
  */
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
+
+const THEME_LABEL: Record<ThemePreference, string> = {
+  system: 'System',
+  light: 'Light',
+  dark: 'Dark',
+};
 
 interface Row {
   icon: IconName;
@@ -36,7 +43,7 @@ interface Group {
 }
 
 const SettingsScreen = () => {
-  const { colors } = useTheme();
+  const { colors, preference: themePreference, setPreference: setThemePreference } = useTheme();
   const router = useRouter();
   const { user, groups, blockedIds } = useCometChat();
   const { entries: starredEntries } = useStarredMessages();
@@ -100,6 +107,21 @@ const SettingsScreen = () => {
           { icon: 'lock-closed-outline', badge: '#34AADC', label: 'Privacy', onPress: open('/privacy') },
           { icon: 'chatbubble-ellipses-outline', badge: '#34C759', label: 'Chats', onPress: open('/chats-settings') },
           {
+            icon: 'moon-outline',
+            badge: '#5E5CE6',
+            label: 'Theme',
+            value: THEME_LABEL[themePreference],
+            onPress: () => {
+              const label = (preference: ThemePreference) =>
+                `${THEME_LABEL[preference]}${themePreference === preference ? '  ✓' : ''}`;
+              showAlertDialog('Theme', undefined, [
+                { text: label('system'), onPress: () => setThemePreference('system') },
+                { text: label('light'), onPress: () => setThemePreference('light') },
+                { text: label('dark'), onPress: () => setThemePreference('dark') },
+              ]);
+            },
+          },
+          {
             icon: 'notifications-outline',
             badge: '#FC3D39',
             label: 'Notifications',
@@ -135,7 +157,7 @@ const SettingsScreen = () => {
         ],
       },
     ],
-    [router, user, groups.length, starredEntries.length]
+    [router, user, groups.length, starredEntries.length, themePreference]
   );
 
   // The design's search field filters the rows beneath it.
