@@ -16,7 +16,12 @@ import MessageAvatar from './MessageAvatar';
 import SecureMediaBubble from './SecureMediaBubble';
 import VideoAttachment from './VideoAttachment';
 import { useTheme } from '@/hooks/useTheme';
-import { isSecuredCarrier, SECURE_CHUNK } from '@/lib/secure-media';
+import {
+  isSecuredCarrier,
+  isSecureText,
+  secureTextOf,
+  SECURE_CHUNK,
+} from '@/lib/secure-media';
 
 interface MessageBubbleProps {
   message: any;
@@ -193,7 +198,17 @@ const MessageBubble = ({
   }
 
   const attachment = getMessageAttachment(message);
-  const body = getMessageBody(message);
+  // Sealed text decrypts through getMessageBody; while the key is still pending
+  // (or the envelope failed verification) the bubble shows an honest
+  // placeholder instead of an empty row that vanishes.
+  const sealedText = isSecureText(message) ? secureTextOf(message) : null;
+  const body =
+    getMessageBody(message) ||
+    (sealedText
+      ? sealedText.failed
+        ? 'This message could not be verified'
+        : '🔒 Encrypted message'
+      : '');
   const reactions = getMessageReactions(message);
   if (!attachment && !body) return null;
 

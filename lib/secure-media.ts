@@ -555,3 +555,114 @@ export const prepareTransfer = (
   }
   return { start, chunks };
 };
+
+// ---------------------------------------------------------------------------
+// sealed text
+// ---------------------------------------------------------------------------
+
+/**
+ * Text rides the same primitives as media: one `ve:text` custom message whose
+ * data is a single sealed envelope (own IV, own MAC) under the conversation's
+ * key. Nothing new to derive, nothing new to key-exchange — the receiver opens
+ * it with the exact key it would have used for a picture.
+ *
+ * The honest asymmetry with media: the plaintext is IN the envelope, so while
+ * the key is present every reader gets it back verbatim — but the chats list,
+ * push tray, and search never see it, because those surfaces stay outside the
+ * sealed zone by policy (the provider marks previews locked).
+ */
+export const SECURE_TEXT = 've:text';
+
+/** aes-js bundles a utf8 codec at runtime (index.js `utils.utf8`), a piece its
+ * typings omit — so the codec is picked up through a tight cast once, here. */
+type Utf8Codec = {
+  toBytes: (text: string) => Uint8Array;
+  fromBytes: (bytes: Uint8Array) => string;
+};
+const utf8Codec = (aesjs as unknown as { utils: { utf8: Utf8Codec } }).utils.utf8;
+
+export interface TextEnvelope {
+  v: 1;
+  iv: string;
+  mac: string;
+  d: string;
+}
+
+/**
+ * The ceiling for one sealed envelope: a plaintext byte count whose base64
+ * ciphertext (plus iv/mac/json) stays inside CometChat's custom-data limit —
+ * the same headroom a 4KB media chunk uses. Beyond it the sender falls back to
+ * an ordinary, unsealed TextMessage rather than truncating or losing the send.
+ */
+export const MAX_SEALED_TEXT_BYTES = 4096;
+
+/** Seal one text message. Overflow is the caller's decision (returns null). */
+export const sealText = (text: string, key: Uint8Array): TextEnvelope | null => {
+  const plain = utf8Codec.toBytes(text);
+  if (plain.length > MAX_SEALED_TEXT_BYTES) return null;
+  const { ivB64, cipherB64, mac } = sealChunk(plain, key);
+  return { v: 1, iv: ivB64, mac, d: cipherB64 };
+};
+
+/** Open one sealed envelope; any tampering returns null. */
+export const openTextEnvelope = (data: any, key: Uint8Array): string | null => {
+  if (!data || typeof data !== 'object') return null;
+  const chunk: ChunkEnvelope = {
+    v: 1,
+    id: '',
+    n: 0,
+    total: 1,
+    iv: String(data.iv || ''),
+    mac: String(data.mac || ''),
+    d: String(data.d || ''),
+  };
+  const plain = openChunk(chunk, key);
+  if (!plain) return null;
+  try {
+    return utf8Codec.fromBytes(plain);
+  } catch {
+    return null;
+  }
+};
+
+/** Whether a message is a sealed-text envelope (category custom, ve:text). */
+export const isSecureText = (message: any): boolean => {
+  const category =
+    typeof message?.getCategory === 'function' ? message.getCategory() : message?.category;
+  if (category !== 'custom') return false;
+  const type = typeof message?.getType === 'function' ? message.getType() : message?.type;
+  return type === SECURE_TEXT;
+};
+
+export interface SealedTextState {
+  text?: string;
+  failed?: boolean;
+}
+
+type SealedTextResolver = (message: any) => SealedTextState;
+
+let resolveSealedText: SealedTextResolver | null = null;
+
+/** The provider holds the local uid and the conversation types, so it
+ * registers the text resolver the same way it registers the media key one. */
+export const registerSealedTextResolver = (fn: SealedTextResolver | null): void => {
+  if (!fn) sealedTextCache.clear(); // plaintext never outlives a session
+  resolveSealedText = fn;
+};
+
+const sealedTextCache = new Map<string, SealedTextState>();
+
+/**
+ * The plaintext of one sealed message: from the per-id cache, else the
+ * registered resolver, synchronously (the work is a sha256 plus one AES pass
+ * over at most the ceiling). The list preview calls this as often as the
+ * bubble does; the cache makes that free.
+ */
+export const secureTextOf = (message: any): SealedTextState => {
+  const id = String(message?.getId?.() ?? message?.id ?? '');
+  const cached = id ? sealedTextCache.get(id) : undefined;
+  if (cached) return cached;
+  const state = resolveSealedText?.(message) ?? {};
+  if (id) sealedTextCache.set(id, state);
+  return state;
+};

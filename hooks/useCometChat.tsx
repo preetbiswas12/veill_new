@@ -16,14 +16,20 @@ import { registerDeviceForPush, unregisterDeviceFromPush } from '@/lib/push';
 import {
   SECURE_CHUNK,
   SECURE_START,
+  SECURE_TEXT,
   conversationKey,
   ingestSecuredMessage,
   isSecuredCarrier,
+  isSecureText,
+  openTextEnvelope,
   participantTagFor,
   prepareTransfer,
   registerSecureKeyResolver,
+  registerSealedTextResolver,
+  sealText,
+  secureTextOf,
 } from '@/lib/secure-media';
-import type { SecuredKind } from '@/lib/secure-media';
+import type { SecuredKind, TextEnvelope } from '@/lib/secure-media';
 
 export interface CometChatUser {
   id: string;
@@ -447,6 +453,11 @@ export const getMessageReceiptLabel = (receipts?: any[]): string => {
 /** Caption or text body of a message, without media/call labelling. */
 export const getMessageBody = (message: any): string => {
   if (!message) return '';
+  // Sealed text decrypts here, so everything downstream — bubbles, copy,
+  // reply quotes, forward, info rows — sees the plaintext without knowing
+  // there is an envelope. While the key is not ready yet this stays empty
+  // and callers show their own locked placeholder.
+  if (isSecureText(message)) return secureTextOf(message).text ?? '';
   if (typeof message.getCaption === 'function') {
     const caption = message.getCaption();
     if (caption) return caption;
@@ -476,6 +487,9 @@ export const getMessageText = (message: any): string => {
     if (data?.kind === 'file') return `🔒 ${data?.name || 'File'}`;
     return '🔒 Photo';
   }
+  // Sealed text previews stay locked as well: a conversation list says what
+  // arrived, never what a sealed message says. Threads decrypt; lists do not.
+  if (isSecureText(message)) return '🔒 Encrypted message';
   const body = getMessageBody(message);
   if (body) return body;
   const attachment = getMessageAttachment(message);
@@ -752,9 +766,55 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
     });
   }, []);
 
+  /**
+   * Text travels sealed by default: the content becomes a ve:text custom
+   * message encrypted under the conversation's key, exactly like media.
+   * Two honest exceptions, declared rather than silent:
+   *   - content over the sealed ceiling (4096 bytes) falls back to an
+   *     ordinary TextMessage — unsealed, but never truncated;
+   *   - the push tray shows a generic "New message" body, because the push
+   *     extension holds no key and there is no honest way around that.
+   * A seal that cannot be delivered throws rather than degrading to a
+   * plaintext send.
+   */
   const sendTextMessage = useCallback(
     async (targetId: string, content: string, chatType?: string) => {
       const type = chatType || resolveConversationType(targetId);
+
+      let envelope: TextEnvelope | null = null;
+      try {
+        envelope = sealText(
+          content,
+          conversationKey(
+            targetId,
+            participantTagFor(
+              targetId,
+              type,
+              userRef.current?.id ?? null
+            )
+          )
+        );
+      } catch {
+        envelope = null;
+      }
+
+      if (envelope) {
+        const message = new (CometChat as any).CustomMessage(
+          targetId,
+          type === 'group' ? 'group' : 'user',
+          SECURE_TEXT,
+          envelope
+        );
+        // Decorative only: what the push extension renders in the tray.
+        message.setMetadata?.({ pushNotification: 'New message' });
+        const sent = await (CometChat.sendCustomMessage as any)(message);
+        appendMessage(targetId, sent);
+        void refreshConversations();
+        return;
+      }
+
+      // Over the sealed ceiling. Kept visibly in code so the tradeoff is a
+      // fact of the source rather than of the runtime.
       const message = new (CometChat as any).TextMessage(targetId, content, type);
       const sent = await (CometChat.sendMessage as any)(message);
       appendMessage(targetId, sent);
@@ -1976,23 +2036,30 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
     };
   }, [identity, refreshConversations, clearRingTimer, resetCall]);
 
+  /**
+   * Who a message belongs to, conversation-wise. Shared by the realtime
+   * listener and the sealed-text resolver — the latter runs outside any
+   * effect's closure, so it lives on the provider proper.
+   */
+  const resolveMessageConversationId = useCallback((message: any): string => {
+    const receiverType = message?.getReceiverType?.() || 'user';
+    if (receiverType === 'group') {
+      return (
+        message?.getReceiver?.()?.getGuid?.() ||
+        message?.getConversationId?.() ||
+        ''
+      );
+    }
+    const senderId = message?.getSender?.()?.getUid?.();
+    const myId = userRef.current?.id;
+    if (senderId && senderId !== myId) return senderId;
+    return message?.getReceiverId?.() || message?.getConversationId?.() || '';
+  }, []);
+
   useEffect(() => {
     if (!sessionReady) return;
 
-    const resolveConversationId = (message: any): string => {
-      const receiverType = message?.getReceiverType?.() || 'user';
-      if (receiverType === 'group') {
-        return (
-          message?.getReceiver?.()?.getGuid?.() ||
-          message?.getConversationId?.() ||
-          ''
-        );
-      }
-      const senderId = message?.getSender?.()?.getUid?.();
-      const myId = userRef.current?.id;
-      if (senderId && senderId !== myId) return senderId;
-      return message?.getReceiverId?.() || message?.getConversationId?.() || '';
-    };
+    const resolveConversationId = resolveMessageConversationId;
 
     const listener = new (CometChat as any).MessageListener({
       onTextMessageReceived: (message: any) => {
@@ -2075,6 +2142,43 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
       registerSecureKeyResolver(null);
     };
   }, [sessionReady, resolveConversationType]);
+
+  // Sealed text resolves through the same conversation keys as media. Per-id
+  // decrypted cache lives in lib/secure-media and clears when the session
+  // tears down, so plaintext never outlives a login.
+  useEffect(() => {
+    if (!sessionReady) {
+      registerSealedTextResolver(null);
+      return;
+    }
+    registerSealedTextResolver((message: any) => {
+      if (!isSecureText(message)) return {};
+      const conversationId = resolveMessageConversationId(message);
+      if (!conversationId) return {};
+      const data =
+        typeof message?.getData === 'function' ? message.getData() : message?.data;
+      try {
+        const plain = openTextEnvelope(
+          data,
+          conversationKey(
+            conversationId,
+            participantTagFor(
+              conversationId,
+              resolveConversationType(conversationId),
+              userRef.current?.id ?? null
+            )
+          )
+        );
+        if (plain) return { text: plain };
+      } catch {
+        // fall through to the failed verdict
+      }
+      return { failed: true };
+    });
+    return () => {
+      registerSealedTextResolver(null);
+    };
+  }, [sessionReady, resolveMessageConversationId, resolveConversationType]);
 
   useEffect(() => {
     if (!sessionReady) return;
