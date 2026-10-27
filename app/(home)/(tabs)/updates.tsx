@@ -12,7 +12,8 @@ import Button from '@/components/Button';
 import Screen from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import VideoAttachment from '@/components/VideoAttachment';
-import { OutgoingMedia, useCometChat } from '@/hooks/useCometChat';
+import { OutgoingMedia, useCometChat, type StoryAttachment } from '@/hooks/useCometChat';
+import { useSecureMedia } from '@/lib/secure-media';
 import { useTheme } from '@/hooks/useTheme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { showAlertDialog } from '@/components/AlertDialog';
@@ -30,6 +31,40 @@ const formatWhen = (timestamp: number): string => {
   const days = Math.round(hours / 24);
   if (days < 7) return `${days}d ago`;
   return new Date(timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' });
+};
+
+/**
+ * A story's bytes travel through the encrypted carrier, so the viewer renders
+ * through the reassembly store: while chunks are still landing it shows the
+ * honest count behind a locked chip, and once the digest verifies, the media
+ * renders exactly as a plaintext one would. The tap zones and progress dots
+ * sit around this view and are unaffected by how long the decrypt takes.
+ */
+const SecureStoryView = ({ item }: { item: StoryAttachment }) => {
+  const { uri, received, total, error } = useSecureMedia(item.id);
+
+  if (!uri) {
+    return (
+      <View className="flex-1 items-center justify-center">
+        <View className="items-center gap-3 rounded-bubble bg-black/45 px-5 py-4">
+          <Ionicons name="lock-closed-outline" size={27} color="rgba(255,255,255,0.65)" />
+          {error ? (
+            <Text className="text-body-2 text-white/70">{error}</Text>
+          ) : total > 0 ? (
+            <Text className="text-body-2 text-white/70">{`Decrypting ${received}/${total}`}</Text>
+          ) : (
+            <Text className="text-body-2 text-white/70">Waiting for the rest…</Text>
+          )}
+        </View>
+      </View>
+    );
+  }
+
+  return item.type === 'video' ? (
+    <VideoAttachment uri={uri} style={{ flex: 1 }} />
+  ) : (
+    <Image source={{ uri }} style={{ flex: 1 }} contentFit="contain" />
+  );
 };
 
 const StoriesScreen = () => {
@@ -296,15 +331,7 @@ const StoriesScreen = () => {
       >
         {viewer && viewerItem && viewerAuthor ? (
           <View className="flex-1 bg-black">
-            {viewerItem.type === 'video' ? (
-              <VideoAttachment uri={viewerItem.url} style={{ flex: 1 }} />
-            ) : (
-              <Image
-                source={{ uri: viewerItem.url }}
-                style={{ flex: 1 }}
-                contentFit="contain"
-              />
-            )}
+            <SecureStoryView item={viewerItem} />
 
             {/* Header */}
             <View className="absolute top-0 left-0 right-0 flex-row items-center gap-3 px-4 pt-12 pb-6 bg-black/40">

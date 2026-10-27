@@ -105,8 +105,13 @@ export interface MessageReaction {
 }
 
 export interface StoryAttachment {
+  /**
+   * The transfer id in the reassembly store - a story's bytes travel through
+   * the encrypted carrier (`ve:start`/`ve:chunk` custom messages), never as a
+   * plaintext CDN file, so there is no `url` on the payload. The viewer
+   * decrypts through `useSecureMedia(id)`.
+   */
   id: string;
-  url: string;
   type: 'image' | 'video';
   at: number;
 }
@@ -1726,7 +1731,8 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
   }, []);
 
   //
-  // ——— Stories (backed by the public STORIES_GUID group) ———
+  // ——— Stories (backed by the public STORIES_GUID group; media always rides
+  // the encrypted carrier, so the CDN never sees a story's bytes) ———
   //
 
   const ensureStoriesGroup = useCallback(async () => {
@@ -1762,15 +1768,28 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
       const builder = new (CometChat as any).MessagesRequestBuilder()
         .setGUID(STORIES_GUID)
         .setLimit(50)
-        .setTypes(['image', 'video']);
+        .setCategories(['custom'])
+        .setTypes([SECURE_START, SECURE_CHUNK]);
       const messages = (await builder.build().fetchNext()) || [];
+
+      // History rehydrates through the same pipeline as a thread: chunks of
+      // stories that streamed in while the app was closed still reassemble,
+      // and the announces are what the rows below read.
+      for (const message of messages) {
+        ingestSecuredMessage(message, STORIES_GUID);
+      }
 
       const authors = new Map<string, StoryAuthor>();
       for (const message of messages) {
+        // Chunks surface through the reassembly store; only an announce row.
+        const carrierType =
+          typeof message?.getType === 'function' ? message.getType() : message?.type;
+        if (carrierType !== SECURE_START) continue;
         const at = messageSentAt(message);
         if (at < cutoff) continue;
-        const attachment = getMessageAttachment(message);
-        if (!attachment?.url) continue;
+        const data = message?.getData?.();
+        const mediaId = String(data?.id || '');
+        if (!mediaId) continue;
         const sender = message?.getSender?.();
         const senderId = sender?.getUid?.() || '';
         if (!senderId) continue;
@@ -1792,9 +1811,8 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
           authors.set(senderId, author);
         }
         author.items.push({
-          id: String(message?.getId?.() ?? `${senderId}-${at}`),
-          url: attachment.url,
-          type: messageKind(message) === 'video' ? 'video' : 'image',
+          id: mediaId,
+          type: String(data?.kind) === 'video' ? 'video' : 'image',
           at,
         });
       }
@@ -1819,18 +1837,13 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
     async (media: OutgoingMedia) => {
       if (!media?.uri) return;
       await ensureStoriesGroup();
-      const file = {
-        uri: media.uri,
-        name: media.name || 'story',
-        type: guessMimeType(media.name || '', media.kind),
-        size: media.size || 0,
-      };
-      const kind = media.kind === 'video' ? 'video' : 'image';
-      const message = new (CometChat as any).MediaMessage(STORIES_GUID, file, kind, 'group');
-      await (CometChat.sendMediaMessage as any)(message);
+      // Stories ride the same encrypted carrier as thread media: the bytes are
+      // sealed under the group's derived key, so nothing unencrypted reaches
+      // CometChat's CDN. The explicit type is what keeps the key group-tagged.
+      await sendSecureMedia(STORIES_GUID, media, 'group');
       await refreshStories();
     },
-    [ensureStoriesGroup, refreshStories]
+    [ensureStoriesGroup, refreshStories, sendSecureMedia]
   );
 
   //
@@ -2049,7 +2062,11 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
         conversationId,
         participantTagFor(
           conversationId,
-          resolveConversationType(conversationId),
+          // The stories group is the one conversation deliberately kept out of
+          // the list (it is not meant to open as a chat), so its type cannot
+          // resolve from there — and it is always a group. Deriving through the
+          // fallback would silently produce a different key on the receiver.
+          conversationId === STORIES_GUID ? 'group' : resolveConversationType(conversationId),
           userRef.current?.id ?? null
         )
       )
