@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { BackHandler, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { useEffect } from 'react';
 
 import { useTheme } from '@/hooks/useTheme';
 
@@ -95,6 +96,18 @@ const MessageActions = ({
   onForward,
 }: MessageActionsProps) => {
   const { colors } = useTheme();
+
+  // Back dismisses the sheet explicitly - not every Android build delivers
+  // the gesture to Modal's onRequestClose.
+  useEffect(() => {
+    if (!visible) return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      onClose();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [visible, onClose]);
+
   return (
     <Modal
       visible={visible}

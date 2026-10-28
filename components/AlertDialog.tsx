@@ -1,4 +1,4 @@
-import { AlertButton, Animated, Modal, Pressable, Text, View } from 'react-native';
+import { AlertButton, Animated, BackHandler, Modal, Pressable, Text, View } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 
 import { useTheme } from '@/hooks/useTheme';
@@ -86,6 +86,19 @@ const AlertDialogHost = () => {
     if (cancel?.onPress) cancel.onPress();
     close();
   };
+
+  // Belt and braces over Modal's onRequestClose: not every Android build
+  // delivers the back gesture to the dialog's own window, so an explicit
+  // subscription guarantees back always dismisses the dialog - and never
+  // falls through to the navigator or the system.
+  useEffect(() => {
+    if (!current) return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      handleBack();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [current]);
 
   const horizontal = (current?.buttons.length ?? 0) <= 2;
 

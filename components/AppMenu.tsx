@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { BackHandler, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { getError } from '../lib/utils';
 import Avatar from './Avatar';
@@ -19,6 +19,17 @@ const AppMenu = () => {
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const avatarRef = useRef<View>(null);
+
+  // Back closes the menu explicitly - not every Android build delivers the
+  // gesture to Modal's onRequestClose.
+  useEffect(() => {
+    if (!menuVisible) return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      setMenuVisible(false);
+      return true;
+    });
+    return () => subscription.remove();
+  }, [menuVisible]);
 
   const toggleMenu = () => {
     if (menuVisible) {

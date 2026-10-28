@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import clsx from 'clsx';
 import { Image } from 'expo-image';
-import { Animated, Easing, Modal, Pressable, Text, View } from 'react-native';
+import { Animated, BackHandler, Easing, Modal, Pressable, Text, View } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 
 import MessageAvatar from './MessageAvatar';
@@ -60,6 +60,17 @@ const DemoMessageBubble = ({
   const { colors } = useTheme();
   const [previewOpen, setPreviewOpen] = useState(false);
   const [playing, setPlaying] = useState(false);
+
+  // Back closes the preview explicitly - not every Android build delivers the
+  // gesture to Modal's onRequestClose.
+  useEffect(() => {
+    if (!previewOpen) return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      setPreviewOpen(false);
+      return true;
+    });
+    return () => subscription.remove();
+  }, [previewOpen]);
   const [note, setNote] = useState<string | null>(null);
   const progress = useRef(new Animated.Value(0)).current;
   const voiceAnim = useRef<Animated.CompositeAnimation | null>(null);
