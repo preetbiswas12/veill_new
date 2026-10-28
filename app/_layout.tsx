@@ -18,14 +18,20 @@ import '../global.css';
 const RootNavigator = () => {
   const { isDark } = useTheme();
   return (
-    <Stack>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      <Stack.Screen name="(home)" options={{ headerShown: false }} />
+    <>
+      <Stack>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)" options={{ headerShown: false }} />
+      </Stack>
       <StatusBar style={isDark ? 'light' : 'dark'} />
-      {/* One themed alert host for the whole app; screens call showAlertDialog(). */}
+      {/* One themed alert host for the whole app; screens call showAlertDialog().
+          It sits beside the navigator, not inside it - non-route children of a
+          navigator warn in expo-router, and the Modal renders into its own
+          native dialog window anyway, so z-order does not depend on tree
+          position. */}
       <AlertDialogHost />
-    </Stack>
+    </>
   );
 };
 
