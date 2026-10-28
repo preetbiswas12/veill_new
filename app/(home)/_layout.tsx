@@ -126,6 +126,14 @@ const HomeLayout = () => {
             title: 'Find by Username',
           }}
         />
+        <Stack.Screen
+          name="new"
+          options={{
+            presentation: 'transparentModal',
+            headerShown: false,
+            animation: 'fade',
+          }}
+        />
         {/* Detail screens draw their own themed headers (ScreenHeader or an
             inset block above them) - the stack's native bar would stack a
             second navbar on top of them. */}

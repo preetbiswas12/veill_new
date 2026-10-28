@@ -197,17 +197,6 @@ const ChatsScreen = () => {
     [markConversationRead, markConversationUnread, router]
   );
 
-  const startSomethingNew = useCallback(() => {
-    // This is the design's action sheet: New chat, New group, New community.
-    const actions: AlertButton[] = [
-      { text: 'New chat', onPress: () => router.push('/new-message') },
-      { text: 'New group', onPress: () => router.push('/new-group') },
-      { text: 'Find channels to follow', onPress: () => router.push('/communities') },
-      { text: 'Cancel', style: 'cancel' },
-    ];
-    showAlertDialog('New', undefined, actions, { cancelable: true });
-  }, [router]);
-
   const titleBlock = (
     <>
       {/* The design's large title carries the action controls on its own row:
@@ -230,7 +219,7 @@ const ChatsScreen = () => {
               label="New chat"
               onPress={() => router.push('/new-message')}
             />
-            <HeaderButton icon="add" solid label="New" onPress={startSomethingNew} />
+            <HeaderButton icon="add" solid label="New" onPress={() => router.push('/new')} />
           </View>
         </View>
       </View>
