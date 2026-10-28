@@ -52,6 +52,16 @@ const HomeLayout = () => {
             animation: 'none',
           }}
         />
+        {/* Detail screens draw their own themed headers (ScreenHeader or an
+            inset block above them) - the stack's native bar would stack a
+            second navbar on top of them. */}
+        <Stack.Screen name="contact-info" options={{ headerShown: false }} />
+        <Stack.Screen name="privacy" options={{ headerShown: false }} />
+        <Stack.Screen name="chats-settings" options={{ headerShown: false }} />
+        <Stack.Screen name="notifications" options={{ headerShown: false }} />
+        <Stack.Screen name="storage" options={{ headerShown: false }} />
+        <Stack.Screen name="starred" options={{ headerShown: false }} />
+        <Stack.Screen name="camera" options={{ headerShown: false }} />
       </Stack>
     </>
   );

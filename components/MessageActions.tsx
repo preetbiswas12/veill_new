@@ -3,8 +3,6 @@ import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { useTheme } from '@/hooks/useTheme';
 
-import Button from './Button';
-
 const QUICK_REACTIONS = ['❤️', '👍', '😂', '😮', '😢', '🙏'];
 
 interface MessageActionsProps {
@@ -42,21 +40,45 @@ const Row = ({
 }) => {
   const { colors } = useTheme();
   return (
-  <Pressable
-    onPress={onPress}
-    className="flex-row items-center gap-4 px-5 py-4 active:bg-surface-muted"
-  >
-    <Ionicons
-      name={icon}
-      size={20}
-      color={destructive ? colors['text-error'] : colors['text-strong']}
-    />
-    <Text className={`text-body-1 ${destructive ? 'text-text-error' : 'text-text-strong'}`}>{label}</Text>
-  </Pressable>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        columnGap: 16,
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        backgroundColor: pressed ? colors['surface-muted'] : 'transparent',
+      })}
+    >
+      <Ionicons
+        name={icon}
+        size={20}
+        color={destructive ? colors['text-error'] : colors['text-strong']}
+      />
+      <Text
+        style={{
+          fontSize: 17,
+          lineHeight: 22,
+          color: destructive ? colors['text-error'] : colors['text-strong'],
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
   );
 };
 
-/** Bottom sheet for per-message actions, on the design's white surface. */
+/**
+ * Bottom sheet for per-message actions, on the design's surface colour.
+ *
+ * Styles are explicit rather than NativeWind classes because a React Native
+ * Modal renders into its own native window, where the CSS-variable classes
+ * do not reliably resolve on Android — which left the sheet unstyled (white,
+ * sharp corners in dark mode).
+ */
 const MessageActions = ({
   visible,
   canCopy = false,
@@ -71,75 +93,108 @@ const MessageActions = ({
   onDelete,
   onStar,
   onForward,
-}: MessageActionsProps) => (
-  <Modal
-    visible={visible}
-    transparent
-    animationType="slide"
-    onRequestClose={onClose}
-    statusBarTranslucent
-  >
-    <Pressable className="flex-1" onPress={onClose} />
+}: MessageActionsProps) => {
+  const { colors } = useTheme();
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+      statusBarTranslucent
+    >
+      <Pressable style={{ flex: 1 }} onPress={onClose} />
 
-    <View className="bg-surface rounded-t-3xl pb-8 pt-3 shadow-2xl">
-      {/* Grabber, per the iOS sheet convention. */}
-      <View className="items-center pb-3">
-        <View className="w-10 h-1 rounded-full bg-separator" />
-      </View>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 12, gap: 8, paddingBottom: 12 }}
-        className="border-b-hair border-separator"
+      <View
+        style={{
+          backgroundColor: colors['surface'],
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+          paddingTop: 12,
+          paddingBottom: 32,
+          shadowColor: '#000',
+          shadowOpacity: 0.5,
+          shadowRadius: 16,
+          shadowOffset: { width: 0, height: -6 },
+          elevation: 24,
+        }}
       >
-        {QUICK_REACTIONS.map((emoji) => {
-          const active = activeReactions.includes(emoji);
-          return (
-            <Pressable
-              key={emoji}
-              onPress={() => {
-                onReact(emoji);
-                onClose();
-              }}
-              className={`w-12 h-12 rounded-full items-center justify-center text-2xl ${
-                active ? 'bg-surface-active border-2 border-primary' : 'bg-surface-muted'
-              }`}
-              accessibilityLabel={`React with ${emoji}`}
-            >
-              {emoji}
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+        {/* Grabber, per the iOS sheet convention. */}
+        <View style={{ alignItems: 'center', paddingBottom: 12 }}>
+          <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors['separator'] }} />
+        </View>
 
-      {canReply ? (
-        <Row icon="return-down-forward" label="Reply" onPress={() => { onReply?.(); onClose(); }} />
-      ) : null}
-      {onForward ? (
-        <Row icon="arrow-redo-outline" label="Forward" onPress={() => { onForward(); onClose(); }} />
-      ) : null}
-      {canCopy ? <Row icon="copy" label="Copy text" onPress={() => { onCopy?.(); onClose(); }} /> : null}
-      {onStar ? (
-        <Row
-          icon={starred ? 'star' : 'star-outline'}
-          label={starred ? 'Remove star' : 'Star message'}
-          onPress={() => { onStar(); onClose(); }}
-        />
-      ) : null}
-      {canDelete ? (
-        <Row
-          icon="trash-outline"
-          label="Delete message"
-          destructive
-          onPress={() => { onDelete?.(); onClose(); }}
-        />
-      ) : null}
-      <Button variant="plain" className="self-center mt-2 px-6 py-2" onPress={onClose}>
-        <Text className="text-body-1 font-semibold text-link">Cancel</Text>
-      </Button>
-    </View>
-  </Modal>
-);
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 12, gap: 8, paddingBottom: 12 }}
+          style={{ borderBottomWidth: 0.5, borderBottomColor: colors['separator'] }}
+        >
+          {QUICK_REACTIONS.map((emoji) => {
+            const active = activeReactions.includes(emoji);
+            return (
+              <Pressable
+                key={emoji}
+                onPress={() => {
+                  onReact(emoji);
+                  onClose();
+                }}
+                accessibilityLabel={`React with ${emoji}`}
+                style={({ pressed }) => ({
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: active ? colors['surface-active'] : colors['surface-muted'],
+                  borderWidth: active ? 2 : 0,
+                  borderColor: active ? colors['product'] : 'transparent',
+                  opacity: pressed ? 0.7 : 1,
+                })}
+              >
+                <Text style={{ fontSize: 24 }}>{emoji}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        {canReply ? (
+          <Row icon="return-down-forward" label="Reply" onPress={() => { onReply?.(); onClose(); }} />
+        ) : null}
+        {onForward ? (
+          <Row icon="arrow-redo-outline" label="Forward" onPress={() => { onForward(); onClose(); }} />
+        ) : null}
+        {canCopy ? <Row icon="copy" label="Copy text" onPress={() => { onCopy?.(); onClose(); }} /> : null}
+        {onStar ? (
+          <Row
+            icon={starred ? 'star' : 'star-outline'}
+            label={starred ? 'Remove star' : 'Star message'}
+            onPress={() => { onStar(); onClose(); }}
+          />
+        ) : null}
+        {canDelete ? (
+          <Row
+            icon="trash-outline"
+            label="Delete message"
+            destructive
+            onPress={() => { onDelete?.(); onClose(); }}
+          />
+        ) : null}
+        <Pressable
+          onPress={onClose}
+          style={({ pressed }) => ({
+            alignSelf: 'center',
+            marginTop: 8,
+            paddingHorizontal: 24,
+            paddingVertical: 8,
+            opacity: pressed ? 0.6 : 1,
+          })}
+        >
+          <Text style={{ fontSize: 17, fontWeight: '600', color: colors['link'] }}>Cancel</Text>
+        </Pressable>
+      </View>
+    </Modal>
+  );
+};
 
 export default MessageActions;

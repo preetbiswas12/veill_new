@@ -97,25 +97,63 @@ const AlertDialogHost = () => {
       statusBarTranslucent
       onRequestClose={handleBack}
     >
-      <View className="flex-1 items-center justify-center bg-black/40 px-8">
+      {/* A Modal renders into its own native window, and NativeWind's
+          CSS-variable classes do not reliably resolve inside it on Android -
+          the card came out white with no radius in dark mode. Every style
+          below is therefore explicit through the palette. */}
+      <View
+        className="flex-1 items-center justify-center px-8"
+        style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+      >
         {current ? (
           <Animated.View
-            style={{ opacity }}
-            className="w-[270px] rounded-card overflow-hidden bg-cta-options border-hair border-panel-border"
+            style={{
+              opacity,
+              width: 270,
+              borderRadius: 14, // rounded-card
+              overflow: 'hidden',
+              backgroundColor: colors['cta-options'],
+              borderColor: colors['panel-border'],
+              borderWidth: 0.5,
+            }}
           >
-            <Text className="px-5 pt-5 text-[16px] leading-[20px] font-semibold text-text-strong text-center">
+            <Text
+              style={{
+                paddingHorizontal: 20,
+                paddingTop: 20,
+                fontSize: 16,
+                lineHeight: 20,
+                fontWeight: '600',
+                color: colors['text-strong'],
+                textAlign: 'center',
+              }}
+            >
               {current.title}
             </Text>
             {current.message ? (
-              <Text className="px-5 pt-1.5 pb-5 text-[13px] leading-[17px] text-text-muted text-center">
+              <Text
+                style={{
+                  paddingHorizontal: 20,
+                  paddingTop: 6,
+                  paddingBottom: 20,
+                  fontSize: 13,
+                  lineHeight: 17,
+                  color: colors['text-muted'],
+                  textAlign: 'center',
+                }}
+              >
                 {current.message}
               </Text>
             ) : (
-              <View className="h-4" />
+              <View style={{ height: 16 }} />
             )}
-            {/* iOS spacing rule: exactly two buttons sit on one hairline row;
-                three or more stack so the labels stay readable. */}
-            <View className={horizontal ? 'flex-row border-t-hair border-separator' : undefined}>
+            <View
+              style={{
+                borderTopWidth: 0.5,
+                borderTopColor: colors['separator'],
+                flexDirection: horizontal ? 'row' : 'column',
+              }}
+            >
               {current.buttons.map((button, index) => (
                 <Pressable
                   key={`${button.text}-${index}`}
@@ -125,22 +163,35 @@ const AlertDialogHost = () => {
                   }}
                   accessibilityRole="button"
                   accessibilityLabel={button.text}
-                  className={
+                  style={({ pressed }) => [
                     horizontal
-                      ? `flex-1 h-11 items-center justify-center active:bg-surface-muted ${
-                          index > 0 ? 'border-l-hair border-separator' : ''
-                        }`
-                      : `h-11 items-center justify-center border-t-hair border-separator active:bg-surface-muted`
-                  }
+                      ? {
+                          flex: 1,
+                          height: 44,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderLeftWidth: index > 0 ? 0.5 : 0,
+                          borderLeftColor: colors['separator'],
+                        }
+                      : {
+                          height: 44,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderTopWidth: index > 0 ? 0.5 : 0,
+                          borderTopColor: colors['separator'],
+                        },
+                    pressed ? { backgroundColor: colors['surface-muted'] } : null,
+                  ]}
                 >
                   <Text
-                    className={
-                      button.style === 'destructive'
-                        ? 'text-[16px] text-text-error'
-                        : button.style === 'cancel'
-                          ? 'text-[16px] font-semibold text-link'
-                          : 'text-[16px] text-link'
-                    }
+                    style={{
+                      fontSize: 16,
+                      color:
+                        button.style === 'destructive'
+                          ? colors['text-error']
+                          : colors['link'],
+                      fontWeight: button.style === 'cancel' ? '600' : '400',
+                    }}
                   >
                     {button.text}
                   </Text>

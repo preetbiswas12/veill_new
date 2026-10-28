@@ -68,24 +68,55 @@ const AppMenu = () => {
         onRequestClose={() => setMenuVisible(false)}
       >
         <Pressable style={StyleSheet.absoluteFill} onPress={() => setMenuVisible(false)}>
+          {/* Explicit styles: inside a Modal, NativeWind's CSS-variable classes
+              do not reliably resolve on Android and render unstyled. */}
           <View
-            style={{ top: menuPosition.top, left: menuPosition.left }}
-            className="absolute min-w-[200px] rounded-search bg-surface border-hair border-separator"
+            style={{
+              position: 'absolute',
+              top: menuPosition.top,
+              left: menuPosition.left,
+              minWidth: 200,
+              borderRadius: 10, // rounded-search
+              backgroundColor: colors['surface'],
+              borderWidth: 0.5,
+              borderColor: colors['separator'],
+              overflow: 'hidden',
+            }}
           >
             <Pressable
               onPress={goToProfile}
               accessibilityRole="button"
-              className="flex-row items-center justify-between px-4 py-3 border-b-hair border-separator active:bg-surface-muted"
+              style={({ pressed }) => ({
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                borderBottomWidth: 0.5,
+                borderBottomColor: colors['separator'],
+                backgroundColor: pressed ? colors['surface-muted'] : 'transparent',
+              })}
             >
-              <Text className="text-body-1 text-text-strong">Profile</Text>
+              <Text style={{ fontSize: 17, lineHeight: 22, color: colors['text-strong'] }}>
+                Profile
+              </Text>
               <Ionicons name="person-outline" size={20} color={colors['text-strong']} />
             </Pressable>
             <Pressable
               onPress={() => void handleSignOut()}
               accessibilityRole="button"
-              className="flex-row items-center justify-between px-4 py-3 active:bg-surface-muted"
+              style={({ pressed }) => ({
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                backgroundColor: pressed ? colors['surface-muted'] : 'transparent',
+              })}
             >
-              <Text className="text-body-1 text-text-error">Sign out</Text>
+              <Text style={{ fontSize: 17, lineHeight: 22, color: colors['text-error'] }}>
+                Sign out
+              </Text>
               <Ionicons name="log-out-outline" size={20} color={colors['text-error']} />
             </Pressable>
           </View>
