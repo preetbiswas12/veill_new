@@ -18,6 +18,7 @@ import {
   SECURE_START,
   SECURE_TEXT,
   conversationKey,
+  customPayloadOf,
   ingestSecuredMessage,
   isSecuredCarrier,
   isSecureText,
@@ -466,7 +467,9 @@ export const getMessageBody = (message: any): string => {
     const text = message.getText();
     if (text) return text;
   }
-  const data = typeof message.getData === 'function' ? message.getData() : undefined;
+  const data = customPayloadOf(
+    typeof message.getData === 'function' ? message.getData() : undefined
+  );
   return data?.text || message.text || message.content || message.body?.content || '';
 };
 
@@ -481,7 +484,9 @@ export const getMessageText = (message: any): string => {
   // Secured-media carriers never describe their payload in plaintext: the
   // conversation preview says what arrived, never what it looks like.
   if (isSecuredCarrier(message)) {
-    const data = typeof message?.getData === 'function' ? message.getData() : message?.data;
+    const data = customPayloadOf(
+      typeof message?.getData === 'function' ? message.getData() : message?.data
+    );
     if (typeof data?.n === 'number') return '🔒 Media'; // a chunk, mid-flight
     if (data?.kind === 'video') return '🔒 Video';
     if (data?.kind === 'file') return `🔒 ${data?.name || 'File'}`;
@@ -1878,7 +1883,7 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
         if (carrierType !== SECURE_START) continue;
         const at = messageSentAt(message);
         if (at < cutoff) continue;
-        const data = message?.getData?.();
+        const data = customPayloadOf(message?.getData?.());
         const mediaId = String(data?.id || '');
         if (!mediaId) continue;
         const sender = message?.getSender?.();
@@ -2186,8 +2191,9 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
       if (!isSecureText(message)) return {};
       const conversationId = resolveMessageConversationId(message);
       if (!conversationId) return {};
-      const data =
-        typeof message?.getData === 'function' ? message.getData() : message?.data;
+      const data = customPayloadOf(
+        typeof message?.getData === 'function' ? message.getData() : message?.data
+      );
       try {
         const plain = openTextEnvelope(
           data,

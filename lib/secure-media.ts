@@ -404,6 +404,25 @@ const finalize = async (mediaId: string, conversationId: string): Promise<void> 
 };
 
 /**
+ * The custom payload of a message, wherever the SDK has put it.
+ *
+ * A locally echoed send carries the envelope directly in `data`, while the
+ * server's form (history, conversation previews, the realtime listener)
+ * wraps the same payload under `customData`. Return the inner object when
+ * the wrapper is present so both shapes read identically.
+ */
+export const customPayloadOf = (data: unknown): Record<string, any> | undefined => {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    return data as Record<string, any> | undefined;
+  }
+  const inner = (data as Record<string, unknown>).customData;
+  if (inner && typeof inner === 'object' && !Array.isArray(inner)) {
+    return inner as Record<string, any>;
+  }
+  return data as Record<string, any>;
+};
+
+/**
  * Feeds one incoming message into the pipeline.
  *
  * Returns the media id when the message is a carrier for a secured transfer, so
@@ -418,7 +437,9 @@ export const ingestSecuredMessage = (message: any, conversationId: string): stri
   const type = typeof message?.getType === 'function' ? message.getType() : message?.type;
   if (type !== SECURE_START && type !== SECURE_CHUNK) return null;
 
-  const data = typeof message?.getData === 'function' ? message.getData() : message?.data;
+  const data = customPayloadOf(
+    typeof message?.getData === 'function' ? message.getData() : message?.data
+  );
   if (!data || typeof data !== 'object') return null;
 
   const id = String(data.id || '');
@@ -494,7 +515,9 @@ export const isSecuredCarrier = (message: any): boolean => {
 
 /** The media id a carrier message belongs to, from its own data. */
 export const secureMediaIdOf = (message: any): string | null => {
-  const data = typeof message?.getData === 'function' ? message.getData() : message?.data;
+  const data = customPayloadOf(
+    typeof message?.getData === 'function' ? message.getData() : message?.data
+  );
   const id = data && typeof data === 'object' ? String(data.id || '') : '';
   return id || null;
 };
