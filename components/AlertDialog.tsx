@@ -155,7 +155,10 @@ const AlertDialogHost = () => {
                 style={{
                   paddingHorizontal: 20,
                   paddingTop: 6,
-                  paddingBottom: 20,
+                  // A short step to the action row: the hairline lands just
+                  // under the last line of text, so the actions read as part
+                  // of the sentence rather than pinned to the card's edge.
+                  paddingBottom: 12,
                   fontSize: 13,
                   lineHeight: 17,
                   color: colors['text-muted'],
@@ -165,7 +168,7 @@ const AlertDialogHost = () => {
                 {current.message}
               </Text>
             ) : (
-              <View style={{ height: 16 }} />
+              <View style={{ height: 14 }} />
             )}
             <View
               style={{
