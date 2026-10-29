@@ -1,4 +1,5 @@
 import { Entypo, Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
@@ -24,27 +25,44 @@ import { STORIES_GUID } from '@/lib/cometchat';
 interface ForwardTarget {
   id: string;
   type: 'user' | 'group';
+  name?: string;
+  image?: string;
 }
+
+/** Router params may arrive as string or string[]; normalize to one value. */
+const pickOne = (value?: string | string[]): string =>
+  Array.isArray(value) ? value[0] : (value ?? '');
 
 /**
  * New-message picker, and — when it arrives carrying a `forward` text — the
- * forward picker the thread's action sheet routes to.
+ * forward picker the thread's action sheet routes to; carrying a `capture`
+ * (from the chats header's camera), the WhatsApp-style share-to picker.
  *
- * Forward mode follows the design's WhatsApp parentage: the quoted message
- * previews on top, taps become a multi-select across contacts and joined
- * groups, and a floating action button sends once per target. The same sealed
- * send path text always uses runs per destination (each conversation seals the
- * content under its own key — the plaintext is re-sealed, never relayed).
+ * Share mode follows the design's WhatsApp parentage: the payload previews
+ * on top, taps become a multi-select across contacts and joined groups, and
+ * a floating action button sends once per target. Every destination seals
+ * the content under its own key — text is re-sealed per conversation, media
+ * runs the private pipeline per conversation; nothing relays in plaintext.
  */
 const NewMessageScreen = () => {
   const router = useRouter();
   const { colors } = useTheme();
-  const { getOrCreateConversation, sendTextMessage, groups, user } = useCometChat();
+  const { getOrCreateConversation, sendSecureMedia, sendTextMessage, groups, user } =
+    useCometChat();
   const { contacts, loadingContacts } = useContacts();
 
-  const forwardParam = useLocalSearchParams<{ forward?: string | string[] }>().forward;
-  const forwardedText = Array.isArray(forwardParam) ? forwardParam[0] : forwardParam;
+  const params = useLocalSearchParams<{
+    forward?: string | string[];
+    capture?: string | string[];
+    captureKind?: string | string[];
+  }>();
+  const forwardedText = pickOne(params.forward);
+  const captureUri = pickOne(params.capture);
+  const captureKind: 'image' | 'video' =
+    pickOne(params.captureKind) === 'video' ? 'video' : 'image';
   const isForwarding = Boolean(forwardedText);
+  const isCapture = Boolean(captureUri);
+  const isShare = isForwarding || isCapture;
 
   const [selected, setSelected] = useState<ForwardTarget[]>([]);
   const [sending, setSending] = useState(false);
@@ -89,17 +107,30 @@ const NewMessageScreen = () => {
     [contacts, selectableGroups, user?.id]
   );
 
-  const onSendForward = useCallback(async () => {
-    const text = forwardedText ?? '';
-    if (!text || selected.length === 0 || sending) return;
+  const onSendTargets = useCallback(async () => {
+    if (selected.length === 0 || sending) return;
+    if (!captureUri && !forwardedText) return;
     setSending(true);
 
     // One sealed send per target; a single dead conversation reports partial
     // progress honestly instead of implying the whole thing failed.
+    const targets = [...selected];
     let fulfilled = 0;
-    for (const target of selected) {
+    for (const target of targets) {
       try {
-        await sendTextMessage(target.id, text, target.type);
+        if (captureUri) {
+          await sendSecureMedia(
+            target.id,
+            {
+              uri: captureUri,
+              name: captureKind === 'video' ? 'capture.mp4' : 'capture.jpg',
+              kind: captureKind,
+            },
+            target.type
+          );
+        } else {
+          await sendTextMessage(target.id, forwardedText ?? '', target.type);
+        }
         fulfilled += 1;
       } catch {
         // counted below
@@ -107,16 +138,32 @@ const NewMessageScreen = () => {
     }
 
     setSending(false);
-    if (fulfilled === selected.length) {
+    if (fulfilled === targets.length) {
+      // One recipient drops straight into that chat, as on WhatsApp.
+      const [single] = targets;
+      if (targets.length === 1 && single) {
+        router.dismissTo({
+          pathname: '/chat/[id]',
+          params: {
+            id: single.id,
+            name: single.name || '',
+            image: single.image || '',
+            type: single.type,
+          },
+        });
+        return;
+      }
       router.back();
       return;
     }
     showAlertDialog(
-      'Forward incomplete',
-      `Sent to ${fulfilled} of ${selected.length}. Check your connection, then forward again from the original chat.`
+      captureUri ? 'Send incomplete' : 'Forward incomplete',
+      captureUri
+        ? `Sent to ${fulfilled} of ${targets.length}. Check your connection, then try again.`
+        : `Sent to ${fulfilled} of ${targets.length}. Check your connection, then forward again from the original chat.`
     );
     if (fulfilled > 0) router.back();
-  }, [forwardedText, selected, sending, sendTextMessage, router]);
+  }, [captureUri, captureKind, forwardedText, selected, sending, sendTextMessage, sendSecureMedia, router]);
 
   const checkbox = (name: string, chosen: boolean) => (
     <Ionicons
@@ -129,23 +176,49 @@ const NewMessageScreen = () => {
 
   return (
     <Screen viewClassName="pt-1 relative">
-      {isForwarding ? (
+      {isShare ? (
         <>
-          {/* What is being forwarded, quoted once at the top. */}
-          <View className="mx-4 mb-2 rounded-card bg-surface border-hair border-panel-border p-3 flex-row items-start gap-3">
-            <Ionicons
-              name="arrow-redo-outline"
-              size={18}
-              color={colors['text-muted']}
-              style={{ marginTop: 2 }}
-            />
-            <View className="flex-1 min-w-0">
-              <Text className="text-caption text-text-muted">Forwarding</Text>
-              <Text className="text-body-2 text-text-strong" numberOfLines={4}>
-                {forwardedText}
-              </Text>
+          {/* What is going out, quoted once at the top. */}
+          {isCapture ? (
+            <View className="mx-4 mb-2 rounded-card bg-surface border-hair border-panel-border p-3 flex-row items-center gap-3">
+              <Ionicons
+                name="camera-outline"
+                size={18}
+                color={colors['text-muted']}
+                style={{ marginTop: 2 }}
+              />
+              <View className="flex-1 min-w-0">
+                <Text className="text-caption text-text-muted">Sending</Text>
+                <Text className="text-body-2 text-text-strong">
+                  {captureKind === 'video' ? 'Video' : 'Photo'}
+                </Text>
+              </View>
+              {captureKind === 'video' ? (
+                <Ionicons name="videocam" size={28} color={colors['text-muted']} />
+              ) : (
+                <Image
+                  source={{ uri: captureUri }}
+                  style={{ width: 64, height: 64, borderRadius: 10 }}
+                  contentFit="cover"
+                />
+              )}
             </View>
-          </View>
+          ) : (
+            <View className="mx-4 mb-2 rounded-card bg-surface border-hair border-panel-border p-3 flex-row items-start gap-3">
+              <Ionicons
+                name="arrow-redo-outline"
+                size={18}
+                color={colors['text-muted']}
+                style={{ marginTop: 2 }}
+              />
+              <View className="flex-1 min-w-0">
+                <Text className="text-caption text-text-muted">Forwarding</Text>
+                <Text className="text-body-2 text-text-strong" numberOfLines={4}>
+                  {forwardedText}
+                </Text>
+              </View>
+            </View>
+          )}
 
           <ScrollView
             className="flex-1"
@@ -159,7 +232,14 @@ const NewMessageScreen = () => {
                 .map((contact, index, list) => (
                   <Pressable
                     key={contact.id}
-                    onPress={() => toggle({ id: contact.id, type: 'user' })}
+                    onPress={() =>
+                      toggle({
+                        id: contact.id,
+                        type: 'user',
+                        name: contact.name || contact.username || contact.id,
+                        image: contact.image,
+                      })
+                    }
                     className={`flex-row items-center gap-3 px-4 py-3 active:bg-surface-muted ${
                       index < list.length - 1 ? 'border-b-hair border-separator' : ''
                     }`}
@@ -199,7 +279,9 @@ const NewMessageScreen = () => {
                   {selectableGroups.map((group, index, list) => (
                     <Pressable
                       key={group.id}
-                      onPress={() => toggle({ id: group.id, type: 'group' })}
+                      onPress={() =>
+                        toggle({ id: group.id, type: 'group', name: group.name, image: group.image })
+                      }
                       className={`flex-row items-center gap-3 px-4 py-3 active:bg-surface-muted ${
                         index < list.length - 1 ? 'border-b-hair border-separator' : ''
                       }`}
@@ -227,8 +309,8 @@ const NewMessageScreen = () => {
           {selected.length > 0 ? (
             <View className="absolute bottom-6 right-4">
               <Pressable
-                onPress={() => void onSendForward()}
-                accessibilityLabel={`Forward to ${selected.length} chats`}
+                onPress={() => void onSendTargets()}
+                accessibilityLabel={`${isCapture ? 'Send capture to' : 'Forward to'} ${selected.length} chats`}
                 className="h-14 w-14 rounded-full bg-product items-center justify-center active:opacity-80"
                 style={{
                   shadowColor: '#000',

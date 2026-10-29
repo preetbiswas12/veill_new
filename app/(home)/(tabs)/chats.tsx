@@ -216,8 +216,8 @@ const ChatsScreen = () => {
           <View className="flex-row items-center gap-3">
             <HeaderButton
               icon="camera-outline"
-              label="New chat"
-              onPress={() => router.push('/new-message')}
+              label="Camera"
+              onPress={() => router.push('/camera?handoff=pick')}
             />
             <HeaderButton icon="add" solid label="New" onPress={() => router.push('/new')} />
           </View>

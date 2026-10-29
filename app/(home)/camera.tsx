@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,6 +23,8 @@ type Mode = 'photo' | 'video';
 
 const CameraScreen = () => {
   const router = useRouter();
+  const { handoff } = useLocalSearchParams<{ handoff?: string }>();
+  const captureForPicker = handoff === 'pick';
   const cameraRef = useRef<CameraView>(null);
   const [mode, setMode] = useState<Mode>('photo');
   const [recording, setRecording] = useState(false);
@@ -52,6 +54,17 @@ const CameraScreen = () => {
   };
 
   const finish = (uri: string, kind: Mode) => {
+    // From a conversation's composer the capture rides the one-slot store
+    // back: the composer takes it and sends. From the chats header there is
+    // no composer to return to, so it hands off to the recipient picker with
+    // the capture as params, WhatsApp-style; the slot stays empty there.
+    if (captureForPicker) {
+      router.replace({
+        pathname: '/new-message',
+        params: { capture: uri, captureKind: kind },
+      });
+      return;
+    }
     setPendingCapture({ uri, kind });
     router.back();
   };
