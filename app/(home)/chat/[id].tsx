@@ -495,14 +495,14 @@ const ChatScreen = () => {
               onPress={() => openCallScreen(true)}
               accessibilityLabel="Start video call"
             >
-              <Feather name="video" size={22} color="black" />
+              <Feather name="video" size={22} color={colors['text-strong']} />
             </Button>
             <Button
               variant="plain"
               onPress={() => openCallScreen(false)}
               accessibilityLabel="Start voice call"
             >
-              <Feather name="phone" size={22} color="black" />
+              <Feather name="phone" size={22} color={colors['text-strong']} />
             </Button>
           </View>
         ) : null}
