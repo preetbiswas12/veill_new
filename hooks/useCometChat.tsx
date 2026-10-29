@@ -487,9 +487,15 @@ export const getMessageText = (message: any): string => {
     if (data?.kind === 'file') return `🔒 ${data?.name || 'File'}`;
     return '🔒 Photo';
   }
-  // Sealed text previews stay locked as well: a conversation list says what
-  // arrived, never what a sealed message says. Threads decrypt; lists do not.
-  if (isSecureText(message)) return '🔒 Encrypted message';
+  // Sealed text previews open exactly like the thread bubbles: the keys are
+  // local, so the conversation list shows the real last line. The wire still
+  // never carries plaintext - only this on-device read path sees it.
+  if (isSecureText(message)) {
+    const state = secureTextOf(message);
+    if (state.text) return state.text;
+    if (state.failed) return 'This message could not be verified';
+    return '🔒 Encrypted message';
+  }
   const body = getMessageBody(message);
   if (body) return body;
   const attachment = getMessageAttachment(message);

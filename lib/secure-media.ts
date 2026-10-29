@@ -657,12 +657,17 @@ const sealedTextCache = new Map<string, SealedTextState>();
  * registered resolver, synchronously (the work is a sha256 plus one AES pass
  * over at most the ceiling). The list preview calls this as often as the
  * bubble does; the cache makes that free.
+ *
+ * Only settled successes are cached. An unresolved or failed attempt is
+ * retried on the next render, so previews self-heal once the conversation
+ * keys are ready - and a tampered message keeps failing loudly instead of
+ * being remembered as an empty verdict.
  */
 export const secureTextOf = (message: any): SealedTextState => {
   const id = String(message?.getId?.() ?? message?.id ?? '');
   const cached = id ? sealedTextCache.get(id) : undefined;
   if (cached) return cached;
   const state = resolveSealedText?.(message) ?? {};
-  if (id) sealedTextCache.set(id, state);
+  if (id && state.text) sealedTextCache.set(id, state);
   return state;
 };
