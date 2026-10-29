@@ -753,7 +753,11 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
         } else {
           builder.setUID(conversationId);
         }
-        const result = (await builder.build().fetchNext()) || [];
+        // v4 pagination: `fetchNext()` walks forward (newer than an anchor)
+        // and refuses to run without one, while `fetchPrevious()` walks older
+        // from the server's newest page - so a bare fetchPrevious() is the
+        // initial history load.
+        const result = (await builder.build().fetchPrevious()) || [];
         // History replays through the ingest so transfers that streamed in
         // while this conversation was closed rehydrate: the chunks are already
         // stored as custom messages, and the receiver needs only to reassemble.
@@ -1322,7 +1326,7 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
         const builder: any = new (CometChat as any).MessagesRequestBuilder().setLimit(1);
         if (type === 'group') builder.setGUID(conversationId);
         else builder.setUID(conversationId);
-        const [latest] = (await builder.build().fetchNext()) || [];
+        const [latest] = (await builder.build().fetchPrevious()) || [];
         if (!latest) return;
         await (CometChat.markMessageAsUnread as any)(latest);
         setConversations((prev) =>
@@ -1784,7 +1788,7 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
             .setUID(peer.id)
             .setCategories(['call'])
             .setLimit(10);
-          const messages = (await builder.build().fetchNext()) || [];
+          const messages = (await builder.build().fetchPrevious()) || [];
           return messages.map(
             (message: any): CallHistoryEntry => ({
               id: String(message?.getId?.() ?? `${peer.id}-${messageSentAt(message)}`),
@@ -1857,7 +1861,7 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
         .setLimit(50)
         .setCategories(['custom'])
         .setTypes([SECURE_START, SECURE_CHUNK]);
-      const messages = (await builder.build().fetchNext()) || [];
+      const messages = (await builder.build().fetchPrevious()) || [];
 
       // History rehydrates through the same pipeline as a thread: chunks of
       // stories that streamed in while the app was closed still reassemble,
@@ -2200,6 +2204,28 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
       } catch {
         // fall through to the failed verdict
       }
+      // Diagnostic (shapes only - the payload is ciphertext): why the
+      // conversation key did not open this envelope.
+      console.warn(
+        '[sealed-text] open failed',
+        JSON.stringify({
+          conversationId,
+          sender: message?.getSender?.()?.getUid?.() ?? null,
+          receiverId:
+            (typeof message?.getReceiverId === 'function'
+              ? message.getReceiverId()
+              : null) ?? null,
+          conversationIdField:
+            (typeof message?.getConversationId === 'function'
+              ? message.getConversationId()
+              : null) ?? null,
+          dataKind: Array.isArray(data)
+            ? 'array'
+            : data && typeof data === 'object'
+              ? Object.keys(data).join(',')
+              : typeof data,
+        })
+      );
       return { failed: true };
     });
     return () => {
