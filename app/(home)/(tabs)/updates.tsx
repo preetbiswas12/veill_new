@@ -282,21 +282,21 @@ const StoriesScreen = () => {
           </View>
 
           {/* Channels */}
-          <View className="gap-4">
-            <View className="h-[25px] px-4 justify-center">
+          <View className="gap-4 items-center">
+            <View className="w-full px-4 h-[25px] justify-center items-center">
               <Text className="text-[18.33px] font-semibold text-text-strong">Channels</Text>
             </View>
-            <View className="gap-4">
-              <Text className="text-body-2 text-text-muted">
+            <View className="gap-4 items-center w-full px-6">
+              <Text className="text-body-2 text-text-muted text-center w-full">
                 Stay updated on topics that matter to you. Find channels to follow below.
               </Text>
               <Pressable
                 onPress={() => router.push('/communities')}
                 accessibilityRole="button"
                 accessibilityLabel="Find channels to follow"
-                className="flex-row items-center gap-2.5 active:opacity-70"
+                className="self-center flex-row items-center gap-2.5 active:opacity-70"
               >
-                <Text className="flex-1 text-[15.8px] font-semibold text-text-muted">
+                <Text className="text-[15.8px] font-semibold text-text-muted text-center">
                   Find channels to follow
                 </Text>
                 <Ionicons name="chevron-forward" size={16} color={colors['text-muted']} />
@@ -305,7 +305,7 @@ const StoriesScreen = () => {
                 onPress={() => router.push('/communities')}
                 accessibilityRole="button"
                 accessibilityLabel="Explore more"
-                className="self-start px-4 py-2 rounded-full bg-primary active:opacity-80"
+                className="self-center px-4 py-2 rounded-full bg-primary active:opacity-80"
               >
                 <Text className="text-body-1 text-white">Explore more</Text>
               </Pressable>
