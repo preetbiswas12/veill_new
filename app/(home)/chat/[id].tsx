@@ -4,7 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Keyboard, KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Dimensions, FlatList, Keyboard, KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
 
 import Avatar from '@/components/Avatar';
 import Button from '@/components/Button';
@@ -136,14 +136,29 @@ const ChatScreen = () => {
 
   useEffect(() => {
     const showListener = Keyboard.addListener('keyboardDidShow', (event) => {
-      setKeyboardHeight(Math.round(event.endCoordinates.height) || 0);
+      // The IME's reported height is unstable across its two didShow events on
+      // Android 15 edge-to-edge: the second fires once the keyboard window has
+      // settled and its height has grown by the gesture-bar inset, which made
+      // the composer jump a second time and hang in space above the visible
+      // keyboard. The keyboard's top edge (screenY) is the one stable fact —
+      // pad by the distance from the window's bottom to that top, minus the
+      // bottom inset the Screen already reserves under this view. screenY is
+      // missing or zero on a few OEM keyboards, so fall back to the height.
+      const screenH = Dimensions.get('screen').height;
+      const screenY = event.endCoordinates.screenY;
+      let pad = Math.round(event.endCoordinates.height) || 0;
+      if (screenY > 0 && screenY < screenH) {
+        const fromTop = Math.round(screenH - screenY) - insets.bottom;
+        if (fromTop > 0) pad = fromTop;
+      }
+      setKeyboardHeight(pad);
     });
     const hideListener = Keyboard.addListener('keyboardDidHide', () => setKeyboardHeight(0));
     return () => {
       showListener.remove();
       hideListener.remove();
     };
-  }, []);
+  }, [insets.bottom]);
 
   const isDemoThread =
     conversationId.toLowerCase() === 'alice' || title.toLowerCase() === 'alice';
@@ -495,8 +510,9 @@ const ChatScreen = () => {
       <KeyboardAvoidingView
         className="flex-1"
         style={
-          // Edge-to-edge Android never resizes the window; pad the content by
-          // exactly what the IME insets API reports (already net of nav bar).
+          // Edge-to-edge Android never resizes the window; pad by the
+          // keyboard's visible top edge (see the listener above), already
+          // net of the inset the Screen reserves under this view.
           Platform.OS === 'android' && keyboardHeight > 0
             ? { paddingBottom: keyboardHeight }
             : undefined
