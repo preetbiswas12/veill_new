@@ -113,10 +113,17 @@ const AlertDialogHost = () => {
       {/* A Modal renders into its own native window, and NativeWind's
           CSS-variable classes do not reliably resolve inside it on Android -
           the card came out white with no radius in dark mode. Every style
-          below is therefore explicit through the palette. */}
+          below is therefore explicit through the palette - including this
+          placement container, whose flex-1/items-center classes would
+          otherwise be dropped and leave the card anchored to the top-left. */}
       <View
-        className="flex-1 items-center justify-center px-8"
-        style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingHorizontal: 32,
+          backgroundColor: 'rgba(0,0,0,0.4)',
+        }}
       >
         {current ? (
           <Animated.View

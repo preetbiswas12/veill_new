@@ -66,7 +66,9 @@ const StorageScreen = () => {
           </Text>
         </View>
 
-        {/* Bar chart, coloured by category, per the design. */}
+        {/* Bar chart, coloured by category, per the design. Percentage widths
+            rather than flex ratios: the segments close at exactly 100% of the
+            track and nothing animatable ever lands in an inline style. */}
         <View className="px-4 pb-2">
           <View className="h-3 rounded-full overflow-hidden flex-row bg-surface-muted">
             {items.map((item) =>
@@ -74,7 +76,7 @@ const StorageScreen = () => {
                 <View
                   key={item.label}
                   style={{
-                    flex: item.value,
+                    width: `${(item.value / total) * 100}%`,
                     backgroundColor: item.color,
                   }}
                 />
