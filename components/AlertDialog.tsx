@@ -207,7 +207,7 @@ const AlertDialogHost = () => {
                       : {
                           minHeight: 44,
                           paddingHorizontal: 20,
-                          alignItems: 'flex-start',
+                          alignItems: 'center',
                           justifyContent: 'center',
                           borderTopWidth: index > 0 ? 0.5 : 0,
                           borderTopColor: colors['separator'],
@@ -218,7 +218,7 @@ const AlertDialogHost = () => {
                   <Text
                     style={{
                       fontSize: 16,
-                      textAlign: horizontal ? undefined : 'left',
+                      textAlign: horizontal ? undefined : 'center',
                       color:
                         button.style === 'destructive'
                           ? colors['text-error']
