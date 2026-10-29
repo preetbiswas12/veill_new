@@ -5,6 +5,7 @@ import { ScrollView, Text, View } from 'react-native';
 import { SettingsRowItem } from '@/components/BadgeIcon';
 import Screen from '@/components/Screen';
 import { HeaderButton } from '@/components/ScreenHeader';
+import { showAlertDialog } from '@/components/AlertDialog';
 import { useCometChat } from '@/hooks/useCometChat';
 import { useFavourites } from '@/hooks/useFavourites';
 import { useTheme } from '@/hooks/useTheme';
@@ -15,9 +16,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
  *
  * The rows that CometChat's client SDK can actually enforce are live: blocked
  * users come from `getBlockedUsers`, and blocking goes through the SDK rather
- * than being faked. The presence rows describe what the platform does rather
- * than offering a switch that would not take effect, because there is no client
- * API to change last-seen or online visibility.
+ * than being faked. There is no client API for profile-visibility, About
+ * visibility, per-account presence or group-invite rules, so those rows do not
+ * offer dead switches - they state what the platform will actually do and why,
+ * in the alert they open.
  */
 const PrivacyScreen = () => {
   const { colors } = useTheme();
@@ -25,6 +27,12 @@ const PrivacyScreen = () => {
   const router = useRouter();
   const { blockedIds, toggleBlockUser, isBlocked } = useCometChat();
   const { ids: favouriteIds } = useFavourites();
+
+  // A read-only row still answers: the dialog declares what the platform
+  // enforces and why there is nothing this account can set — never a switch
+  // that would do nothing.
+  const declare = (title: string, message: string) => () =>
+    showAlertDialog(title, message);
 
   return (
     <Screen edges={['left', 'right', 'bottom']}>
@@ -88,22 +96,30 @@ const PrivacyScreen = () => {
               badgeColor="#4a90d9"
               label="Profile photo"
               value="Everyone"
-              onPress={() =>
-                // Read-only: CometChat has no client API for profile visibility.
-                undefined
-              }
+              onPress={declare(
+                'Profile photo',
+                'CometChat hosts your avatar and serves it to anyone who can open a conversation with you. There is no client call to restrict its visibility, so this row describes the platform rather than offering a switch it could not honour.'
+              )}
             />
             <SettingsRowItem
               icon="information-circle-outline"
               badgeColor="#4a90d9"
               label="About"
               value="Everyone"
+              onPress={declare(
+                'About',
+                'The About status has no visibility control in CometChat: anyone who can open a conversation with you sees it, exactly as it was set for this account.'
+              )}
             />
             <SettingsRowItem
               icon="call-outline"
               badgeColor="#4a90d9"
               label="Last seen and online"
               value="Everyone"
+              onPress={declare(
+                'Last seen and online',
+                'CometChat applies one presence rule to everyone in this app - set in the app\u2019s CometChat settings, with choices of everyone, roles only, friends or none. There is no per-account choice for this app to change.'
+              )}
             />
           </View>
         </View>
@@ -118,12 +134,20 @@ const PrivacyScreen = () => {
               badgeColor="#4a90d9"
               label="Who can add me to groups"
               value="Everyone"
+              onPress={declare(
+                'Who can add me to groups',
+                'CometChat has no per-user rule for this: whether someone may add you is governed by each group\u2019s own settings and the scope its members hold.'
+              )}
             />
             <SettingsRowItem
               icon="star-outline"
               badgeColor="#4a90d9"
               label="Favourites on this device"
               value={favouriteIds.length ? `${favouriteIds.length}` : 'None'}
+              onPress={declare(
+                'Favourites on this device',
+                'Favourites are stored on this device alone - they are neither saved to CometChat nor visible to anyone else.'
+              )}
             />
           </View>
         </View>
