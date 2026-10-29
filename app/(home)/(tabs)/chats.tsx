@@ -200,7 +200,7 @@ const ChatsScreen = () => {
   const titleBlock = (
     <>
       {/* The design's large title carries the action controls on its own row:
-          "Edit" on the leading edge, camera and compose on the trailing one.
+          "Edit" on the leading edge, compose on the trailing one.
           The Screen excludes the top edge, so this block owns the status-bar
           inset; without it the 34pt title collides with the notch. */}
       <View
@@ -214,11 +214,6 @@ const ChatsScreen = () => {
         <View className="flex-row items-center justify-between">
           <Text className="flex-1 min-w-0 text-display font-bold text-text-strong">Chats</Text>
           <View className="flex-row items-center gap-3">
-            <HeaderButton
-              icon="camera-outline"
-              label="Camera"
-              onPress={() => router.push('/camera?handoff=pick')}
-            />
             <HeaderButton icon="add" solid label="New" onPress={() => router.push('/new')} />
           </View>
         </View>
