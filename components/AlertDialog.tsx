@@ -175,10 +175,13 @@ const AlertDialogHost = () => {
                 borderTopWidth: 0.5,
                 borderTopColor: colors['separator'],
                 flexDirection: horizontal ? 'row' : 'column',
-                // Horizontal actions anchor to the card's trailing edge,
-                // WhatsApp-style: the labels are read left to right and the
-                // box closes on the action, not under its middle.
-                justifyContent: horizontal ? 'flex-end' : 'flex-start',
+                // Horizontal actions with a pair (Cancel + OK) close on the
+                // card's trailing edge, WhatsApp-style. A lone action takes
+                // the midpoint: half the travel from centre to the edge.
+                justifyContent:
+                  horizontal
+                    ? (current.buttons.length === 1 ? 'center' : 'flex-end')
+                    : 'flex-start',
                 paddingHorizontal: horizontal ? 12 : 0,
               }}
             >
