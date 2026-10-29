@@ -523,6 +523,25 @@ const conversationTargetId = (conversation: any, type: string) => {
   return id as string;
 };
 
+/**
+ * CometChat rejects with a plain object ({ code, details, message }) rather
+ * than an Error instance, so the raw object used to vanish into the fallback
+ * string and left nothing to debug from. Surface the code: the banner and the
+ * console both carry it.
+ */
+const describeSdkError = (caught: unknown, fallback: string): string => {
+  if (caught instanceof Error) return caught.message;
+  const e = caught as { code?: unknown; message?: unknown; details?: { message?: unknown } } | null;
+  if (!e || typeof e !== 'object') return fallback;
+  const code = typeof e.code === 'string' ? e.code : '';
+  const detail =
+    (typeof e.details?.message === 'string' && e.details.message) ||
+    (typeof e.message === 'string' && e.message) ||
+    '';
+  const text = detail ? (code ? `${code}: ${detail}` : detail) : code;
+  return text || fallback;
+};
+
 const mapConversation = (conversation: any): CometChatConversation => {
   const type =
     (typeof conversation.getConversationType === 'function'
@@ -716,7 +735,8 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
       mapped.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
       setConversations(mapped);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Unable to load conversations');
+      console.warn('[conversations] load failed', caught);
+      setError(describeSdkError(caught, 'Unable to load conversations'));
     } finally {
       setLoadingConversations(false);
     }
@@ -747,7 +767,8 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
           return next;
         });
       } catch (caught) {
-        setError(caught instanceof Error ? caught.message : 'Unable to load messages');
+        console.warn('[messages] load failed', conversationId, caught);
+        setError(describeSdkError(caught, 'Unable to load messages'));
       } finally {
         setLoadingMessages((prev) => new Map(prev).set(conversationId, false));
       }
