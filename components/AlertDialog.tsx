@@ -175,6 +175,11 @@ const AlertDialogHost = () => {
                 borderTopWidth: 0.5,
                 borderTopColor: colors['separator'],
                 flexDirection: horizontal ? 'row' : 'column',
+                // Horizontal actions anchor to the card's trailing edge,
+                // WhatsApp-style: the labels are read left to right and the
+                // box closes on the action, not under its middle.
+                justifyContent: horizontal ? 'flex-end' : 'flex-start',
+                paddingHorizontal: horizontal ? 12 : 0,
               }}
             >
               {current.buttons.map((button, index) => (
@@ -189,16 +194,17 @@ const AlertDialogHost = () => {
                   style={({ pressed }) => [
                     horizontal
                       ? {
-                          flex: 1,
                           height: 44,
+                          paddingHorizontal: 14,
                           alignItems: 'center',
                           justifyContent: 'center',
                           borderLeftWidth: index > 0 ? 0.5 : 0,
                           borderLeftColor: colors['separator'],
                         }
                       : {
-                          height: 44,
-                          alignItems: 'center',
+                          minHeight: 44,
+                          paddingHorizontal: 20,
+                          alignItems: 'flex-start',
                           justifyContent: 'center',
                           borderTopWidth: index > 0 ? 0.5 : 0,
                           borderTopColor: colors['separator'],
@@ -209,6 +215,7 @@ const AlertDialogHost = () => {
                   <Text
                     style={{
                       fontSize: 16,
+                      textAlign: horizontal ? undefined : 'left',
                       color:
                         button.style === 'destructive'
                           ? colors['text-error']
