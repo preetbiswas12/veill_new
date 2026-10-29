@@ -136,14 +136,21 @@ const ChatScreen = () => {
 
   useEffect(() => {
     const showListener = Keyboard.addListener('keyboardDidShow', (event) => {
-      // The IME's reported height is unstable across its two didShow events on
-      // Android 15 edge-to-edge: the second fires once the keyboard window has
-      // settled and its height has grown by the gesture-bar inset, which made
-      // the composer jump a second time and hang in space above the visible
-      // keyboard. The keyboard's top edge (screenY) is the one stable fact —
-      // pad by the distance from the window's bottom to that top, minus the
-      // bottom inset the Screen already reserves under this view. screenY is
-      // missing or zero on a few OEM keyboards, so fall back to the height.
+      // Android 14 and below: windowSoftInputMode=adjustResize still resizes
+      // the window around the IME, so the system lifts the composer flush on
+      // its own. Padding here as well doubled the lift - the composer ended
+      // up one keyboard height above the keyboard (measured on the user's
+      // Android 13 device). Only Android 15+ enforces edge-to-edge, where the
+      // window never resizes and the JS pad is the only lifter. (iOS uses the
+      // behavior="padding" path and never reaches this.)
+      if (Platform.OS !== 'android' || Number(Platform.Version) < 35) return;
+
+      // Android 15+: pad by the keyboard's visible top edge (screenY), the
+      // stable fact across the IME's two didShow events (whose reported
+      // height grows by the gesture-bar inset once the window settles), net
+      // of the bottom inset the Screen already reserves under this view.
+      // screenY is missing or zero on a few OEM keyboards, so fall back to
+      // the reported height.
       const screenH = Dimensions.get('screen').height;
       const screenY = event.endCoordinates.screenY;
       let pad = Math.round(event.endCoordinates.height) || 0;
@@ -510,9 +517,10 @@ const ChatScreen = () => {
       <KeyboardAvoidingView
         className="flex-1"
         style={
-          // Edge-to-edge Android never resizes the window; pad by the
-          // keyboard's visible top edge (see the listener above), already
-          // net of the inset the Screen reserves under this view.
+          // Android 15+ edge-to-edge never resizes the window: pad by the
+          // keyboard's visible top edge (see the listener above), net of the
+          // inset the Screen reserves under this view. Android 14 and below
+          // resize natively - keyboardHeight stays 0 there.
           Platform.OS === 'android' && keyboardHeight > 0
             ? { paddingBottom: keyboardHeight }
             : undefined
