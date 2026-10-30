@@ -74,7 +74,6 @@ const WhatsAppTabIcon = ({
       <Text
         className="text-tabbar mt-[3px]"
         numberOfLines={1}
-        adjustsFontSizeToFit
         style={{ color: colors['text-muted'] }}
       >
         {label}

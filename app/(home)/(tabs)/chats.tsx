@@ -338,13 +338,14 @@ const ChatsScreen = () => {
             </Text>
           </View>
         }
-        // The design pins the encryption note under the list.
+        // Encryption note under the list. Honest wording: transport and app
+        // seals are real, but the audit found conversation keys derivable from
+        // public inputs, so "end-to-end" would overstate the guarantee.
         ListFooterComponent={
           <View className="flex-row items-start justify-center gap-1 py-px px-4">
             <Ionicons name="lock-closed" size={12} color={colors['text-muted']} />
             <Text className="text-caption text-text-muted">
-              Your personal messages are{' '}
-              <Text className="text-text-product">end-to-end encrypted</Text>
+              Your personal messages are encrypted in transit
             </Text>
           </View>
         }
