@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colorScheme } from 'nativewind';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { useColorScheme as useSystemScheme } from 'react-native';
+import { useColorScheme as useSystemScheme, View } from 'react-native';
 
 import { darkPalette, lightPalette } from '@/lib/colors';
 import type { Palette } from '@/lib/colors';
@@ -38,17 +38,23 @@ const ThemeContext = createContext<ThemeValue | null>(null);
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const systemScheme = useSystemScheme();
   const [preference, setPreferenceState] = useState<ThemePreference>('system');
+  const [ready, setReady] = useState(false);
 
-  // Restore the saved preference before the first paint that matters, so the app
-  // does not flash light and then swap.
+  // Restore the saved preference synchronously before any paint. The initial
+  // 'system' default flashes a different surface briefly; holding children
+  // until AsyncStorage responds avoids that white flash on every navigation.
   useEffect(() => {
     let active = true;
     void (async () => {
       try {
         const saved = await AsyncStorage.getItem(STORAGE_KEY);
-        if (active && saved === 'light' || saved === 'dark') setPreferenceState(saved);
+        if (active && (saved === 'light' || saved === 'dark')) {
+          setPreferenceState(saved);
+        }
       } catch {
         // A missing or unreadable preference just leaves the default.
+      } finally {
+        if (active) setReady(true);
       }
     })();
     return () => {
@@ -83,6 +89,18 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     }),
     [preference, resolved, setPreference, toggle]
   );
+
+  // Prevent the white flash: hold children until the saved preference is
+  // loaded from storage. A black surface matches whatever the resolved
+  // theme will be (dark surfaces stay dark; light surfaces show a brief
+  // black screen instead of a jaring white flash).
+  if (!ready) {
+    return (
+      <ThemeContext.Provider value={value}>
+        <View style={{ flex: 1, backgroundColor: '#0a0a0a' }} />
+      </ThemeContext.Provider>
+    );
+  }
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };
