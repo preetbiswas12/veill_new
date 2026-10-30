@@ -1,7 +1,22 @@
 import { Feather } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import * as MediaLibrary from 'expo-media-library';
+/** Lazy-loaded because expo-media-library is a native module: it only exists
+     in a dev build / Expo Go that includes it. Importing it at module top
+     level crashes the entire chat screen (no default export → ErrorBoundary)
+     whenever the native module isn't linked. */
+let _MediaLibrary: typeof import('expo-media-library') | null = null;
+function mediaLibrary(): typeof import('expo-media-library') | null {
+  if (_MediaLibrary === null) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      _MediaLibrary = require('expo-media-library');
+    } catch {
+      _MediaLibrary = {} as typeof import('expo-media-library');
+    }
+  }
+  return _MediaLibrary;
+}
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -411,7 +426,15 @@ const ChatScreen = () => {
       return;
     }
     try {
-      const permission = await MediaLibrary.requestPermissionsAsync();
+      const ML = mediaLibrary();
+      if (!ML || typeof ML.requestPermissionsAsync !== 'function') {
+        showAlertDialog(
+          'Save unavailable',
+          'Media saving needs a dev build with expo-media-library linked. Rebuild with expo-dev-client, or use Expo Go SDK 57.'
+        );
+        return;
+      }
+      const permission = await ML.requestPermissionsAsync();
       if (!permission.granted) {
         showAlertDialog(
           'Permission needed',
@@ -419,7 +442,7 @@ const ChatScreen = () => {
         );
         return;
       }
-      await MediaLibrary.saveToLibraryAsync(uri);
+      await ML.saveToLibraryAsync(uri);
       setStarToast('Saved to gallery');
     } catch {
       showAlertDialog('Could not save', 'The file could not be written to the gallery.');
