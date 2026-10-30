@@ -29,6 +29,7 @@ import DateDivider, { getDateKey } from '@/components/DateDivider';
 import MessageActions from '@/components/MessageActions';
 import ChatWallpaper from '@/components/ChatWallpaper';
 import MessageBubble, { BubbleEntrance } from '@/components/MessageBubble';
+import SwipeToReply from '@/components/SwipeToReply';
 import ToastHost from '@/components/ToastHost';
 import MessageListHeader from '@/components/MessageListHeader';
 import Screen from '@/components/Screen';
@@ -356,22 +357,26 @@ const ChatScreen = () => {
     await Clipboard.setStringAsync(text);
   }, [selected, demoSelected]);
 
-  // The design's reply flow: quote the selected message in the bar above the
-  // composer, then send the next message as its reply.
-  const onReplySelected = useCallback(() => {
-    if (!selected) return;
+  // Quote any message object into the bar above the composer. Shared by the
+  // long-press actions and by WhatsApp-style swipe-to-reply.
+  const replyToMessage = useCallback((message: any) => {
     const sender =
-      (typeof selected.message?.getSender === 'function'
-        ? selected.message.getSender()
+      (typeof message?.getSender === 'function'
+        ? message.getSender()
         : undefined)?.getName?.() ||
-      getMessageText(selected.message) ||
+      getMessageText(message) ||
       'Message';
     setReplyTo({
-      messageId: String(selected.message?.getId?.() ?? selected.message?.id ?? ''),
+      messageId: String(message?.getId?.() ?? message?.id ?? ''),
       sender,
-      text: getMessageBody(selected.message) || getMessageText(selected.message) || '',
+      text: getMessageBody(message) || getMessageText(message) || '',
     });
-  }, [selected]);
+  }, []);
+
+  const onReplySelected = useCallback(() => {
+    if (!selected) return;
+    replyToMessage(selected.message);
+  }, [selected, replyToMessage]);
 
   // CometChat 4.1.0 has no star action on the client SDK, so starring is a
   // local store (hooks/useStarredMessages.ts) the same way Favourites is.
@@ -534,24 +539,26 @@ const ChatScreen = () => {
 
     return (
       <BubbleEntrance appear={rowIsNew}>
-        <MessageBubble
-          message={item.message}
-          isOwn={item.isOwn}
-          isGroupStart={item.isGroupStart}
-          isGroupEnd={item.isGroupEnd}
-          showAvatar={item.showAvatar}
-          senderName={item.senderName}
-          receiptLabel={receiptLabel}
-          reply={replyPreviews.get(messageKey) ?? null}
-          onLongPress={() => {
-            void Haptics.selectionAsync();
-            setSelected({
-              message: item.message,
-              canCopy: Boolean(getMessageBody(item.message)),
-            });
-          }}
-          onReact={(reaction) => void toggleReaction(conversationId, item.message, reaction)}
-        />
+        <SwipeToReply onReply={() => replyToMessage(item.message)}>
+          <MessageBubble
+            message={item.message}
+            isOwn={item.isOwn}
+            isGroupStart={item.isGroupStart}
+            isGroupEnd={item.isGroupEnd}
+            showAvatar={item.showAvatar}
+            senderName={item.senderName}
+            receiptLabel={receiptLabel}
+            reply={replyPreviews.get(messageKey) ?? null}
+            onLongPress={() => {
+              void Haptics.selectionAsync();
+              setSelected({
+                message: item.message,
+                canCopy: Boolean(getMessageBody(item.message)),
+              });
+            }}
+            onReact={(reaction) => void toggleReaction(conversationId, item.message, reaction)}
+          />
+        </SwipeToReply>
       </BubbleEntrance>
     );
   };
