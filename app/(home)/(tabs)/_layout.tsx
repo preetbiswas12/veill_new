@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs, useRouter } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { useEffect } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import clsx from 'clsx';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -11,18 +11,22 @@ import { useCometChat } from '@/hooks/useCometChat';
 import { useTheme } from '@/hooks/useTheme';
 
 /**
- * Tab bar measured off WhatsApp-android's 2024+ build:
+ * Tab bar measured off WhatsApp-android's 2024+ build: 60dp flat bar,
+ * labeled slots, a round chip behind the active icon, gray labels in both
+ * states, and an unread pill on the chats icon.
  *
- *   bar 60dp, flat panel colour, no top hairline
- *   icon 26dp over a 12sp gray label
- *   active slot: 44x32dp rounded capsule in the chip green with a strong icon
- *   inactive slot: plain gray icon and label
- *   unread badge: 18dp green pill with the mode-inverted count on the chats icon
+ * react-navigation v7 contract this layout respects (read from the installed
+ * @react-navigation/bottom-tabs source):
+ *  - `tabBarIcon` content is rendered inside a fixed 31x28 box (TabBarIcon
+ *    wrapperUikit), stacked twice for the active/inactive fade. Anything
+ *    larger — capsules, labels, badges built inside the icon — gets clamped
+ *    into that box, which is exactly the "icons not showing" regression.
+ *  - So the icon stays a plain glyph in a 28x28 slot (the active chip IS the
+ *    slot fill and fits the box budget), the label is react-navigation's own
+ *    (`tabBarLabelStyle` + tints), and the badge is the native `tabBarBadge`.
  *
- * Our five destinations keep the same shapes: chats first, then updates,
- * communities, calls — WhatsApp's four — with settings as an extra slot on the
- * end so profile and sign-out keep a fixed home (WhatsApp reaches settings from
- * its overflow menu instead; the menu here mirrors that entry).
+ * Order: chats, updates, communities, calls — WhatsApp's four — with settings
+ * as an extra slot on the end so profile and sign-out keep a fixed home.
  */
 
 /** The bar height, excluding the gesture-area inset. */
@@ -30,56 +34,29 @@ const TAB_BAR_HEIGHT = 60;
 
 type TabIconName = ComponentProps<typeof Ionicons>['name'];
 
-/**
- * One tab slot: a 44x32dp capsule behind a 26dp icon, a 12sp label under it,
- * plus the optional unread pill on the chats icon.
- */
-const WhatsAppTabIcon = ({
+/** 28x28 slot fill: a round chip when focused, a plain centered glyph. */
+const TabIcon = ({
   focused,
   name,
   focusedName,
-  label,
-  badge,
 }: {
   focused: boolean;
   name: TabIconName;
   focusedName: TabIconName;
-  label: string;
-  badge?: number;
 }) => {
   const { colors } = useTheme();
   return (
-    // w-full is what stops react-navigation's flex slot from compressing the
-    // icon+label subtree to ~40px (compressed glyphs read as "missing icons").
-    <View className="items-center w-full">
-      <View className="relative">
-        <View
-          className={clsx(
-            'h-8 px-3.5 rounded-full items-center justify-center',
-            focused ? 'bg-surface-active' : 'bg-transparent'
-          )}
-        >
-          <Ionicons
-            name={focused ? focusedName : name}
-            size={26}
-            color={focused ? colors['text-strong'] : colors['text-muted']}
-          />
-        </View>
-        {badge && badge > 0 ? (
-          <View className="absolute -top-1 -right-2.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary items-center justify-center border-[1.5px] border-panel-blur">
-            <Text className="text-body-3 font-semibold text-text-invert">
-              {badge > 99 ? '99+' : badge}
-            </Text>
-          </View>
-        ) : null}
-      </View>
-      <Text
-        className="text-tabbar mt-[3px]"
-        numberOfLines={1}
-        style={{ color: colors['text-muted'] }}
-      >
-        {label}
-      </Text>
+    <View
+      className={clsx(
+        'h-7 w-7 items-center justify-center rounded-full',
+        focused ? 'bg-surface-active' : 'bg-transparent'
+      )}
+    >
+      <Ionicons
+        name={focused ? focusedName : name}
+        size={22}
+        color={focused ? colors['text-strong'] : colors['text-muted']}
+      />
     </View>
   );
 };
@@ -111,13 +88,18 @@ const TabsLayout = () => {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarShowLabel: false,
+        // Labels are react-navigation's own: 12sp, gray in both states —
+        // WhatsApp-android keeps labels uniform and lets the chip carry the
+        // active signal.
+        tabBarShowLabel: true,
+        tabBarActiveTintColor: colors['text-muted'],
+        tabBarInactiveTintColor: colors['text-muted'],
+        tabBarLabelStyle: { fontSize: 12, lineHeight: 14 },
         tabBarButton: HapticTab,
-        // WhatsApp-android's bar is a flat, hairline-less panel; the token is
-        // solid-backed instead of a BlurView so the bottom edge never breaks.
+        // WhatsApp-android's bar is a flat, hairline-less panel.
         tabBarStyle: {
           height: TAB_BAR_HEIGHT + insets.bottom,
-          paddingTop: 4,
+          paddingTop: 6,
           paddingBottom: insets.bottom,
           backgroundColor: colors['surface-muted'],
         },
@@ -128,14 +110,10 @@ const TabsLayout = () => {
         name="chats"
         options={{
           title: 'Chats',
+          tabBarBadge: unreadTotal > 0 ? unreadTotal : undefined,
+          tabBarBadgeStyle: { backgroundColor: colors['product'] },
           tabBarIcon: ({ focused }) => (
-            <WhatsAppTabIcon
-              focused={focused}
-              name="chatbubbles-outline"
-              focusedName="chatbubbles"
-              label="Chats"
-              badge={unreadTotal}
-            />
+            <TabIcon focused={focused} name="chatbubbles-outline" focusedName="chatbubbles" />
           ),
         }}
       />
@@ -144,7 +122,7 @@ const TabsLayout = () => {
         options={{
           title: 'Updates',
           tabBarIcon: ({ focused }) => (
-            <WhatsAppTabIcon focused={focused} name="radio-outline" focusedName="radio" label="Updates" />
+            <TabIcon focused={focused} name="radio-outline" focusedName="radio" />
           ),
         }}
       />
@@ -153,7 +131,7 @@ const TabsLayout = () => {
         options={{
           title: 'Communities',
           tabBarIcon: ({ focused }) => (
-            <WhatsAppTabIcon focused={focused} name="people-outline" focusedName="people" label="Communities" />
+            <TabIcon focused={focused} name="people-outline" focusedName="people" />
           ),
         }}
       />
@@ -162,7 +140,7 @@ const TabsLayout = () => {
         options={{
           title: 'Calls',
           tabBarIcon: ({ focused }) => (
-            <WhatsAppTabIcon focused={focused} name="call-outline" focusedName="call" label="Calls" />
+            <TabIcon focused={focused} name="call-outline" focusedName="call" />
           ),
         }}
       />
@@ -171,7 +149,7 @@ const TabsLayout = () => {
         options={{
           title: 'Settings',
           tabBarIcon: ({ focused }) => (
-            <WhatsAppTabIcon focused={focused} name="settings-outline" focusedName="settings" label="Settings" />
+            <TabIcon focused={focused} name="settings-outline" focusedName="settings" />
           ),
         }}
       />
