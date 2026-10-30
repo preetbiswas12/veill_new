@@ -122,6 +122,9 @@ const AlertDialogHost = () => {
   const cardWidth = Math.min(300, windowWidth - 40);
   // WhatsApp/M3 action tint: brand green, destructive red, cancel muted.
   const actionTint = isDark ? colors['product'] : colors['teal'];
+  // Menu-style stacking once a picker carries more than a pair of rows,
+  // matching the wallpaper/theme pickers' option lists.
+  const stacked = (current?.buttons.length ?? 0) > 2;
 
   return (
     <Modal
@@ -195,7 +198,7 @@ const AlertDialogHost = () => {
             )}
             <View
               style={{
-                flexDirection: current.buttons.length > 2 ? 'column' : 'row',
+                flexDirection: stacked ? 'column' : 'row',
                 // Material 3 puts every action on the trailing edge — WhatsApp
                 // dialogs included. (Replaces the old iOS carry of centring a
                 // lone action or trailing Cancel/OK.) Four-option pickers
@@ -203,6 +206,7 @@ const AlertDialogHost = () => {
                 // rows, the M3 menu idiom, so nothing overflows the card.
                 justifyContent: 'flex-end',
                 paddingHorizontal: 12,
+                paddingTop: stacked ? 4 : 0,
                 paddingBottom: 14,
               }}
             >
@@ -217,13 +221,13 @@ const AlertDialogHost = () => {
                   accessibilityLabel={button.text}
                   android_ripple={{ color: RIPPLE_INK, radius: 72 }}
                   style={({ pressed }) => ({
-                    minHeight: 44,
+                    minHeight: stacked ? 48 : 44,
                     paddingHorizontal: 14,
-                    marginTop: current.buttons.length > 2 && index > 0 ? 2 : 0,
-                    marginLeft: current.buttons.length > 2 ? 0 : index > 0 ? 6 : 0,
-                    alignSelf: current.buttons.length > 2 ? 'stretch' : undefined,
-                    width: current.buttons.length > 2 ? '100%' : undefined,
-                    alignItems: current.buttons.length > 2 ? 'flex-start' : 'center',
+                    marginTop: stacked && index > 0 ? 2 : 0,
+                    marginLeft: !stacked && index > 0 ? 6 : 0,
+                    alignSelf: stacked ? 'stretch' : undefined,
+                    width: stacked ? '100%' : undefined,
+                    alignItems: stacked ? 'flex-start' : 'center',
                     justifyContent: 'center',
                     borderRadius: 22,
                     opacity: pressed ? 0.9 : 1,
@@ -231,16 +235,27 @@ const AlertDialogHost = () => {
                 >
                   <Text
                     style={{
-                      fontSize: 14,
-                      lineHeight: 20,
+                      fontSize: stacked ? 15 : 14,
+                      lineHeight: stacked ? 20 : 20,
                       letterSpacing: 0.1,
-                      textAlign: current.buttons.length > 2 ? 'left' : undefined,
+                      textAlign: stacked ? 'left' : undefined,
+                      // Tint tiers, WhatsApp/M3: destructive red; a lone
+                      // confirm is always read as the primary action (the
+                      // fallback `{ text: 'OK', style: 'cancel' }` would
+                      // otherwise render a dead grey corner button); a Cancel
+                      // in a pair is muted; multi-option menus render neutral
+                      // rows with green reserved for the checkmark the caller
+                      // embeds in its own label.
                       color:
                         button.style === 'destructive'
                           ? colors['text-error']
-                          : button.style === 'cancel'
-                            ? colors['text-muted']
-                            : actionTint,
+                          : stacked
+                            ? button.style === 'cancel'
+                              ? colors['text-muted']
+                              : colors['text-strong']
+                            : current.buttons.length === 1 || button.style !== 'cancel'
+                              ? actionTint
+                              : colors['text-muted'],
                       fontWeight: '600',
                     }}
                   >

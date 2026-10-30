@@ -135,8 +135,15 @@ const ChatScreen = () => {
       const parent = byId.get(parentId);
       if (parent) {
         const parentSender = senderOf(parent);
+        // Image-3 bug: when the quoted message is your own, the label must be
+        // "You" — WhatsApp-style — not your profile name. `localUid` alone
+        // can't decide it (it is only stamped by the call flow), so the
+        // authenticated `user.id` backs the comparison.
         previews.set(String(message?.getId?.() ?? message?.id ?? ''), {
-          sender: parentSender === localUid ? 'You' : (parent.getSender?.()?.getName?.() || title),
+          sender:
+            (parentSender && (parentSender === localUid || parentSender === user?.id))
+              ? 'You'
+              : (parent.getSender?.()?.getName?.() || title),
           text: getMessageBody(parent) || getMessageText(parent) || 'Earlier message',
         });
       } else {
@@ -148,7 +155,7 @@ const ChatScreen = () => {
       }
     }
     return previews;
-  }, [messages, localUid, title]);
+  }, [messages, localUid, user?.id, title]);
 
   // Whether a message is saveable media, without opening the media store.
   const mediaKindOf = useCallback(
@@ -358,20 +365,26 @@ const ChatScreen = () => {
   }, [selected, demoSelected]);
 
   // Quote any message object into the bar above the composer. Shared by the
-  // long-press actions and by WhatsApp-style swipe-to-reply.
+  // long-press actions and by WhatsApp-style swipe-to-reply. Quoting your own
+  // message shows "You", WhatsApp-style — the sender card's uid is the truth
+  // (`localUid` is only stamped by the call flow, so it cannot be relied on).
   const replyToMessage = useCallback((message: any) => {
-    const sender =
+    const uid =
+      senderOf(message) ||
+      (typeof message?.getSender === 'function' ? message.getSender()?.getUid?.() : '') ||
+      '';
+    const own = Boolean(uid) && (uid === localUid || uid === user?.id);
+    const senderName =
       (typeof message?.getSender === 'function'
         ? message.getSender()
-        : undefined)?.getName?.() ||
-      getMessageText(message) ||
-      'Message';
+        : undefined)?.getName?.() || title;
+    const sender = own ? 'You' : senderName;
     setReplyTo({
       messageId: String(message?.getId?.() ?? message?.id ?? ''),
       sender,
       text: getMessageBody(message) || getMessageText(message) || '',
     });
-  }, []);
+  }, [localUid, user?.id, title]);
 
   const onReplySelected = useCallback(() => {
     if (!selected) return;
@@ -393,16 +406,23 @@ const ChatScreen = () => {
       id,
       conversationId,
       body: getMessageBody(selected.message) || getMessageText(selected.message) || '',
-      senderName:
-        (typeof selected.message?.getSender === 'function'
-          ? selected.message.getSender()
-          : undefined)?.getName?.() ||
-        senderOf(selected.message) === localUid ? 'You' : title,
+      // Same "You" rule as the quotes: own messages are labelled You, the
+      // sender card's uid decides (same precedence bug as the old expression,
+      // which let an empty-name fallback flip every starred entry to You).
+      senderName: (() => {
+        const uid = senderOf(selected.message);
+        if (uid && (uid === localUid || uid === user?.id)) return 'You';
+        return (
+          (typeof selected.message?.getSender === 'function'
+            ? selected.message.getSender()
+            : undefined)?.getName?.() || title
+        );
+      })(),
       timestamp: getMessageTimestamp(selected.message),
     }).then((nowStarred) => {
       setStarToast(nowStarred ? 'Message starred' : 'Star removed');
     });
-  }, [demoSelected, selected, conversationId, localUid, title, toggleStarred]);
+  }, [demoSelected, selected, conversationId, localUid, user?.id, title, toggleStarred]);
 
   const onForwardSelected = useCallback(() => {
     if (!selected) return;
