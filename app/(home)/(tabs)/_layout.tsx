@@ -49,7 +49,9 @@ const WhatsAppTabIcon = ({
 }) => {
   const { colors } = useTheme();
   return (
-    <View className="items-center">
+    // w-full is what stops react-navigation's flex slot from compressing the
+    // icon+label subtree to ~40px (compressed glyphs read as "missing icons").
+    <View className="items-center w-full">
       <View className="relative">
         <View
           className={clsx(
