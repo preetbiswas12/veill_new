@@ -49,9 +49,22 @@ const FilterChip = ({
   onPress?: () => void;
 }) => (
   <Pressable
-    onPress={onPress}
+    onPress={
+      onPress
+        ? () => {
+            void Haptics.selectionAsync();
+            onPress();
+          }
+        : undefined
+    }
     accessibilityRole="button"
     accessibilityState={{ selected: active }}
+    android_ripple={{
+      color: 'rgba(134,150,160,0.28)',
+      borderless: true,
+      radius: 24,
+      foreground: true,
+    }}
     className={[
       'shrink-0 h-8 px-3 rounded-full items-center justify-center',
       active ? 'bg-surface-active' : 'bg-surface-muted',
@@ -67,6 +80,52 @@ const FilterChip = ({
     </Text>
   </Pressable>
 );
+
+/**
+ * The design's floating compose button, drawn from WhatsApp-android: a 56pt
+ * brand-green circle with a white plus, inked with a light ripple that spreads
+ * under the finger, resting `16pt` in from the right edge and above the tab
+ * bar. Haptic medium on press — the loudest affordance on the screen.
+ */
+const Fab = () => {
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  return (
+    <Pressable
+      onPress={() => {
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        router.push('/new');
+      }}
+      accessibilityRole="button"
+      accessibilityLabel="New chat"
+      android_ripple={{
+        color: 'rgba(255,255,255,0.26)',
+        borderless: true,
+        radius: 84,
+        foreground: true,
+      }}
+      style={{
+        position: 'absolute',
+        right: 16,
+        bottom: insets.bottom + 14,
+        height: 56,
+        width: 56,
+        borderRadius: 28,
+        backgroundColor: colors['product'],
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: colors['bubble-shadow'],
+        shadowOpacity: 0.28,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 5 },
+        elevation: 6,
+      }}
+    >
+      <Ionicons name="add" size={26} color={colors['text-invert']} />
+    </Pressable>
+  );
+};
 
 const ChatsScreen = () => {
   const { colors } = useTheme();
@@ -277,7 +336,12 @@ const ChatsScreen = () => {
         }
         accessibilityRole="button"
         accessibilityLabel="Archived"
-        className="flex-row items-center gap-3 pl-8 pr-4 py-2.5 border-b-hair border-separator active:bg-surface-muted"
+        className="flex-row items-center gap-3 pl-8 pr-4 py-2.5 border-b-hair border-separator"
+        android_ripple={{
+          color: 'rgba(134,150,160,0.20)',
+          borderless: false,
+          foreground: true,
+        }}
       >
         <View className="w-8 h-6 items-center justify-center">
           <Ionicons name="archive-outline" size={24} color={colors['text-strong']} />
@@ -296,6 +360,7 @@ const ChatsScreen = () => {
         <View className="flex-1 items-center justify-center">
           <Text className="text-body-2 text-text-muted">Loading chats…</Text>
         </View>
+        <Fab />
       </Screen>
     );
   }
@@ -349,8 +414,9 @@ const ChatsScreen = () => {
             </Text>
           </View>
         }
-        contentContainerStyle={{ paddingBottom: 8 }}
+        contentContainerStyle={{ paddingBottom: 72 }}
       />
+      <Fab />
     </Screen>
   );
 };

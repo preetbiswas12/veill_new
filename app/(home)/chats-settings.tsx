@@ -1,10 +1,13 @@
 import { useRouter } from 'expo-router';
-import { ScrollView, Switch, Text, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import Screen from '@/components/Screen';
 import { HeaderButton } from '@/components/ScreenHeader';
+import { showAlertDialog } from '@/components/AlertDialog';
 import { useCometChat } from '@/hooks/useCometChat';
 import { useEnterSend } from '@/hooks/useEnterSend';
+import { useWallpaper, WALLPAPER_STYLES } from '@/hooks/useWallpaper';
 import { useTheme } from '@/hooks/useTheme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -44,6 +47,43 @@ const ToggleRow = ({
         accessibilityLabel={label}
       />
     </View>
+  );
+};
+
+/**
+ * The wallpaper picker row: opens the WhatsApp-style option list (each choice
+ * is one of the app's own generated patterns, not WhatsApp's artwork) and
+ * persists through the same storage the thread renders from.
+ */
+const WallpaperRow = () => {
+  const { colors } = useTheme();
+  const [style, setWallpaper] = useWallpaper();
+  const current = WALLPAPER_STYLES.find((entry) => entry.key === style);
+
+  const openPicker = () => {
+    const buttons = [
+      ...WALLPAPER_STYLES.map((entry) => ({
+        text: entry.key === style ? `${entry.label}  \u2713` : entry.label,
+        onPress: () => setWallpaper(entry.key),
+      })),
+      { text: 'Cancel', style: 'cancel' as const },
+    ];
+    showAlertDialog('Chat wallpaper', undefined, buttons);
+  };
+
+  return (
+    <Pressable
+      onPress={openPicker}
+      accessibilityRole="button"
+      accessibilityLabel="Chat wallpaper"
+      className="flex-row items-center gap-3 pl-4 pr-4 min-h-[44px] py-3 border-b-hair border-separator active:bg-surface-muted"
+    >
+      <Text className="flex-1 text-body-1 text-text-strong">Chat wallpaper</Text>
+      {/* A live swatch of the token the thread renders over. */}
+      <View className="h-8 w-12 rounded-thumb bg-chat-bg border-hair border-separator" />
+      <Text className="text-body-2 text-text-muted">{current?.label ?? 'Default'}</Text>
+      <Feather name="chevron-right" size={18} color={colors['text-muted']} />
+    </Pressable>
   );
 };
 
@@ -128,12 +168,7 @@ const ChatsSettingsScreen = () => {
           Appearance
         </Text>
         <View className="mx-4 mb-6 overflow-hidden rounded-card">
-          <View className="flex-row items-center gap-3 pl-4 pr-4 min-h-[44px] py-3 border-b-hair border-separator">
-            <Text className="flex-1 text-body-1 text-text-strong">Chat wallpaper</Text>
-            {/* A live swatch of the token the thread renders. */}
-            <View className="h-8 w-12 rounded-thumb bg-chat-bg border-hair border-separator" />
-            <Text className="text-body-2 text-text-muted">Default</Text>
-          </View>
+          <WallpaperRow />
           <ToggleRow
             label="Enter to send"
             description="Off means Return inserts a new line"

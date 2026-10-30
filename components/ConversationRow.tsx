@@ -92,7 +92,14 @@ const ConversationRow = ({
         onPress={onPress}
         onLongPress={onLongPress}
         delayLongPress={280}
-        className="flex-row items-center gap-3 px-4 h-row active:bg-surface-muted"
+        // WhatsApp-android's row feedback is the platform ripple, not an
+        // opacity swap — the ink spreads from the touch point under the row.
+        android_ripple={{
+          color: 'rgba(134,150,160,0.20)',
+          borderless: false,
+          foreground: true,
+        }}
+        className="flex-row items-center gap-3 px-4 h-row"
         accessibilityRole="button"
         accessibilityLabel={`Chat with ${title}`}
       >
