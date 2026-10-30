@@ -77,6 +77,8 @@ const CallScreen = () => {
   const isVideo = params.video === '1' || params.video === 'true';
   const isOutgoing = params.direction === 'outgoing';
 
+  const [speakerOn, setSpeakerOn] = useState(false);
+
   const {
     rtcState,
     incomingCall,
@@ -172,6 +174,33 @@ const CallScreen = () => {
     void endCall();
   };
 
+  // Real audio routing: the calls SDK itself exposes only mute controls, so
+  // the speaker switch goes through the device's route manager. Falls back
+  // to an honest dialog where the native module is absent (Expo Go).
+  const onToggleSpeaker = () => {
+    const next = !speakerOn;
+    let manager: any = null;
+    try {
+      const mod = require('react-native-incall-manager');
+      manager = mod?.default ?? mod;
+    } catch {
+      manager = null;
+    }
+    if (!manager || typeof manager.setSpeakerphoneOn !== 'function') {
+      showAlertDialog(
+        'Speaker unavailable',
+        'Audio routing needs the dev build. Expo Go does not include the native module.'
+      );
+      return;
+    }
+    try {
+      manager.setSpeakerphoneOn(next);
+      setSpeakerOn(next);
+    } catch {
+      showAlertDialog('Speaker unavailable', 'The audio route could not be changed.');
+    }
+  };
+
   // "Message" from the incoming screen opens the thread rather than ending the
   // ring, which is what WhatsApp does.
   const onMessage = () => {
@@ -190,12 +219,9 @@ const CallScreen = () => {
             <Text className="text-white text-2xl font-semibold" numberOfLines={1}>
               {peerName}
             </Text>
-            <View className="flex-row items-center gap-1.5">
-              <Ionicons name="lock-closed" size={11} color={colors['tick-read']} />
-              <Text className="text-caption" style={{ color: colors['tick-read'] }}>
-                End-to-end encrypted
-              </Text>
-            </View>
+            <Text className="text-caption" style={{ color: colors['tick-read'] }}>
+              Encrypted in transit
+            </Text>
             <Text className="text-body-2 text-white/70" accessibilityLiveRegion="polite">
               {formatDuration(elapsed)}
             </Text>
@@ -208,10 +234,10 @@ const CallScreen = () => {
           {/* The design's floating control row over the call surface. */}
           <View className="flex-row items-center justify-around px-4 pb-10 pt-6">
             <CallControl
-              icon={audioEnabled ? 'volume-medium-outline' : 'volume-mute-outline'}
+              icon={speakerOn ? 'volume-high' : 'volume-medium-outline'}
               label="Speaker"
               tone="neutral"
-              onPress={() => void toggleAudio()}
+              onPress={onToggleSpeaker}
             />
             <CallControl
               icon="videocam-outline"
@@ -266,7 +292,9 @@ const CallScreen = () => {
         <View className="items-center gap-8 pb-4">
           {isIncomingRing ? (
             <>
-              {/* "Message" and "Remind me" sit above the answer pair. */}
+              {/* "Message" offers an exit without ending the ring, which is
+                  what WhatsApp does. The old "Remind me" row was removed: it
+                  only declined, which read as a feature it did not have. */}
               <View className="flex-row items-center gap-10">
                 <Pressable
                   onPress={onMessage}
@@ -278,18 +306,6 @@ const CallScreen = () => {
                     <Ionicons name="chatbubble-ellipses-outline" size={24} color="#ffffff" />
                   </View>
                   <Text className="text-caption text-white">Message</Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={onDecline}
-                  accessibilityRole="button"
-                  accessibilityLabel="Remind me later"
-                  className="items-center gap-2 active:opacity-70"
-                >
-                  <View className="w-14 h-14 rounded-full items-center justify-center bg-white/15">
-                    <Ionicons name="alarm-outline" size={24} color="#ffffff" />
-                  </View>
-                  <Text className="text-caption text-white">Remind me</Text>
                 </Pressable>
               </View>
 

@@ -522,6 +522,14 @@ export const secureMediaIdOf = (message: any): string | null => {
   return id || null;
 };
 
+/**
+ * The decrypted file URI for one media id, read without a hook — for action
+ * handlers (Save to device) that fire outside render. Undefined while the
+ * transfer has not landed, which callers report honestly.
+ */
+export const resolvedUriOf = (mediaId: string): string | undefined =>
+  resolved.get(mediaId)?.uri;
+
 /** One-line preview for the conversation list. */
 export const securedPreviewText = (start: StartEnvelope): string => {
   if (start.kind === 'image') return '🔒 Photo';

@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
+import * as MediaLibrary from 'expo-media-library';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -27,9 +28,11 @@ import {
   getMessageTimestamp,
   useCometChat,
 } from '@/hooks/useCometChat';
+import { useEnterSend } from '@/hooks/useEnterSend';
 import { useStarredMessages } from '@/hooks/useStarredMessages';
 import { useTheme } from '@/hooks/useTheme';
 import { showAlertDialog } from '@/components/AlertDialog';
+import { customPayloadOf, secureMediaIdOf, resolvedUriOf } from '@/lib/secure-media';
 
 /** Messages closer together than this collapse into one visual group. */
 const GROUP_WINDOW_MS = 5 * 60 * 1000;
@@ -100,6 +103,57 @@ const ChatScreen = () => {
     return [...list].sort((a, b) => getMessageTimestamp(a) - getMessageTimestamp(b));
   }, [messagesByConversation, conversationId]);
 
+  // Quote previews for every message that carries a parent id: one lookup pass
+  // over the loaded history, so both ends of a reply render the same block.
+  const replyPreviews = useMemo(() => {
+    const previews = new Map<string, { sender: string; text: string }>();
+    const byId = new Map<string, any>();
+    for (const message of messages) {
+      byId.set(String(message?.getId?.() ?? message?.id ?? ''), message);
+    }
+    for (const message of messages) {
+      const parentId = String(
+        message?.getParentMessageId?.() ?? message?.parentMessageId ?? ''
+      );
+      if (!parentId || parentId === '0') continue;
+      const parent = byId.get(parentId);
+      if (parent) {
+        const parentSender = senderOf(parent);
+        previews.set(String(message?.getId?.() ?? message?.id ?? ''), {
+          sender: parentSender === localUid ? 'You' : (parent.getSender?.()?.getName?.() || title),
+          text: getMessageBody(parent) || getMessageText(parent) || 'Earlier message',
+        });
+      } else {
+        // The quoted message is behind the current history window.
+        previews.set(String(message?.getId?.() ?? message?.id ?? ''), {
+          sender: '',
+          text: 'Earlier reply',
+        });
+      }
+    }
+    return previews;
+  }, [messages, localUid, title]);
+
+  // Whether a message is saveable media, without opening the media store.
+  const mediaKindOf = useCallback(
+    (message: any): 'image' | 'video' | null => {
+      const category =
+        typeof message?.getCategory === 'function' ? message.getCategory() : message?.category;
+      if (category === 'custom') {
+        const type = typeof message?.getType === 'function' ? message.getType() : message?.type;
+        if (type !== 've:start') return null;
+        const data = customPayloadOf(
+          typeof message?.getData === 'function' ? message.getData() : message?.data
+        );
+        const kind = (data as any)?.kind;
+        return kind === 'image' || kind === 'video' ? kind : null;
+      }
+      const type = typeof message?.getType === 'function' ? message.getType() : message?.type;
+      return type === 'image' || type === 'video' ? type : null;
+    },
+    []
+  );
+
   const isLoadingMessages = Boolean(loadingMessages.get(conversationId));
   const listRef = useRef<FlatList<ThreadItem>>(null);
   const [showScrollDown, setShowScrollDown] = useState(false);
@@ -120,6 +174,9 @@ const ChatScreen = () => {
     sender: string;
     text: string;
   } | null>(null);
+  // Composer behaviour: Return submits when the setting is on (hook reads the
+  // device-local preference; the switch lives in the chat settings screen).
+  const [enterSend] = useEnterSend();
   const fetchedReceiptsRef = useRef<Set<string>>(new Set());
   // Captured once so the "jump to latest" badge reflects what was unread on
   // entry — the thread marks the conversation read immediately after mount.
@@ -339,6 +396,36 @@ const ChatScreen = () => {
     });
   }, [selected, router]);
 
+  // Save a landed image/video bubble into the device gallery. The bytes live
+  // in the cache only after the transfer verified; saving is the explicit act
+  // of moving one out of the app's sandbox.
+  const onSaveMediaSelected = useCallback(async () => {
+    if (!selected) return;
+    const mediaId = secureMediaIdOf(selected.message);
+    const uri = mediaId ? resolvedUriOf(mediaId) : undefined;
+    if (!uri) {
+      showAlertDialog(
+        'Still streaming',
+        'This media has not finished arriving on this device yet. Try again in a moment.'
+      );
+      return;
+    }
+    try {
+      const permission = await MediaLibrary.requestPermissionsAsync();
+      if (!permission.granted) {
+        showAlertDialog(
+          'Permission needed',
+          'Allow photo library access to save media to your gallery.'
+        );
+        return;
+      }
+      await MediaLibrary.saveToLibraryAsync(uri);
+      setStarToast('Saved to gallery');
+    } catch {
+      showAlertDialog('Could not save', 'The file could not be written to the gallery.');
+    }
+  }, [selected]);
+
   const onReactSelected = useCallback(
     (reaction: string) => {
       // Demo rows are local; reacting would imply a CometChat mutation.
@@ -416,6 +503,7 @@ const ChatScreen = () => {
     }
 
     const messageId = item.message?.getId?.();
+    const messageKey = String(messageId ?? item.message?.id ?? '');
     const receiptLabel =
       item.isOwn && item.isGroupEnd && messageId
         ? getMessageReceiptLabel(messageReceipts.get(String(messageId)))
@@ -431,6 +519,7 @@ const ChatScreen = () => {
           showAvatar={item.showAvatar}
           senderName={item.senderName}
           receiptLabel={receiptLabel}
+          reply={replyPreviews.get(messageKey) ?? null}
           onLongPress={() => {
             void Haptics.selectionAsync();
             setSelected({
@@ -602,6 +691,7 @@ const ChatScreen = () => {
           chatType={conversationType}
           replyTo={replyTo}
           onClearReply={() => setReplyTo(null)}
+          enterSend={enterSend}
         />
       </KeyboardAvoidingView>
 
@@ -621,6 +711,9 @@ const ChatScreen = () => {
         onReact={onReactSelected}
         onReply={onReplySelected}
         onDelete={onDeleteSelected}
+        // Media rows carry their landed bytes on this device; text has nothing
+        // to save off the bubble.
+        onSaveMedia={selected && mediaKindOf(selected.message) ? onSaveMediaSelected : undefined}
         starred={
           Boolean(selected) &&
           isStarred(String(selected?.message?.getId?.() ?? selected?.message?.id ?? ''))

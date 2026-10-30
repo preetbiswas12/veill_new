@@ -34,11 +34,47 @@ interface MessageBubbleProps {
   senderName?: string;
   /** `Read` / `Delivered`, shown under the last outgoing message. */
   receiptLabel?: string;
+  /** Quote block atop the bubble when the message replies to another. */
+  reply?: { sender: string; text: string } | null;
   onLongPress?: () => void;
   onReact?: (reaction: string) => void;
 }
 
 const MEDIA_SIZE = { width: 216, height: 236 };
+
+/**
+ * The quote block inside a bubble. The 4pt bar and the named sender follow
+ * the composer's reply preview exactly, so a sent reply and its landed echo
+ * read as one design.
+ */
+const ReplyQuote = ({ sender, text }: { sender: string; text: string }) => {
+  const { colors } = useTheme();
+  return (
+    <View className="flex-row items-stretch mb-1.5">
+      <View
+        style={{
+          width: 3,
+          borderRadius: 1.5,
+          backgroundColor: colors['quote'],
+          marginTop: 1,
+          marginBottom: 1,
+        }}
+      />
+      <View className="flex-1 min-w-0 pl-2 justify-center">
+        <Text
+          className="text-body-3 font-semibold"
+          style={{ color: colors['product-deep'] }}
+          numberOfLines={1}
+        >
+          {sender || 'Reply'}
+        </Text>
+        <Text className="text-body-3 text-text-muted" numberOfLines={2}>
+          {text || 'Earlier message'}
+        </Text>
+      </View>
+    </View>
+  );
+};
 
 const formatTime = (timestamp: number) => {
   const { colors } = useTheme();
@@ -102,6 +138,7 @@ const MessageBubble = ({
   showAvatar = false,
   senderName,
   receiptLabel,
+  reply = null,
   onLongPress,
   onReact,
 }: MessageBubbleProps) => {
@@ -169,6 +206,7 @@ const MessageBubble = ({
               isOwn ? 'bg-bubble-out border-bubble-shadow' : 'bg-bubble-in border-bubble-shadow'
             )}
           >
+            {reply ? <ReplyQuote sender={reply.sender} text={reply.text} /> : null}
             <SecureMediaBubble message={message} isOwn={isOwn} />
 
             {/* Time and ticks ride the trailing edge inside the bubble, as
@@ -290,6 +328,7 @@ const MessageBubble = ({
             hasInlineMedia ? 'p-1' : 'pt-[13px] pl-[7px] pr-[8px] pb-[3px]'
           )}
         >
+          {reply ? <ReplyQuote sender={reply.sender} text={reply.text} /> : null}
           {attachment?.url ? renderAttachment() : null}
           {body ? (
             <Text className="text-body-2 text-text-strong">

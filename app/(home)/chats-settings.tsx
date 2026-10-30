@@ -4,6 +4,7 @@ import { ScrollView, Switch, Text, View } from 'react-native';
 import Screen from '@/components/Screen';
 import { HeaderButton } from '@/components/ScreenHeader';
 import { useCometChat } from '@/hooks/useCometChat';
+import { useEnterSend } from '@/hooks/useEnterSend';
 import { useTheme } from '@/hooks/useTheme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -58,13 +59,9 @@ const ChatsSettingsScreen = () => {
   const { colors } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const {
-    mutedConversations,
-    setConversationMuted,
-    conversations,
-    pushEnabled,
-    setPushEnabled,
-  } = useCometChat();
+  const { mutedConversations, setConversationMuted, conversations, pushEnabled, setPushEnabled } =
+    useCometChat();
+  const [enterSend, setEnterSend] = useEnterSend();
 
   const mutedCount = mutedConversations.length;
 
@@ -140,11 +137,8 @@ const ChatsSettingsScreen = () => {
           <ToggleRow
             label="Enter to send"
             description="Off means Return inserts a new line"
-            value={false}
-            onChange={() =>
-              // Honest about the state rather than implying a persisted setting.
-              undefined
-            }
+            value={enterSend}
+            onChange={(next) => void setEnterSend(next)}
             last
           />
         </View>

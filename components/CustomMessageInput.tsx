@@ -32,6 +32,8 @@ interface CustomMessageInputProps {
   /** Set to show the design's quote bar; cleared once the reply is sent. */
   replyTo?: ReplyTarget | null;
   onClearReply?: () => void;
+  /** True when Return submits instead of inserting a newline (see useEnterSend). */
+  enterSend?: boolean;
 }
 
 const CustomMessageInput = ({
@@ -42,6 +44,7 @@ const CustomMessageInput = ({
   disabled = false,
   replyTo = null,
   onClearReply,
+  enterSend = false,
 }: CustomMessageInputProps) => {
   const { colors } = useTheme();
   const router = useRouter();
@@ -101,7 +104,10 @@ const CustomMessageInput = ({
 
     setSending(true);
     try {
-      await sendTextMessage(conversationId, trimmed, chatType);
+      // A live reply carries its parent id to the server, so both ends render
+      // the quote (CometChat routes it through sendMessageInThread).
+      await sendTextMessage(conversationId, trimmed, chatType, replyTo?.messageId || undefined);
+      onClearReply?.();
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {
       // Put the draft back so a failed send is not silently dropped.
@@ -265,7 +271,7 @@ const CustomMessageInput = ({
                 multiline
                 editable={!disabled}
                 onSubmitEditing={handleSend}
-                blurOnSubmit={false}
+                submitBehavior={enterSend ? 'submit' : 'newline'}
               />
               {/* The design parks a 24pt sticker glyph on the input's trailing
                   edge until there is something to send; then a solid brand

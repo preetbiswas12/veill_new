@@ -54,7 +54,7 @@ const StarredScreen = () => {
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
         {!ready ? (
           <View className="items-center py-10">
-            <Text className="text-body-2 text-text-muted">Loading\u2026</Text>
+            <Text className="text-body-2 text-text-muted">Loading…</Text>
           </View>
         ) : entries.length === 0 ? (
           <View className="items-center gap-2 py-20 px-10">

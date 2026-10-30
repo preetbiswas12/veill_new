@@ -11,6 +11,7 @@ import {
 import { CometChat } from '@cometchat/chat-sdk-react-native';
 import { File as FsFile } from 'expo-file-system';
 
+import { showAlertDialog } from '@/components/AlertDialog';
 import { STORIES_GUID, normalizeCometChatUserId } from '@/lib/cometchat';
 import { registerDeviceForPush, unregisterDeviceFromPush } from '@/lib/push';
 import {
@@ -147,7 +148,12 @@ interface CometChatContextType {
   error: string | null;
   messagesByConversation: Map<string, any[]>;
   loadingMessages: Map<string, boolean>;
-  sendTextMessage: (targetId: string, content: string, chatType?: string) => Promise<void>;
+  sendTextMessage: (
+    targetId: string,
+    content: string,
+    chatType?: string,
+    parentId?: string
+  ) => Promise<void>;
   sendMediaMessage: (targetId: string, media: OutgoingMedia, chatType?: string) => Promise<void>;
   /**
    * Sends media through the private pipeline (lib/secure-media.ts): encrypted,
@@ -814,7 +820,7 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
    * plaintext send.
    */
   const sendTextMessage = useCallback(
-    async (targetId: string, content: string, chatType?: string) => {
+    async (targetId: string, content: string, chatType?: string, parentId?: string) => {
       const type = chatType || resolveConversationType(targetId);
 
       let envelope: TextEnvelope | null = null;
@@ -841,6 +847,9 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
           SECURE_TEXT,
           envelope
         );
+        // A reply quote: the parent id rides the message envelope (SDK sends
+        // through the thread endpoint), while the preview text stays sealed.
+        if (parentId) (message as any).setParentMessageId?.(parentId);
         // Decorative only: what the push extension renders in the tray.
         message.setMetadata?.({ pushNotification: 'New message' });
         const sent = await (CometChat.sendCustomMessage as any)(message);
@@ -849,12 +858,21 @@ export const CometChatProvider = ({ children }: CometChatProviderProps) => {
         return;
       }
 
-      // Over the sealed ceiling. Kept visibly in code so the tradeoff is a
-      // fact of the source rather than of the runtime.
+      // Over the sealed ceiling. Declared at send time, not just in source:
+      // the user sees that this one left unsealed, and the tray stays generic.
       const message = new (CometChat as any).TextMessage(targetId, content, type);
+      try {
+        message.setMetadata?.({ pushNotification: 'New message' });
+      } catch {
+        // Some older message classes lack the override; the send proceeds.
+      }
       const sent = await (CometChat.sendMessage as any)(message);
       appendMessage(targetId, sent);
       void refreshConversations();
+      showAlertDialog(
+        'Sent unencrypted',
+        'This message was longer than the sealed envelope limit, so it left the device as plain text.'
+      );
     },
     [appendMessage, refreshConversations, resolveConversationType]
   );

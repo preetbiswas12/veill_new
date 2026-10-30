@@ -26,6 +26,8 @@ interface MessageActionsProps {
   onStar?: () => void;
   /** Absent when there is nothing to forward. */
   onForward?: () => void;
+  /** Present for image/video rows whose bytes already resolved on this device. */
+  onSaveMedia?: () => void;
 }
 
 const Row = ({
@@ -94,6 +96,7 @@ const MessageActions = ({
   onDelete,
   onStar,
   onForward,
+  onSaveMedia,
 }: MessageActionsProps) => {
   const { colors } = useTheme();
 
@@ -178,6 +181,9 @@ const MessageActions = ({
           <Row icon="arrow-redo-outline" label="Forward" onPress={() => { onForward(); onClose(); }} />
         ) : null}
         {canCopy ? <Row icon="copy" label="Copy text" onPress={() => { onCopy?.(); onClose(); }} /> : null}
+        {onSaveMedia ? (
+          <Row icon="save-outline" label="Save to device" onPress={() => { onSaveMedia(); onClose(); }} />
+        ) : null}
         {onStar ? (
           <Row
             icon={starred ? 'star' : 'star-outline'}
