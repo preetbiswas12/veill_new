@@ -59,16 +59,16 @@
     --color-surface: 11 20 26;
     --color-surface-muted: 17 27 33;
     --color-surface-input: 32 44 51;
-    --color-surface-active: 18 61 51;
+    --color-surface-active: 16 53 41;
     --color-surface-cta: 20 30 36;
     --color-panel-blur: 17 27 33;
     --color-panel-blur-warm: 11 20 26;
     --color-chat-bg: 11 20 26;
     --color-input-border: 42 57 66;
 
-    /* brand: the dark-mode accent, which is a deeper teal rather than the
-       light green so it does not glare against the near-black background */
-    --color-product: 0 168 132;
+    /* brand: WhatsApp's current dark-mode accent green (#21c063, decoded from
+       the com.whatsapp resources) for badges, unread time and active chips */
+    --color-product: 33 192 99;
     --color-teal: 0 168 132;
     --color-product-deep: 6 214 165;
 

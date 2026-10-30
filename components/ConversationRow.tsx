@@ -37,12 +37,16 @@ const formatTimestamp = (timestamp?: number): string => {
   return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 };
 
-/** A single tick for sent, a blue double tick once the peer has read it. */
+/**
+ * WhatsApp-android preview ticks: one gray check while the message is merely
+ * sent, a gray double check once delivered, and the blue double check once read.
+ */
 const DeliveryTicks = ({ status }: { status?: string }) => {
   const { colors } = useTheme();
+  const delivered = status === 'delivered' || status === 'read';
   return (
     <Ionicons
-      name={status === 'read' ? 'checkmark-done' : 'checkmark'}
+      name={delivered ? 'checkmark-done' : 'checkmark'}
       size={16}
       color={status === 'read' ? colors['tick-read'] : colors['text-muted']}
     />
@@ -50,23 +54,21 @@ const DeliveryTicks = ({ status }: { status?: string }) => {
 };
 
 /**
- * Conversation row, matching the design at 393pt:
+ * Conversation row, measured off WhatsApp-android (2024+ build):
  *
- *   flex items-center gap-3 px-4 h-[76px]      <- the row
- *     size-14 rounded-full                     <- 56pt avatar
+ *   flex items-center gap-3 px-4 h-row          <- 72dp row
+ *     48dp avatar                                <- WA's list avatar
  *     flex-1 min-w-0
- *       flex justify-between items-baseline    <- name + timestamp on ONE line
- *         text-[17px] font-semibold truncate
- *         text-[15px] font-medium
- *       flex justify-between items-center mt-0.5  <- preview + badge on ONE line
- *         text-[15px] truncate
- *         size-5 rounded-full text-[12px] font-semibold
- *   h-px bg-border mx-4                        <- separator, inset 16pt both sides
+ *       flex justify-between items-baseline      <- name + time on one line
+ *         text-[17px] font-medium (500)
+ *         text-body-3 (12sp)                     <- time, green when unread
+ *       flex justify-between items-center mt-0.5 <- preview + badge
+ *         text-body-2 (15sp) truncate
+ *         size-5 rounded-full bg-primary
+ *   (no separator — the current WhatsApp rows sit on flat color)
  *
- * The separator is a sibling rather than a border on the text column, so it runs
- * the full width beneath the avatar instead of stopping at the avatar's edge.
- * Both text lines carry `min-w-0` plus a truncating Text, which is what stops a
- * long sender name from pushing the timestamp off the row.
+ * The preview line keeps `min-w-0` plus a truncating Text, which is what stops
+ * a long sender name from pushing the timestamp off the row.
  */
 const ConversationRow = ({
   name,
@@ -97,20 +99,21 @@ const ConversationRow = ({
         <Avatar
           name={title}
           imageUrl={image}
-          size={56}
-          fontSize={22}
+          size={48}
+          fontSize={20}
           placeholderType={isGroup ? 'icon' : 'text'}
         />
 
         <View className="flex-1 min-w-0">
-          {/* Name and timestamp share the first baseline. */}
+          {/* Name and timestamp share the first baseline. WhatsApp draws the
+              name at 17sp/500 and the time at 12sp, green while unread. */}
           <View className="flex-row items-baseline justify-between gap-2">
-            <Text className="flex-1 min-w-0 text-body-1 font-semibold text-text-strong" numberOfLines={1}>
+            <Text className="flex-1 min-w-0 text-body-1 font-medium text-text-strong" numberOfLines={1}>
               {title}
             </Text>
             <Text
               className={clsx(
-                'text-body-2 font-medium',
+                'text-body-3',
                 unread ? 'text-primary' : 'text-text-muted'
               )}
               numberOfLines={1}
@@ -135,10 +138,11 @@ const ConversationRow = ({
             </View>
 
             {unread ? (
-              // A 20pt circle at the design's size, allowed to widen for "99+" so
-              // a three-digit count is never clipped.
+              // A 20pt circle at WhatsApp's size, allowed to widen for "99+" so
+              // a three-digit count is never clipped. The current build paints
+              // the count in the mode-inverted colour, so it flips with theme.
               <View className="min-w-[20px] h-5 px-1 rounded-full bg-primary items-center justify-center">
-                <Text className="text-body-3 font-semibold text-white">
+                <Text className="text-body-3 font-semibold text-text-invert">
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </Text>
               </View>
@@ -146,8 +150,6 @@ const ConversationRow = ({
           </View>
         </View>
       </Pressable>
-
-      <View className="h-px bg-separator mx-4" />
     </View>
   );
 };

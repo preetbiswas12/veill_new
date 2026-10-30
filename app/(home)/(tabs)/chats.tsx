@@ -39,10 +39,12 @@ type FilterKey = 'all' | 'unread' | 'favourites' | 'groups';
  */
 const FilterChip = ({
   label,
+  count,
   active,
   onPress,
 }: {
   label: string;
+  count?: number;
   active: boolean;
   onPress?: () => void;
 }) => (
@@ -61,7 +63,7 @@ const FilterChip = ({
         active ? 'text-text-strong' : 'text-text-muted',
       ].join(' ')}
     >
-      {label}
+      {count !== undefined && count > 0 ? `${label} ${count}` : label}
     </Text>
   </Pressable>
 );
@@ -212,9 +214,10 @@ const ChatsScreen = () => {
         className="px-4 pb-1"
       >
         <View className="flex-row items-center justify-between">
-          <Text className="flex-1 min-w-0 text-display font-bold text-text-strong">Chats</Text>
+          <Text className="flex-1 min-w-0 text-display font-bold text-text-strong tracking-tight">Veill</Text>
           <View className="flex-row items-center gap-3">
-            <HeaderButton icon="add" solid label="New" onPress={() => router.push('/new')} />
+            <HeaderButton icon="add" solid label="New chat" onPress={() => router.push('/new')} />
+            <HeaderButton icon="ellipsis-vertical" label="More" onPress={() => router.push('/settings')} />
           </View>
         </View>
       </View>
@@ -256,22 +259,10 @@ const ChatsScreen = () => {
           contentContainerStyle={{ gap: 8, paddingRight: 16 }}
           keyboardShouldPersistTaps="handled"
         >
-          <FilterChip label="All" active={filter === 'all'} onPress={() => setFilter('all')} />
-          <FilterChip
-            label="Unread"
-            active={filter === 'unread'}
-            onPress={() => setFilter('unread')}
-          />
-          <FilterChip
-            label="Favourites"
-            active={filter === 'favourites'}
-            onPress={() => setFilter('favourites')}
-          />
-          <FilterChip
-            label="Groups"
-            active={filter === 'groups'}
-            onPress={() => setFilter('groups')}
-          />
+          <FilterChip label="All" active={filter === 'all'} onPress={() => setFilter('all')} count={conversationItems.length} />
+          <FilterChip label="Unread" active={filter === 'unread'} onPress={() => setFilter('unread')} count={conversationItems.filter(c => c.unreadCount > 0).length} />
+          <FilterChip label="Favourites" active={filter === 'favourites'} onPress={() => setFilter('favourites')} count={favouriteIds.length} />
+          <FilterChip label="Groups" active={filter === 'groups'} onPress={() => setFilter('groups')} count={conversationItems.filter(c => c.type === 'group').length} />
         </ScrollView>
       </View>
 

@@ -57,16 +57,17 @@ export const darkPalette: Record<keyof typeof lightPalette, string> = {
   surface: '#0b141a',
   'surface-muted': '#111b21',
   'surface-input': '#202c33',
-  'surface-active': '#123d33',
+  'surface-active': '#103529',
   'surface-cta': '#141e24',
   'panel-blur': '#111b21',
   'panel-blur-warm': '#0b141a',
   'chat-bg': '#0b141a',
   'input-border': '#2a3942',
 
-  // brand: a deeper teal rather than the light green, so it does not glare
-  // against the near-black background
-  product: '#00a884',
+  // brand: WhatsApp's current dark accent green, decoded from the
+  // com.whatsapp resources (0x7f060173 = #21c063); #103529 is the selected
+  // filter chip's fill in the same decode
+  product: '#21c063',
   teal: '#00a884',
   'product-deep': '#06d6a5',
 

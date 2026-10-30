@@ -85,10 +85,12 @@ module.exports = {
         'body-2': ['15px', { lineHeight: '20px' }], // preview, subtitle, chips
         'body-3': ['12px', { lineHeight: '16px' }], // badges, timestamps
         caption: ['11px', { lineHeight: '14px' }],
-        tabbar: ['10px', { lineHeight: '12px' }],
+        // WhatsApp-android draws its tab labels at 12sp; the earlier 10pt came
+        // from the iOS Figma file and vanished against a 60dp bar.
+        tabbar: ['12px', { lineHeight: '14px' }],
       },
       borderRadius: {
-        search: '10px',
+        search: '17px',
         chip: '16px', // pills and large soft corners
         card: '14px', // cards, sheets, primary buttons
         avatar: '28px', // 56pt avatar
@@ -96,11 +98,11 @@ module.exports = {
         thumb: '8px', // swatches, thumbnails, tiny partial corners
       },
       spacing: {
-        row: '76px', // conversation row: 56pt avatar over two text lines
+        row: '72px', // conversation row: WA-android 72dp, 48dp avatar
         statusbar: '54px',
         navbar: '44px',
         header: '98px', // status bar plus nav bar
-        tabbar: '83px',
+        tabbar: '60px',
       },
       borderWidth: {
         hair: '0.5px', // 0.5pt separators
