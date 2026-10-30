@@ -8,6 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import AddMoreSheet from './AddMoreSheet';
 import AttachButton from './AttachButton';
+import Glass from './Glass';
 import { takePendingCapture } from '@/lib/capture';
 import { useTheme } from '@/hooks/useTheme';
 import { showAlertDialog } from '@/components/AlertDialog';
@@ -229,7 +230,13 @@ const CustomMessageInput = ({
           }
         />
       ) : (
-        <View className="bg-panel-blur-warm">
+        <Glass
+          intensity={65}
+          style={{ borderWidth: 0, backgroundColor: colors['panel-blur-warm'] }}
+        >
+          {/* The glass composer: a real blur over the wallpaper where the
+              platform provides one, tinted panel where it does not. Warm tint
+              kept as the fallback so the design's blush-warm ground survives. */}
           {/* Reply preview from the design: a 4pt quote bar in --quote, the
               sender's name in the same colour, the quoted line beneath, and a
               close control on the trailing edge. */}
@@ -329,7 +336,7 @@ const CustomMessageInput = ({
               ) : null}
             </View>
           </View>
-        </View>
+        </Glass>
       )}
     </View>
   );

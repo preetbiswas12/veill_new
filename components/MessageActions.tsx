@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { BackHandler, Modal, Pressable, Text, View } from 'react-native';
-import { useEffect } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import EmojiPickerSheet from '@/components/EmojiPickerSheet';
 import { useTheme } from '@/hooks/useTheme';
 
 const QUICK_REACTIONS = ['❤️', '👍', '😂', '😮', '😢', '🙏'];
@@ -84,8 +86,9 @@ const Row = ({
 
 /**
  * Per-message action menu, styled on WhatsApp-android's long-press card: a
- * floating rounded panel a step above the bottom edge — reactions strip on
- * top, icon rows beneath, every row inked with a platform ripple.
+ * floating rounded panel a step above the bottom edge — reactions strip
+ * (quick six + any-emoji keyboard via "+") on top, icon rows beneath, every
+ * row inked with a platform ripple.
  *
  * Styles are explicit rather than NativeWind classes because a React Native
  * Modal renders into its own native window, where the CSS-variable classes
@@ -108,8 +111,9 @@ const MessageActions = ({
   onForward,
   onSaveMedia,
 }: MessageActionsProps) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
+  const [showPicker, setShowPicker] = useState(false);
 
   // Back dismisses the sheet explicitly - not every Android build delivers
   // the gesture to Modal's onRequestClose.
@@ -142,21 +146,25 @@ const MessageActions = ({
         <View
           style={{
             backgroundColor: colors['surface'],
-            borderRadius: 18,
+            borderRadius: 20,
             overflow: 'hidden',
+            borderWidth: 0.5,
+            borderColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(17,27,33,0.07)',
             shadowColor: '#000',
-            shadowOpacity: 0.45,
-            shadowRadius: 18,
-            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.4,
+            shadowRadius: 22,
+            shadowOffset: { width: 0, height: 10 },
             elevation: 18,
           }}
         >
+          {/* Reactions strip: the quick six plus the "+" cell that opens the
+              full emoji keyboard sheet, evenly spread across the card. */}
           <View
             style={{
               flexDirection: 'row',
-              paddingHorizontal: 6,
-              paddingTop: 8,
-              paddingBottom: 8,
+              paddingHorizontal: 10,
+              paddingTop: 10,
+              paddingBottom: 10,
               borderBottomWidth: 0.5,
               borderBottomColor: colors['separator'],
             }}
@@ -164,31 +172,55 @@ const MessageActions = ({
             {QUICK_REACTIONS.map((emoji, index) => {
               const active = activeReactions.includes(emoji);
               return (
-                <Pressable
-                  key={emoji}
-                  onPress={() => {
-                    onReact(emoji);
-                    onClose();
-                  }}
-                  accessibilityLabel={`React with ${emoji}`}
-                  android_ripple={{ color: RIPPLE_INK, borderless: true, radius: 26 }}
-                  style={({ pressed }) => ({
-                    flex: 1,
-                    height: 48,
-                    marginRight: index < QUICK_REACTIONS.length - 1 ? 4 : 0,
-                    borderRadius: 24,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: active ? colors['surface-active'] : 'transparent',
-                    borderWidth: active ? 2 : 0,
-                    borderColor: active ? colors['product'] : 'transparent',
-                    opacity: pressed || active ? 1 : 0.92,
-                  })}
-                >
-                  <Text style={{ fontSize: 26 }}>{emoji}</Text>
-                </Pressable>
+                <Fragment key={emoji}>
+                  <Pressable
+                    onPress={() => {
+                      onReact(emoji);
+                      onClose();
+                    }}
+                    accessibilityLabel={`React with ${emoji}`}
+                    android_ripple={{ color: RIPPLE_INK, borderless: true, radius: 25 }}
+                    style={({ pressed }) => ({
+                      flex: 1,
+                      height: 50,
+                      borderRadius: 25,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: active ? colors['surface-active'] : 'transparent',
+                      borderWidth: active ? 2 : 0,
+                      borderColor: active ? colors['product'] : 'transparent',
+                      opacity: pressed || active ? 1 : 0.95,
+                    })}
+                  >
+                    <Text style={{ fontSize: 27 }}>{emoji}</Text>
+                  </Pressable>
+                  {index < QUICK_REACTIONS.length - 1 ? <View style={{ width: 4 }} /> : null}
+                </Fragment>
               );
             })}
+            <View style={{ width: 4 }} />
+            <Pressable
+              onPress={() => {
+                void Haptics.selectionAsync();
+                onClose();
+                setShowPicker(true);
+              }}
+              accessibilityLabel="Choose any emoji to react"
+              android_ripple={{ color: RIPPLE_INK, borderless: true, radius: 25 }}
+              style={({ pressed }) => ({
+                flex: 1,
+                height: 50,
+                borderRadius: 25,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: colors['surface-muted'],
+                borderWidth: 0.5,
+                borderColor: colors['separator'],
+                opacity: pressed ? 0.85 : 1,
+              })}
+            >
+              <Ionicons name="add" size={24} color={colors['text-strong']} />
+            </Pressable>
           </View>
 
           {canReply ? (
@@ -223,16 +255,16 @@ const MessageActions = ({
             onPress={onClose}
             accessibilityRole="button"
             accessibilityLabel="Cancel"
-            android_ripple={{ color: RIPPLE_INK, borderless: false }}
+            android_ripple={{ color: RIPPLE_INK, borderless: true, radius: 120 }}
             style={({ pressed }) => ({
+              alignSelf: 'center',
+              minWidth: 140,
               minHeight: 44,
-              maxWidth: 220,
-              alignSelf: 'stretch',
+              paddingHorizontal: 32,
               alignItems: 'center',
               justifyContent: 'center',
-              marginHorizontal: 96,
               marginTop: 2,
-              marginBottom: 8,
+              marginBottom: 10,
               borderRadius: 22,
               opacity: pressed ? 0.8 : 1,
             })}
@@ -243,6 +275,17 @@ const MessageActions = ({
           </Pressable>
         </View>
       </View>
+
+      {/* The full emoji keyboard: WhatsApp closes the quick menu when the
+          picker opens, and the chosen glyph becomes the reaction itself. */}
+      <EmojiPickerSheet
+        visible={showPicker}
+        onClose={() => setShowPicker(false)}
+        onSelect={(emoji) => {
+          setShowPicker(false);
+          onReact(emoji);
+        }}
+      />
     </Modal>
   );
 };

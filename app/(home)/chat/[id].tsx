@@ -26,6 +26,7 @@ import Avatar from '@/components/Avatar';
 import Button from '@/components/Button';
 import CustomMessageInput from '@/components/CustomMessageInput';
 import DateDivider, { getDateKey } from '@/components/DateDivider';
+import Glass from '@/components/Glass';
 import MessageActions from '@/components/MessageActions';
 import ChatWallpaper from '@/components/ChatWallpaper';
 import MessageBubble, { BubbleEntrance } from '@/components/MessageBubble';
@@ -588,13 +589,23 @@ const ChatScreen = () => {
       {/* Top contact from the Figma thread: blurred warm panel, 36pt avatar,
           16pt semibold name over a 12pt secondary subtitle, call actions right.
           The Screen excludes the top edge so this row owns the status-bar inset;
-          44pt is the design's 98pt header minus its 54pt status bar. */}
-      <View
-        className="flex-row items-center gap-2.5 pr-[22px] pb-1 bg-panel-blur-warm border-b-hair border-panel-border"
-        style={{ paddingTop: insets.top + 4, height: insets.top + 48 }}
+          44pt is the design's 98pt header minus its 54pt status bar. Glass
+          turns the header into a real system blur (falls back to the warm
+          panel where the blur API is missing). */}
+      <Glass
+        intensity={55}
+        style={{
+          borderWidth: 0,
+          borderBottomWidth: 0.5,
+          borderBottomColor: colors['panel-border'],
+        }}
       >
-        <Button variant="plain" onPress={() => router.back()} className="p-1" hitSlop={8}>
-          <Feather name="chevron-left" size={32} color="black" />
+        <View
+          className="flex-row items-center gap-2.5 pr-[22px] pb-1"
+          style={{ paddingTop: insets.top + 4, height: insets.top + 48 }}
+        >
+          <Button variant="plain" onPress={() => router.back()} className="p-1" hitSlop={8}>
+            <Feather name="chevron-left" size={32} color={colors['text-strong']} />
         </Button>
         <Pressable
           onPress={() =>
@@ -645,7 +656,8 @@ const ChatScreen = () => {
             </Button>
           </View>
         ) : null}
-      </View>
+        </View>
+      </Glass>
 
       {error ? (
         <View className="bg-surface-muted px-4 py-2 border-b-hair border-separator">
