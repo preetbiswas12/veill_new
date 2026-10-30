@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import clsx from 'clsx';
 import { Image } from 'expo-image';
-import { Animated, Linking, Pressable, Text, View } from 'react-native';
+import { Animated, Linking, Pressable, Text, View, type GestureResponderEvent } from 'react-native';
 import { useEffect, useRef } from 'react';
 
 import {
@@ -36,7 +36,7 @@ interface MessageBubbleProps {
   receiptLabel?: string;
   /** Quote block atop the bubble when the message replies to another. */
   reply?: { sender: string; text: string } | null;
-  onLongPress?: () => void;
+  onLongPress?: (event?: GestureResponderEvent) => void;
   onReact?: (reaction: string) => void;
 }
 

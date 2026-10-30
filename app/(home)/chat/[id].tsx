@@ -181,7 +181,15 @@ const ChatScreen = () => {
   const isLoadingMessages = Boolean(loadingMessages.get(conversationId));
   const listRef = useRef<FlatList<ThreadItem>>(null);
   const [showScrollDown, setShowScrollDown] = useState(false);
-  const [selected, setSelected] = useState<{ message: any; canCopy: boolean } | null>(null);
+  // `anchor` is the long-press point in window coordinates — the action card
+  // anchors next to the pressed message, WhatsApp-style, instead of rising as
+  // a generic bottom slab; a long-press on a demo row leaves it unset and the
+  // card falls back to its bottom-docked position.
+  const [selected, setSelected] = useState<{
+    message: any;
+    canCopy: boolean;
+    anchor?: { x: number; y: number };
+  } | null>(null);
   // Android 15 enforces edge-to-edge for targetSdk 35, so the window never
   // resizes around the IME. RN core still reports the keyboard through the
   // WindowInsets API — and its height already comes net of the navigation
@@ -570,11 +578,14 @@ const ChatScreen = () => {
             senderName={item.senderName}
             receiptLabel={receiptLabel}
             reply={replyPreviews.get(messageKey) ?? null}
-            onLongPress={() => {
+            onLongPress={(event) => {
               void Haptics.selectionAsync();
               setSelected({
                 message: item.message,
                 canCopy: Boolean(getMessageBody(item.message)),
+                anchor: event?.nativeEvent
+                  ? { x: event.nativeEvent.pageX, y: event.nativeEvent.pageY }
+                  : undefined,
               });
             }}
             onReact={(reaction) => void toggleReaction(conversationId, item.message, reaction)}
@@ -780,6 +791,7 @@ const ChatScreen = () => {
           Boolean(selected) &&
           isStarred(String(selected?.message?.getId?.() ?? selected?.message?.id ?? ''))
         }
+        anchor={selected?.anchor ?? null}
         onStar={onStarSelected}
         // Forwarding rides on the message having text to carry; secured-media
         // carriers have none, so the row stays hidden rather than dead.
